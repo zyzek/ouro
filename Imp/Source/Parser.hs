@@ -9,6 +9,12 @@ import Imp.Parsec
 program  :: Parser Token Program
 program = return $ Program []
 -- TODO: finish me
+-- program,
+-- function,
+-- args,
+-- vars,
+-- statements,
+-- block
 
 
 -- | Parse an expression.
@@ -22,7 +28,7 @@ expr
         -- single identifier
  , do   i       <- ident
         return  $ XId i
- ]
+ ] -- TODO: App, Op
 
 
 -- | Parse a number.
@@ -34,7 +40,7 @@ num = from takeNum
 ident :: Parser Token Id
 ident
  = do   i       <- from takeId
-        return  $ Id i 
+        return  $ Id i
 
 
 -- | Parse arguments separated by commas.

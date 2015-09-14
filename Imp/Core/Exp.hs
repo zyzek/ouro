@@ -1,12 +1,20 @@
-
+-- | Intermediate Language Grammar.
 module Imp.Core.Exp where
 
 
 -- | Core programs.
 data Program
-        = Program
+        = Program [Function]
         deriving Show
-        -- this isn't finished.
+
+-- | Core Functions.
+data Function
+        = Function Id [Id] Block:[Block] -- ?? Intended to specify that this list is non-empty.
+        deriving Show
+
+-- | Core Blocks.
+data Block
+        = Block Int Instr:[Instr]
 
 
 -- | Instructions.
@@ -26,6 +34,7 @@ data OpArith
         = OpAdd
         | OpSub
         | OpMul
+        | OpDiv -- ?? This was excluded before. Forestall div by 0?
         | OpLt
         | OpGt
         | OpEq

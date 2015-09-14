@@ -27,15 +27,15 @@ tokens
 -- | Parse a single token.
 token :: Parser Char Token
 token 
- = altss        
-        [ do    match str
-                return tok
-        | (str, tok)    <- atoms]
+ = altss                            
+        [ do    match str           -- Looks like a list comprehension?
+                return tok          -- For each (str, tok) pair, attempt
+        | (str, tok)    <- atoms]   -- a match
 
- $ alt  (do     n   <- nat
-                return $ KNum n)
+ $ alt  (do     n   <- nat           -- Default parser: no prim match
+                return $ KNum n)     -- thus, token is either a num
 
-        (do     str <- many alphanum
+        (do     str <- many alphanum -- or a variable/function ID
                 return $ KId str)
 
 
