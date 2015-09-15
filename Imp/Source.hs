@@ -14,8 +14,8 @@ lexParse p str
         Nothing         -> Nothing
         Just tokens'
          -> case parse p tokens' of
-                [(x, [])]       -> Just x
-                _               -> Nothing
+                 [(x, [])]       -> Just x -- Ambiguous or incomplete parses fail.
+                 _               -> Nothing
 
 
 -- Functions for testing at the ghci command-line.

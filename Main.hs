@@ -4,7 +4,7 @@ import qualified Imp.Source                     as S
 import qualified Imp.Source.Lexer               as S
 import qualified Imp.Source.Check               as S
 import qualified Imp.Source.Check.Error         as S
-import qualified Imp.Source.Convert             as S
+-- import qualified Imp.Source.Convert             as S
 
 import qualified Data.Algorithm.Diff            as Diff
 import qualified Data.Algorithm.DiffOutput      as Diff
@@ -58,15 +58,15 @@ main
           -> error $ "Cannot check " ++ file
 
          -- Convert a file.
-         ["-convert", file]
-          | isSuffixOf ".imp" file
-          -> do str     <- readFile file
-                case S.programOfString str of
-                 Nothing -> error "parse error"
-                 Just progSource
-                  -> do let core = S.convertProgram progSource
-                        let out  = Text.ppShow core
-                        showResult out (file ++ ".convert")
+         --["-convert", file]
+         -- | isSuffixOf ".imp" file
+         -- -> do str     <- readFile file
+         --       case S.programOfString str of
+         --        Nothing -> error "parse error"
+         --        Just progSource
+         --         -> do let core = S.convertProgram progSource
+         --               let out  = Text.ppShow core
+         --               showResult out (file ++ ".convert")
                 
          _ -> help
 

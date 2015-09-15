@@ -5,9 +5,9 @@ import qualified Imp.Core.Exp           as C
 
 
 -- | Convert a program from the source to core languages.
-convertProgram :: S.Program -> C.Program
-convertProgram (S.Program _)
-        = C.Program
+-- convertProgram :: S.Program -> C.Program
+-- convertProgram (S.Program _)
+--        = C.Program
 
 
 -- | Convert a source identifier to a core identifier.

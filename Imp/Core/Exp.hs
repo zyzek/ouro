@@ -9,12 +9,13 @@ data Program
 
 -- | Core Functions.
 data Function
-        = Function Id [Id] Block:[Block] -- ?? Intended to specify that this list is non-empty.
-        deriving Show
+        = Function Id [Id] [Block] -- (Block:[Block]) -- ?? Intended to specify that this list is non-empty.
+        deriving Show                      --    But it doesn't compile.
 
 -- | Core Blocks.
 data Block
-        = Block Int Instr:[Instr]
+        = Block Int [Instr] -- (Instr:[Instr])
+        deriving Show
 
 
 -- | Instructions.
@@ -34,7 +35,7 @@ data OpArith
         = OpAdd
         | OpSub
         | OpMul
-        | OpDiv -- ?? This was excluded before. Forestall div by 0?
+        | OpDiv
         | OpLt
         | OpGt
         | OpEq

@@ -7,14 +7,76 @@ import Imp.Parsec
 
 -- | Whole program.
 program  :: Parser Token Program
-program = return $ Program []
--- TODO: finish me
--- program,
--- function,
--- args,
--- vars,
--- statements,
--- block
+program 
+ = do   funcs    <- (some function)
+        return   $ Program funcs
+
+
+function  :: Parser Token Function
+function
+  = do      only Kfun
+            i          <- ident
+            arg_list   <- args
+            var_list   <- vars
+            b          <- block
+            return     $ Function i arg_list var_list b
+
+
+args :: Parser Token [Id]
+args
+ = do   only KRoundBra
+        arg_list       <- (alt idents (result []))
+        only KRoundKet
+        return arg_list
+
+
+vars :: Parser Token [Id]
+vars
+ = alt  (do  only Kvars
+             v_list    <- idents
+             only KSemi
+             return v_list)
+        (result [])
+
+block :: Parser Token Block
+block 
+ = do   only KBraceBra
+        stmt_list      <- (some stmt)
+        only KBraceKet
+        return         $ Block stmt_list
+
+
+stmt :: Parser Token Stmt
+stmt
+ = alts 
+ [ -- assignment
+   do  i          <- ident
+       only KEquals
+       e          <- expr
+       only KSemi
+       return     $ SAssign i e
+
+   -- if-then-else
+ , do  only Kif
+       guard      <- ident
+       only Kthen
+       lbr        <- block
+       only Kelse
+       rbr        <- block
+       return     $ SIfElse guard lbr rbr
+
+   -- if-then
+ , do  only Kif
+       guard      <- ident
+       only Kthen
+       br         <- block
+       return     $ SIf guard br
+
+  -- return
+ , do  only Kreturn
+       i <- ident
+       return $ SReturn i
+ ]
 
 
 -- | Parse an expression.
@@ -22,13 +84,26 @@ expr  :: Parser Token Exp
 expr
  = alts 
  [      -- number
-   do   n       <- num
-        return  $ XNum n
+   do   n        <- num
+        return   $ XNum n
 
         -- single identifier
- , do   i       <- ident
-        return  $ XId i
- ] -- TODO: App, Op
+ , do   i        <- ident
+        return   $ XId i
+
+        -- function application
+ , do   i        <- ident
+        arg_list <- args
+        return   $ XApp i arg_list
+
+        -- operation
+ , do   only KRoundBra
+        e1       <- expr
+        op       <- oper
+        e2       <- expr
+        only KRoundKet
+        return   $ XOp op e1 e2
+ ]
 
 
 -- | Parse a number.

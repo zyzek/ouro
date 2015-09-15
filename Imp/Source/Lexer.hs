@@ -28,7 +28,7 @@ tokens
 token :: Parser Char Token
 token 
  = altss                            
-        [ do    match str           -- Looks like a list comprehension?
+        [ do    match str           
                 return tok          -- For each (str, tok) pair, attempt
         | (str, tok)    <- atoms]   -- a match
 
