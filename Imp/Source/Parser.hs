@@ -57,6 +57,13 @@ stmt
        return     $ SAssign i e
 
    -- if-then-else
+   -- Must appear before if-then:
+   -- Since that is a prefix, if the match for 
+   -- if-then-else fails, might possibly still succeed
+   -- for if-then.
+   -- But if the if-then succeeds, but there's an else block
+   -- parse must then fail: we have a dangling else
+   -- with no if-then to precede it.
  , do  only Kif
        guard      <- ident
        only Kthen
@@ -75,6 +82,7 @@ stmt
   -- return
  , do  only Kreturn
        i <- ident
+       only KSemi
        return $ SReturn i
  ]
 
@@ -87,14 +95,15 @@ expr
    do   n        <- num
         return   $ XNum n
 
-        -- single identifier
- , do   i        <- ident
-        return   $ XId i
-
         -- function application
+        -- Must appear before single identifier
  , do   i        <- ident
         arg_list <- args
         return   $ XApp i arg_list
+
+        -- single identifier
+ , do   i        <- ident
+        return   $ XId i
 
         -- operation
  , do   only KRoundBra
