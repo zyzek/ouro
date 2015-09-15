@@ -57,13 +57,13 @@ stmt
        return     $ SAssign i e
 
    -- if-then-else
-   -- Must appear before if-then:
-   -- Since that is a prefix, if the match for 
-   -- if-then-else fails, might possibly still succeed
-   -- for if-then.
-   -- But if the if-then succeeds, but there's an else block
-   -- parse must then fail: we have a dangling else
-   -- with no if-then to precede it.
+   --  Must appear before if-then; Since if-then is a prefix 
+   --  of if-then-else, if the match for the latter fails, 
+   --  it might possibly still succeed for if-then.
+   --  But if if-then comes first, then if it matches, 
+   --  and there's an else block following, the whole parse 
+   --  must then fail: we have a dangling else with no 
+   --  if-then to precede it.
  , do  only Kif
        guard      <- ident
        only Kthen
@@ -96,7 +96,7 @@ expr
         return   $ XNum n
 
         -- function application
-        -- Must appear before single identifier
+        -- Must appear before single identifier: see above
  , do   i        <- ident
         arg_list <- args
         return   $ XApp i arg_list
