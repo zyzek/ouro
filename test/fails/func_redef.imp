@@ -1,0 +1,16 @@
+fun  main()
+vars tmp;
+{       
+        return  tmp;
+}
+
+fun  afunc(n)
+{       
+        return  n;
+}
+
+fun  afunc(n)
+vars b;
+{       
+        return  b;
+}

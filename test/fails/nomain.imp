@@ -1,0 +1,5 @@
+fun  notmain(n)
+vars tmp;
+{       
+        return  tmp;
+}

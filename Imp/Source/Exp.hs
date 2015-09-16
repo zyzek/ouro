@@ -54,3 +54,6 @@ data Op
         | OpGt
         | OpEq
         deriving (Show, Eq)
+
+extractIDString :: Id -> String
+extractIDString (Id s) = s

@@ -9,5 +9,5 @@ import Imp.Source.Exp
 checkProgram :: Program -> [Error]
 checkProgram program
         = checkMain program
-        -- ++ checkOtherThings program
+          ++ checkFuncRedef program
         -- ++ checkMoreThings  program
