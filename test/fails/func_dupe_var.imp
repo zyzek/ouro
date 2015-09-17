@@ -1,16 +1,16 @@
-fun  main()
+fun  main(tmp)
 vars tmp;
 {       
         return  tmp;
 }
 
-fun  afunc(n)
+fun  afunc(n, n)
 {       
         return  n;
 }
 
-fun  afunc()
-vars tmp;
+fun  bfunc()
+vars n, n;
 {       
-        return  tmp;
+        return  n;
 }

@@ -1,13 +1,14 @@
 
 
-Start: 15 Sep                        Due: 9 Oct 5pm
-[=|>| | | | | | | | | | | | | | | | | | | | | | | ]
-             ^ 21st        ^ 28th        ^ 5th
+Set: 14th Sep                        Due: 9th Oct 5pm
+[=|=|=|>| | | | | | | | | | | | | | | | | | | | | | ]
+             ^ 20th        ^ 27th        ^ 4th
 
 Finish This TODO Scaffold 
 	(Unless you guys think it's not worthwhile)
 
 Make The Code Style Consistent
+	Choose better function names in Check/Main.hs
 
 Input Language Parsing + Syntax and Semantics Analysis
 	☑ Input Language Parsing	15th Sep
@@ -21,10 +22,10 @@ Input Language Parsing + Syntax and Semantics Analysis
 
 	Errors:
 	 Undefined Function
-	 ☑ Duplicated Function Definition
+	 ☑ Duplicated Function Definition 	16th Sep
 	 Function Call Incorrect Num Arguments
 	 Undefined Variable
-	 Duplicated Variable/Argument Definitions
+	 ☑ Duplicated Variable/Argument Definitions 	17th Sep
 	 ☑ No Main Function
 	 Syntax Error 
 	 	--NOTE-- I'm guessing this means the parse failed?

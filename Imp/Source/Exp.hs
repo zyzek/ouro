@@ -55,5 +55,6 @@ data Op
         | OpEq
         deriving (Show, Eq)
 
-extractIDString :: Id -> String
-extractIDString (Id s) = s
+
+idString :: Id -> String
+idString (Id s) = s

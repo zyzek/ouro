@@ -10,4 +10,5 @@ checkProgram :: Program -> [Error]
 checkProgram program
         = checkMain program
           ++ checkFuncRedef program
+          ++ checkDupeVars program
         -- ++ checkMoreThings  program
