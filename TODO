@@ -1,15 +1,13 @@
 Set: 14th Sep                        Due: 9th Oct 5pm
-[=|=|=|>| | | | | | | | | | | | | | | | | | | | | | ]
+[=|=|=|=|>| | | | | | | | | | | | | | | | | | | | | ]
              ^ 20th        ^ 27th        ^ 4th
 
-Finish This TODO Scaffold 
-	(Unless you guys think it's not worthwhile)
+Divide Labour
 
-Make The Code Style Consistent
-	Choose better function names in Check/Main.hs
+Make the Code Style Consistent and Beautiful
 
 Input Language Parsing + Syntax and Semantics Analysis
-	☑ Input Language Parsing	15th Sep
+	☑ Input Language Parsing						15th Sep
 		☑ Program
 		☑ Functions
 		☑ Args
@@ -26,7 +24,7 @@ Input Language Parsing + Syntax and Semantics Analysis
 	 ☑ Duplicated Variable/Argument Definitions 	17th Sep
 	 ☑ No Main Function
 	 Syntax Error 
-	 	--NOTE-- I'm guessing this means the parse failed?
+	 	I'm guessing this means the parse failed? Shall ask Ben.
 	 	Adding more informative error messages
 	 	might require nested Monads so that the type
 	 	being passed around is Either Parser -- plus an Error

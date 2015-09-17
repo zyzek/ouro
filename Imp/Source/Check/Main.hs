@@ -26,13 +26,13 @@ checkFuncRedef (Program funs)
 checkVarRedef :: Program -> [Error]
 checkVarRedef (Program funs) = concat $ map checkFuncDupeVars funs 
 
+
 checkFuncDupeVars :: Function -> [Error]   -- ?? Possibly merge this with checkFuncRedef
 checkFuncDupeVars (Function _ args vars _)
  = let names = (args ++ vars) 
    in  case repeated names of
              []    -> []
              ns    -> map (\name -> ErrorVarRedef (idString name)) ns
-
 
 
 -- | The following collection of functions traverse the AST, looking for 
@@ -64,6 +64,7 @@ checkIdDefsBlock vars funsigs (Block stmts)
  = concat (map (checkIdDefsStmt vars funsigs) stmts) 
 
 
+-- ?? TODO: Find a better way to do this: these concatenations are you gee elle why. 
 checkIdDefsStmt :: [Id] -> [(Id, Int)] -> Stmt -> [Error]
 checkIdDefsStmt vars funsigs stmt
  = case stmt of
@@ -76,6 +77,7 @@ checkIdDefsStmt vars funsigs stmt
                          ++ (checkIdDefsBlock vars funsigs b2)
     SReturn var       -> checkIdDefsVar vars var
 
+
 checkIdDefsExp :: [Id] -> [(Id, Int)] -> Exp -> [Error]
 checkIdDefsExp vars funsigs expr
  = case expr of
@@ -84,6 +86,7 @@ checkIdDefsExp vars funsigs expr
     XApp i args       -> checkFuncApp vars funsigs i args
     XOp _ e1 e2       -> (checkIdDefsExp vars funsigs e1)
                          ++ (checkIdDefsExp vars funsigs e2)
+
 
 -- | Check that a function is defined, has the correct number of arguments, which must each exist.
 checkFuncApp :: [Id] -> [(Id, Int)] -> Id -> [Id] -> [Error]
@@ -95,21 +98,13 @@ checkFuncApp vars funsigs name args
    Nothing          -> (ErrorFuncUndef (idString name)):argsdef
    where argsdef = (concat (map (checkIdDefsVar vars) args))
 
- -- = let funnames = map fst funsigs
- --       funDefError = if not (elem name funnames)
- --                      then [ErrorFuncUndef (idString name)] ++ numArgsError
- --                      else []
- --       numArgsError = if (Just (length args) /= expectedargs)
- --                       then [ErrorFuncSig name expectedargs]
- --                       else []
- --                      where (Just expectedargs) = lookup name funsigs
- --   in (concat (map (checkIdDefsVar vars) args)) ++ funDefError
 
 -- | Check that a variable is defined. No need to pass in function signatures if this is a variable. 
 checkIdDefsVar :: [Id] -> Id -> [Error]
 checkIdDefsVar vars (Id s) = if not (elem (Id s) vars)
                                then [ErrorVarUndef s]
                                else []
+
 
 -- | Get the name of a function.
 nameOfFunction :: Function -> Id
