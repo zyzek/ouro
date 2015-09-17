@@ -1,23 +1,22 @@
 -- | Input language grammar.
 module Imp.Source.Exp where
 
-
 -- | Source Programs.
 data Program
         = Program [Function]
-        deriving Show
+        deriving (Eq, Show)
 
 
 -- | Source Functions.
 data Function
         = Function Id [Id] [Id] Block
-        deriving Show
+        deriving (Eq, Show)
 
 
 -- | Source Blocks.
 data Block
         = Block [Stmt]
-        deriving Show
+        deriving (Eq, Show)
 
 
 -- | Source Statements.
@@ -26,7 +25,7 @@ data Stmt
         | SIf     Id  Block
         | SIfElse Id  Block Block
         | SReturn Id
-        deriving Show
+        deriving (Eq, Show)
 
 
 -- | Source Expressions.
@@ -35,7 +34,7 @@ data Exp
         | XId   Id
         | XApp  Id [Id]
         | XOp   Op Exp Exp
-        deriving Show
+        deriving (Eq, Show)
 
 
 -- | Source Identifiers.

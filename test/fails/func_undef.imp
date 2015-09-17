@@ -1,0 +1,6 @@
+fun  main(n)
+vars a;
+{       
+		a = nosuchfunction(a);
+        return a;
+}

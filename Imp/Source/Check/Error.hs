@@ -11,6 +11,7 @@ data Error
         | ErrorVarUndef     String
         | ErrorVarRedef     String
         | ErrorSyntax
+        deriving Eq
 
 
 -- | Pretty print an error.
@@ -24,7 +25,7 @@ prettyError err
         ErrorFuncRedef i
          -> "function '" ++ i ++ "' redefined."
         ErrorFuncSig i n
-         -> "function '" ++ i ++ "' expects" ++ (show n) ++ " argument(s)." 
+         -> "function '" ++ i ++ "' expects " ++ (show n) ++ " argument(s)." 
         ErrorVarUndef i
          -> "variable '" ++ i ++ "' undefined."
         ErrorVarRedef i

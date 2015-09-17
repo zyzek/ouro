@@ -1,0 +1,22 @@
+fun  main(n)
+vars a;
+{       
+		a = oneplace(a);
+		a = oneplace();
+		a = oneplace(a, a);
+
+		a = twoplace(a, a);
+		a = twoplace(a);
+		a = twoplace(a, a, a);
+		a = twoplace();
+}
+
+fun oneplace(n)
+{
+
+}
+
+fun twoplace(n, m)
+{
+	
+}

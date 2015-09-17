@@ -1,0 +1,18 @@
+fun  main(n)
+vars tmp;
+{       
+		a = 10;
+		b = t;
+		e = plain(c, e);
+		f = (f + g);
+
+		if b then {}
+		if c then {c=v;} else {return d;}
+
+        return  a;
+}
+
+fun plain(a, b) 
+{
+	return c;
+}
