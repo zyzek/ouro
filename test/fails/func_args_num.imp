@@ -1,5 +1,5 @@
 fun  main(n)
-vars a;
+vars a
 {       
 		a = oneplace(a);
 		a = oneplace();
