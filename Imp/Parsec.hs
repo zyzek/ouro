@@ -2,6 +2,8 @@
 -- | Parser combinators.
 module Imp.Parsec where
 import Control.Monad
+import Control.Applicative
+  hiding (some, many)
 
 -------------------------------------------------------------------------------
 --   A parser is a function that takes a list of input tokens, and produces

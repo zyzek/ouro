@@ -12,10 +12,17 @@ data Function
         = Function Id [Id] [Block] -- (Block:[Block]) -- ?? Intended to specify that this list is non-empty.
         deriving Show                      --    But it doesn't compile.
 
+
 -- | Core Blocks.
 data Block
         = Block Int [Instr] -- (Instr:[Instr])
         deriving Show
+
+--data Blocks
+---- may be one or many blocks
+--        = [Block]
+--        | (Block : Blocks)
+
 
 
 -- | Instructions.
@@ -51,4 +58,4 @@ data Id
 -- | Register numbers.
 data Reg
         = Reg Int
-        deriving (Show, Eq)
+        deriving (Show, Eq, Ord)
