@@ -1,5 +1,5 @@
 fun  notmain(n)
-vars tmp;
+vars tmp
 {       
         return  tmp;
 }

@@ -1,5 +1,5 @@
 fun  main(n)
-vars tmp;
+vars tmp
 {       
 		a = 10;
 		b = t;

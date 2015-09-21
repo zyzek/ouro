@@ -1,6 +1,6 @@
 
 fun  main()
-vars tmp;
+vars tmp
 {       tmp      = 0;
         return tmp;
 }

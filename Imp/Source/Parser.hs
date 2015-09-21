@@ -34,7 +34,6 @@ vars :: Parser Token [Id]
 vars
  = alt  (do  only Kvars
              v_list    <- idents
-             only KSemi
              return v_list)
         (result [])
 

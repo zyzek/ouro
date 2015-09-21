@@ -1,5 +1,5 @@
 fun  main(tmp)
-vars tmp;
+vars tmp
 {       
         return  tmp;
 }
@@ -10,7 +10,7 @@ fun  afunc(n, n)
 }
 
 fun  bfunc()
-vars n, n;
+vars n, n
 {       
         return  n;
 }
