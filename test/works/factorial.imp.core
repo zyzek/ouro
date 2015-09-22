@@ -1,0 +1,48 @@
+(Program
+[ 
+    Function factorial [n] 
+    [
+        (Block 0  
+        [
+            (ILoad (Reg 1) n)
+            (IConst (Reg 2) 0)
+            (IArith OpEq (Reg 3) (Reg 1) (Reg 2))
+            (IStore cond (Reg 3))
+            (ILoad (Reg 4) cond)
+            (IBranch (Reg 4) 1 2) 
+
+        ])
+        , (Block 1  
+        [
+            (IConst (Reg 5) 1)
+            (IStore tmp (Reg 5))
+            (ILoad (Reg 6) tmp)
+            (IReturn (Reg 6)) 
+        ])
+        , (Block 2
+        [
+            (ILoad (Reg 7) n)
+            (IConst (Reg 8) 1)
+            (IArith OpSub (Reg 9) (Reg 7) (Reg 8))
+            (IStore tmp (Reg 9))
+            (ILoad (Reg 10) tmp)
+            (IReturn (Reg 11) factorial (Reg 10))
+            (ILoad (Reg 12) n)
+            (IArith OpMul (Reg 13) (Reg 11) (Reg 12))
+            (IStore tmp (Reg 13))
+            (ILoad (Reg 14) tmp)
+            (IReturn (Reg 14)) 
+        ])
+    ]
+    , Function main [n]
+    [
+        (Block 0  
+        [
+            (ILoad (Reg 1) n)
+            (ICall (Reg 2) factorial [(Reg 1)])
+            (IStore tmp (Reg 2))
+            (ILoad (Reg 3) tmp)
+            (IReturn (Reg 3))
+        ])
+    ]
+]
