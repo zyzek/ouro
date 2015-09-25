@@ -58,13 +58,13 @@ makeNRegs :: Int -> [Reg]
 makeNRegs n
  = unfoldr (\b -> if b == 0 then Nothing else Just (Reg b, b - 1)) n
 
-
+ 
 startProgram :: Program -> [Int] -> Int
 startProgram (Program funcList) args = 
     let func = lookupFunc (Id "main") funcList
-        argsLen = length args
-        argRegs = zip (makeNRegs argsLen) args
-        env = call (Env argRegs []) (Reg 0) funcList func [(Reg 0)]
+        regs = makeNRegs (length args)
+        argRegs = zip regs args
+        env = call (Env argRegs []) (Reg 0) funcList func regs
     in getReg env (Reg 0)
 
 
