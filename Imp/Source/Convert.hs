@@ -9,7 +9,7 @@ import qualified Imp.Core.Exp           as C
 -- | Convert a program from the source to core languages.
 convertProgram :: S.Program -> C.Program
 convertProgram (S.Program funcs)
-	= C.Program (map convertFunc funcs) 
+  = C.Program (map convertFunc funcs) 
 
 -- | Convert source function to core function
 convertFunc :: S.Function -> C.Function
