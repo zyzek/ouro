@@ -6,6 +6,8 @@ Set: 14th Sep                        Due: 9th Oct 5pm
 Make the Code Style Consistent and Beautiful
 	Line lengths <= 100 characters
 	Comment Everything
+	Ask Ben RE: why some tokens have lower-case second letters,
+				and some have upper case, else make it consistent
 
 
 ☑ Input Language Parsing + Syntax and Semantics Analysis 	17th Sep
@@ -78,7 +80,7 @@ Extension Task
 		work, I suspect.
 
 	While Loops
-		More practical, more familiar, maybe easier to implement?
+	-- PARTIAL -- Parsing working.
 
 
 Tests

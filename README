@@ -5,11 +5,15 @@ COMP3109 Assignment 2. Compiler Front End
 Name
 
   Anton Jurisevic
+  Jeremy Short
+  Trung Tran
 
 
 What tasks did you complete?
 
-  [Describe which tasks you completed]
+  Task 1 - Syntax and Semantics Analysis
+  Task 2 - Intermediate Code Generation
+  Task 3 - Interpreter
 
 
 Did you get stuck, or couldn't work something out?

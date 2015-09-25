@@ -21,7 +21,7 @@ executable imp
  main-is:       Main.hs
 
  ghc-options:   
-        -Wall -fno-warn-unused-do-bind
+        -Wall -fno-warn-unused-do-bind -Werror
 
  extensions:
         PatternGuards

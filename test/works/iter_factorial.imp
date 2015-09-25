@@ -1,0 +1,26 @@
+
+fun  factorial(n)
+vars cond, total
+{       
+        total = 1;
+
+        cond = (n > 1);
+        
+        while cond 
+        {       
+                total = (total * n);
+                n = (n - 1);
+                cond = (n > 1);
+        }
+
+        return total;
+
+}
+
+
+fun  main(n)
+vars tmp
+{       
+        tmp = factorial(n);
+        return  tmp;
+}

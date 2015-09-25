@@ -25,6 +25,7 @@ data Token
         | Kthen                 -- then
         | Kelse                 -- else
         | Kreturn               -- return
+        | Kwhile                -- while
         deriving (Show, Eq)
 
 
