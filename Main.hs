@@ -5,6 +5,7 @@ import qualified Imp.Source.Lexer               as S
 import qualified Imp.Source.Check               as S
 import qualified Imp.Source.Check.Error         as S
 import qualified Imp.Source.Convert             as S
+import qualified Imp.Source.Interpreter         as S
 
 import qualified Data.Algorithm.Diff            as Diff
 import qualified Data.Algorithm.DiffOutput      as Diff
@@ -68,6 +69,22 @@ main
                         let out  = Text.ppShow core
                         showResult out (file ++ ".convert")
                 
+          | otherwise
+          -> error $ "Cannot convert " ++ file
+          
+          -- Interpret a file.
+          ["-interpret", file]
+          | isSuffixOf ".imp" file
+          -> do str     <- readFile file
+                case S.programOfString str of
+                 Nothing -> error "parse error"
+                 Just progSource
+                  -> do let core = S.convertProgram progSource
+                        let out  = Text.ppShow core
+                        showResult $ show $ S.startProgram out (map read args)
+
+          | otherwise
+          -> error $ "Cannot interpret " ++ file
          _ -> help
 
 
