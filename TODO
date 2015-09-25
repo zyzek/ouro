@@ -1,13 +1,15 @@
 Set: 14th Sep                        Due: 9th Oct 5pm
-[=|=|=|=|>| | | | | | | | | | | | | | | | | | | | | ]
+[=|=|=|=|=|=|=|=|=|=|=|=|>| | | | | | | | | | | | | ]
              ^ 20th        ^ 27th        ^ 4th
 
-Divide Labour
 
 Make the Code Style Consistent and Beautiful
+	Line lengths <= 100 characters
+	Comment Everything
 
-Input Language Parsing + Syntax and Semantics Analysis
-	☑ Input Language Parsing						15th Sep
+
+☑ Input Language Parsing + Syntax and Semantics Analysis 	17th Sep
+	☑ Input Language Parsing								15th Sep
 		☑ Program
 		☑ Functions
 		☑ Args
@@ -16,14 +18,14 @@ Input Language Parsing + Syntax and Semantics Analysis
 		☑ Statements
 		☑ Expressions
 
-	Errors:
-	 ☑ Undefined Function 							17th Sep
-	 ☑ Duplicated Function Definition 	 			16th Sep
-	 ☑ Function Call Incorrect Num Arguments 		17th Sep
-	 ☑ Undefined Variable 							17th Sep
-	 ☑ Duplicated Variable/Argument Definitions 	17th Sep
+	Errors:													17th Sep
+	 ☑ Undefined Function 							
+	 ☑ Duplicated Function Definition 	 					16th Sep
+	 ☑ Function Call Incorrect Num Arguments 
+	 ☑ Undefined Variable
+	 ☑ Duplicated Variable/Argument Definitions
 	 ☑ No Main Function
-	 Syntax Error 
+	 ☑ Syntax Error
 	 	I'm guessing this means the parse failed? Shall ask Ben.
 	 	Adding more informative error messages
 	 	might require nested Monads so that the type
@@ -31,41 +33,41 @@ Input Language Parsing + Syntax and Semantics Analysis
 	 	payload.
 
 
-Intermediate Code Generation
-	Unbreak Convert.hs
-		Currently commented out so the build compiles.
-	
+Intermediate Code Generation	
 	Complete Grammar
 		--PARTIAL-- Work out how to require Functions and Blocks 
 		to be constituted of non-empty Block and Instr lists.
 	
-	Basic Block Enumeration
+	Variable Zero Initialisation
+
+	☑ Basic Block Enumeration
 	
-	Convertibles:
-		Program
-		Function
-		Block
-		Statement
-		  Assignment
-		  Return
-		  Conditional
-		Expression
-		  Numeric Primitive
-		  ID Primitive
-		  Function Call
-		  Operator Application
+	☑ Convertibles:
+		☑ Program
+		☑ Function
+		☑ Block
+		☑ Statement
+		  ☑ Assignment
+		  ☑ Return
+		  ☑ Conditional
+		☑ Expression
+		  ☑ Numeric Primitive
+		  ☑ ID Primitive
+		  ☑ Function Call
+		  ☑ Operator Application
 
 
-Intermediate Code Interpreter
-	Instructions:
-		Load Constant
-		Load
-		Store
-		Arithmetic
-		Comparison
-		Branch
-		Return
-		Call
+☑ Intermediate Code Interpreter		25th Sept
+	☑ Instructions:
+		☑ Load Constant
+		☑ Load
+		☑ Store
+		☑ Arithmetic
+		☑ Comparison
+		☑ Branch
+		☑ Return
+		☑ Call
+
 
 Extension Task
 	Choose One Or Both
@@ -77,6 +79,7 @@ Extension Task
 
 	While Loops
 		More practical, more familiar, maybe easier to implement?
+
 
 Tests
 	Succeeding Tests (minimum 10)
