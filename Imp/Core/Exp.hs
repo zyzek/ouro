@@ -9,13 +9,13 @@ data Program
 
 -- | Core Functions.
 data Function
-        = Function Id [Id] [Block] -- (Block:[Block]) -- ?? Intended to specify that this list is non-empty.
-        deriving Show                      --    But it doesn't compile.
+        = Function { fId :: Id, fIds :: [Id], fBlocks :: [Block] } 
+        deriving Show 
 
 
 -- | Core Blocks.
 data Block
-        = Block Int [Instr] -- (Instr:[Instr])
+        = Block { bId :: Int, bInstrs :: [Instr] }  -- (Instr:[Instr])
         deriving Show
 
 --data Blocks
