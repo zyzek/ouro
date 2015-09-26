@@ -2,25 +2,35 @@
 module Imp.Source.Convert where
 import qualified Imp.Source.Exp         as S
 import qualified Imp.Core.Exp           as C
---import Data.List
+
 --import qualified Data.Map.Strict        as Map
 
 
 -- | Convert a program from the source to core languages.
 convertProgram :: S.Program -> C.Program
 convertProgram (S.Program funcs)
-	= C.Program (map convertFunc funcs) 
+  = C.Program (map convertFunc funcs) 
 
 -- | Convert source function to core function
 convertFunc :: S.Function -> C.Function
 convertFunc (S.Function sId sArgs sVars sBlock) -- not sure what to do with vars
-  = C.Function cId cArgs cBlocks
+  = C.Function cId cArgs ([initBlock] ++ funcBlocks)
           -- convert function id
     where cId     = (convertId sId)
           -- convert arg list
           cArgs   = (map convertId sArgs)
+          -- load zero to a reg
+          (nextReg, loadZero) = instConst 0 0
+          -- init vars to 0
+          cVars = map convertId sVars
+          storeTuples = map (instStore 0) cVars
+          storeInsts = map snd storeTuples
+          -- unconditional branch to succeeding block
+          branchInst = C.IBranch (C.Reg 0) 1 1
+          -- make block to hold initial instructions
+          initBlock = C.Block 0 ([loadZero] ++ storeInsts ++ [branchInst])
           -- convert block; starting reg 1, block 0
-          (_, _, cBlocks) = (convertBlock sBlock 1 0)
+          (_, _, funcBlocks) = (convertBlock sBlock nextReg 1)
 
 -- | Convert source block to list of core blocks (stmts may yield blocks)
 convertBlock :: S.Block -> Int -> Int -> (Int, Int, [C.Block])
@@ -64,7 +74,7 @@ convertStmt stmt rNum bNum
         let   cId = convertId sId 
               (rNum1, eInst) = convertExp e rNum
               -- prepare store inst
-              (rNum2, storeInst) = instStore cId (rNum1 - 1)
+              (rNum2, storeInst) = instStore (rNum1 - 1) cId
         in    (rNum2, (eInst ++ [storeInst]), bNum, []) 
       -- if statement
       S.SIf sId sb1 ->
@@ -74,10 +84,11 @@ convertStmt stmt rNum bNum
               (rNum1, ldInst) = instLoad rNum cId
               -- branch inst
               (rNum2, brInst) = instBranch (rNum1 - 1) bNum bNum1
-              -- convert block to exec if condition satisfied
+              -- block to exec if cond satisfied
               (rNum3, bNum1, cb1) = convertBlock sb1 rNum2 bNum
-              -- create empty second block for if condition unsatisfied
-              (rNum4, bNum2, cb2) = (rNum3, bNum1 + 1, [(C.Block bNum1 [])] )
+              -- block to exec if cond not satisfied (branch to succ block)
+              branch = C.IBranch (C.Reg 0) (bNum1 + 1) (bNum1 + 1)
+              (rNum4, bNum2, cb2) = (rNum3, bNum1 + 1, [(C.Block bNum1 [branch])] )
         in    (rNum4, [ldInst, brInst], bNum2, cb1 ++ cb2)
       -- if else statement
       S.SIfElse sId sb1 sb2 ->
@@ -104,8 +115,8 @@ convertExp e rNum
         let   (rNum1, lcInst) = instConst rNum i
         in    (rNum1, [lcInst] )
       -- id exp
-      S.XId id ->
-        let   cId = convertId id
+      S.XId sId ->
+        let   cId = convertId sId
               -- create load inst
               (rNum1, ldInst) = instLoad rNum cId
         in    (rNum1, [ldInst] )
@@ -146,13 +157,18 @@ convertOp op
 convertId :: S.Id -> C.Id
 convertId (S.Id str) = C.Id str
 
+-- | Initialise a list of variables given a register containing init value
+--initVars :: [C.Id] -> Int -> (Int, [C.Inst])
+--initVars vars regNum
+--  = 
+
 -- | Create load const inst
 instConst :: Int -> Int -> (Int, C.Instr)
 instConst rNum n = (rNum + 1, C.IConst (C.Reg rNum) n )
 
 -- | Create load inst from var id
 instLoad :: Int -> C.Id -> (Int, C.Instr)
-instLoad rNum id = (rNum + 1, C.ILoad (C.Reg rNum) id )
+instLoad rNum vId = (rNum + 1, C.ILoad (C.Reg rNum) vId )
 
 -- | Create list of load inst's from var id list
 instLoadMany :: Int -> [C.Id] -> (Int, [C.Instr], [C.Reg])
@@ -164,9 +180,9 @@ instLoadMany rNum (v : vs)
             (rNum2, instList, argRegs) = instLoadMany rNum1 vs
       in    (rNum2, [ldInst1] ++ instList, (C.Reg rNum) : argRegs)
 
--- | Create store inst from var id
-instStore :: C.Id -> Int -> (Int, C.Instr)
-instStore id rNum = (rNum + 1, C.IStore id (C.Reg rNum) )
+-- | Create store inst from var id, reg
+instStore :: Int -> C.Id -> (Int, C.Instr)
+instStore rNum vId = (rNum + 1, C.IStore vId (C.Reg rNum) )
 
 -- | Create op inst 
 instOp :: C.OpArith -> Int -> Int -> Int -> (Int, C.Instr)

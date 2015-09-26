@@ -17,13 +17,7 @@ data Function
 data Block
         = Block Int [Instr] -- (Instr:[Instr])
         deriving Show
-
---data Blocks
----- may be one or many blocks
---        = [Block]
---        | (Block : Blocks)
-
-
+        
 
 -- | Instructions.
 data Instr

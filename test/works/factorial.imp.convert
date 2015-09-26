@@ -4,22 +4,29 @@ Program
       [ Id "n" ]
       [ Block
           0
+          [ IConst (Reg 0) 0
+          , IStore (Id "cond") (Reg 0)
+          , IStore (Id "tmp") (Reg 0)
+          , IBranch (Reg 0) 1 1
+          ]
+      , Block
+          1
           [ ILoad (Reg 1) (Id "n")
           , IConst (Reg 2) 0
           , IArith OpEq (Reg 3) (Reg 1) (Reg 2)
           , IStore (Id "cond") (Reg 3)
           , ILoad (Reg 4) (Id "cond")
-          , IBranch (Reg 4) 1 2
+          , IBranch (Reg 4) 2 3
           ]
       , Block
-          1
+          2
           [ IConst (Reg 5) 1
           , IStore (Id "tmp") (Reg 5)
           , ILoad (Reg 6) (Id "tmp")
           , IReturn (Reg 6)
           ]
       , Block
-          2
+          3
           [ ILoad (Reg 7) (Id "n")
           , IConst (Reg 8) 1
           , IArith OpSub (Reg 9) (Reg 7) (Reg 8)
@@ -38,6 +45,12 @@ Program
       [ Id "n" ]
       [ Block
           0
+          [ IConst (Reg 0) 0
+          , IStore (Id "tmp") (Reg 0)
+          , IBranch (Reg 0) 1 1
+          ]
+      , Block
+          1
           [ ILoad (Reg 1) (Id "n")
           , ICall (Reg 2) (Id "factorial") [ Reg 1 ]
           , IStore (Id "tmp") (Reg 2)
