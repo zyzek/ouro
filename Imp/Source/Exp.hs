@@ -25,6 +25,7 @@ data Stmt
         | SIf     Id  Block
         | SIfElse Id  Block Block
         | SReturn Id
+        | SWhile Id Block
         deriving (Eq, Show)
 
 

@@ -27,7 +27,7 @@ tokens
 -- | Parse a single token.
 token :: Parser Char Token
 token 
- = altss                            
+ = altss
         [ do    match str           
                 return tok          -- For each (str, tok) pair, attempt
         | (str, tok)    <- atoms]   -- a match
@@ -67,4 +67,5 @@ atoms
         , ("then",      Kthen)
         , ("else",      Kelse)
         , ("return",    Kreturn) 
+        , ("while",     Kwhile)
         ] 

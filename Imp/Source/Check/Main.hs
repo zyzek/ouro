@@ -76,6 +76,8 @@ checkIdDefsStmt vars funsigs stmt
                          ++ (checkIdDefsBlock vars funsigs b1) 
                          ++ (checkIdDefsBlock vars funsigs b2)
     SReturn var       -> checkIdDefsVar vars var
+    SWhile var b      -> (checkIdDefsVar vars var)
+                        ++ (checkIdDefsBlock vars funsigs b)
 
 
 checkIdDefsExp :: [Id] -> [(Id, Int)] -> Exp -> [Error]

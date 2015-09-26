@@ -83,6 +83,11 @@ stmt
        i <- ident
        only KSemi
        return $ SReturn i
+
+  , do only Kwhile
+       cond       <- ident
+       body       <- block
+       return $ SWhile cond body
  ]
 
 

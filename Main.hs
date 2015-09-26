@@ -5,6 +5,7 @@ import qualified Imp.Source.Lexer               as S
 import qualified Imp.Source.Check               as S
 import qualified Imp.Source.Check.Error         as S
 import qualified Imp.Source.Convert             as S
+import qualified Imp.Source.Interpreter         as S
 
 import qualified Data.Algorithm.Diff            as Diff
 import qualified Data.Algorithm.DiffOutput      as Diff
@@ -68,6 +69,18 @@ main
                         let out  = Text.ppShow core
                         showResult out (file ++ ".convert")
                 
+          | otherwise
+          -> error $ "Cannot convert " ++ file
+          
+          -- Interpret a file.
+         ("-interpret":file:progArgs)
+          | isSuffixOf ".imp" file
+          -> do str     <- readFile file
+                case S.programOfString str of
+                 Nothing -> error "parse error"
+                 Just progSource
+                  -> do let core = S.convertProgram progSource
+                        showResult (show (S.startProgram core (map read progArgs))) (file ++ ".interpret")
          _ -> help
 
 
@@ -78,10 +91,11 @@ help
  $ unlines
         [ "imp'n it up"
         , ""
-        , "  imp -lex     <file>        Lex a file."
-        , "  imp -parse   <file>        Parse a file."
-        , "  imp -check   <file>        Check a file for problems."
-        , "  imp -convert <file>        Convert a file from source to core." ]
+        , "  imp -lex       <file>      Lex a file."
+        , "  imp -parse     <file>      Parse a file."
+        , "  imp -check     <file>      Check a file for problems."
+        , "  imp -convert   <file>      Convert a file from source to core." 
+        , "  imp -interpret <file>      Interpret a file." ]
 
 
 -- | Given an result string and the path to a file containing the expected
