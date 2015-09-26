@@ -1,0 +1,89 @@
+Program
+  [ Function
+      { fId = Id "fib"
+      , fIds = [ Id "n" ]
+      , fBlocks =
+          [ Block
+              { bId = 0
+              , bInstrs =
+                  [ ILoad (Reg 1) (Id "n")
+                  , IConst (Reg 2) 0
+                  , IArith OpEq (Reg 3) (Reg 1) (Reg 2)
+                  , IStore (Id "cond") (Reg 3)
+                  , ILoad (Reg 4) (Id "cond")
+                  , IBranch (Reg 4) 1 2
+                  ]
+              }
+          , Block
+              { bId = 1
+              , bInstrs =
+                  [ IConst (Reg 5) 0
+                  , IStore (Id "pred") (Reg 5)
+                  , ILoad (Reg 6) (Id "pred")
+                  , IReturn (Reg 6)
+                  ]
+              }
+          , Block
+              { bId = 2
+              , bInstrs =
+                  [ ILoad (Reg 7) (Id "n")
+                  , IConst (Reg 8) 1
+                  , IArith OpEq (Reg 9) (Reg 7) (Reg 8)
+                  , IStore (Id "cond") (Reg 9)
+                  , ILoad (Reg 10) (Id "cond")
+                  , IBranch (Reg 10) 3 4
+                  ]
+              }
+          , Block
+              { bId = 3
+              , bInstrs =
+                  [ IConst (Reg 11) 1
+                  , IStore (Id "pred") (Reg 11)
+                  , ILoad (Reg 12) (Id "pred")
+                  , IReturn (Reg 12)
+                  ]
+              }
+          , Block
+              { bId = 4
+              , bInstrs =
+                  [ ILoad (Reg 13) (Id "n")
+                  , IConst (Reg 14) 1
+                  , IArith OpSub (Reg 15) (Reg 13) (Reg 14)
+                  , IStore (Id "pred") (Reg 15)
+                  , ILoad (Reg 16) (Id "n")
+                  , IConst (Reg 17) 2
+                  , IArith OpSub (Reg 18) (Reg 16) (Reg 17)
+                  , IStore (Id "prepred") (Reg 18)
+                  , ILoad (Reg 19) (Id "pred")
+                  , ICall (Reg 20) (Id "fib") [ Reg 19 ]
+                  , IStore (Id "pred") (Reg 20)
+                  , ILoad (Reg 21) (Id "prepred")
+                  , ICall (Reg 22) (Id "fib") [ Reg 21 ]
+                  , IStore (Id "prepred") (Reg 22)
+                  , ILoad (Reg 23) (Id "pred")
+                  , ILoad (Reg 24) (Id "prepred")
+                  , IArith OpAdd (Reg 25) (Reg 23) (Reg 24)
+                  , IStore (Id "cond") (Reg 25)
+                  , ILoad (Reg 26) (Id "cond")
+                  , IReturn (Reg 26)
+                  ]
+              }
+          ]
+      }
+  , Function
+      { fId = Id "main"
+      , fIds = [ Id "n" ]
+      , fBlocks =
+          [ Block
+              { bId = 0
+              , bInstrs =
+                  [ ILoad (Reg 1) (Id "n")
+                  , ICall (Reg 2) (Id "fib") [ Reg 1 ]
+                  , IStore (Id "tmp") (Reg 2)
+                  , ILoad (Reg 3) (Id "tmp")
+                  , IReturn (Reg 3)
+                  ]
+              }
+          ]
+      }
+  ]
