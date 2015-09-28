@@ -2,203 +2,297 @@
 module Imp.Source.Convert where
 import qualified Imp.Source.Exp         as S
 import qualified Imp.Core.Exp           as C
+import Data.List
+import Data.Ord
+import Debug.Trace
 
---import qualified Data.Map.Strict        as Map
 
-
--- | Convert a program from the source to core languages.
+ -- | Convert a program from the source to core languages.
 convertProgram :: S.Program -> C.Program
 convertProgram (S.Program funcs)
-  = C.Program (map convertFunc funcs) 
+        = C.Program (map convertFunc funcs)
 
--- | Convert source function to core function
+ -- | - - - - - - - - - - - - -
+ -- | 
+ -- | Convert Expression
+ -- | 
+ -- | Converts a source expression into a list of core instructions.
+ -- |
+ -- | Takes the next available register id, block id, and a source expression.
+ -- | Returns the next available register id, block id, and a list of core instructions.
+ -- |
+ -- | Assumptions that can be made:
+ -- |    - If an expression returns a value, that value will be stored in the register 
+ -- |       (n - 1) where n is the next available register returned by the convertExp 
+ -- |       function.
+ -- | 
+ -- | Function is of structure:
+ -- |   let { Evaluate internal expressions here. }
+ -- |   in (
+ -- |       {  
+ -- |           Return the last register provided in internal expressions, 
+ -- |           plus the number of registers consumed in the main expression.
+ -- |       },
+ -- |       {
+ -- |           Return the last block provided in internal expressions,
+ -- |           plus the number of blocks consumed in the main expression.
+ -- |       },
+ -- |       {
+ -- |           Return the list of instructions that make up the full expression.
+ -- |       }
+ -- |   )
+ -- |   where { Evaluate any sugaring here. }
+ -- |
+ -- | - - - - - - - - - - - - -
+convertExp :: (Int, Int, S.Exp) -> (Int, Int, [C.Instr])
+convertExp (reg0, blk0, (S.XNum val)) = 
+    (
+        (reg0 + 1),
+        (blk0),
+        [
+            C.IConst (C.Reg reg0) val
+        ]
+    )
+convertExp (reg0, blk0, S.XId varId) = 
+    (
+        (reg0 + 1),
+        (blk0),
+        [
+            C.ILoad (C.Reg reg0) (convertId varId)
+        ]
+    )
+convertExp (reg0, blk0, S.XApp varId argIds) = 
+    (
+        (reg0 + (length argIds) + 1),
+        (blk0),
+        -- Append the list of load instructions to the call instruction.
+        loadInstrs ++ [C.ICall (C.Reg (reg0 + (length argIds))) (convertId varId) regArgs]
+    )
+    -- Create a numbered list
+    where regIdArgs = unfoldr (\b -> 
+            if (b == (length argIds))
+             then Nothing
+             else Just (reg0 + b, b + 1)) 0
+    -- Convert the numbered list to a list of registers
+          regArgs = map (\x -> C.Reg x) regIdArgs
+    -- Zip the registers with the argument Ids
+          idsAndArgs = zip regArgs argIds
+    -- Create the list of load instructions
+          loadInstrs = map (\(reg, varId2) -> C.ILoad reg (convertId varId2)) idsAndArgs
+
+convertExp (reg0, blk0, (S.XOp op exp1 exp2)) = 
+    -- Evaluate the two expressions passed into XOp
+    let (reg1, blk1, instrList1) = convertExp (reg0, blk0, exp1)
+        (reg2, blk2, instrList2) = convertExp (reg1, blk1, exp2)
+    in (
+        (reg2 + 1),
+        (blk2),
+        -- Join the two instruction lists and add the arithmatic instruction
+        instrList1 ++ instrList2 ++ [
+            C.IArith (convertOp op) (C.Reg reg2) (C.Reg (reg1 - 1)) (C.Reg (reg2 - 1))
+        ]
+    )
+
+ -- | - - - - - - - - - - - - -
+ -- | 
+ -- | Convert Expression
+ -- | 
+ -- | Converts a source statement into a list of core instructions and core blocks.
+ -- |
+ -- | Takes the next available register id, block id, and a source statement.
+ -- | Returns the next available register id, block id, and a list of core instructions
+ -- |   and core blocks.
+ -- |
+ -- | Assumptions that can be made:
+ -- |    - The next block in chronological order after the block that is being "worked on"
+ -- |       is the same number that is being returned from the function.
+ -- |    - If an expression returns a value, that value will be stored in the register 
+ -- |       (n - 1) where n is the next available register returned by the convertExp 
+ -- |       function.
+ -- | 
+ -- | Function is of structure:
+ -- |   let { Evaluate internal expressions and internal blocks here. }
+ -- |   in (
+ -- |       {  
+ -- |           Return the last register provided in internal expressions and internal blocks, 
+ -- |           plus the number of registers consumed in the main expression.
+ -- |       },
+ -- |       {
+ -- |           Return the last block provided in internal expressions,
+ -- |           plus the number of blocks consumed in the main expression.
+ -- |       },
+ -- |       {
+ -- |           Return the list of instructions that make up the main expression.
+ -- |       },
+ -- |       {
+ -- |           Return the list of blocks that make up the main expression.
+ -- |       }
+ -- |   )
+ -- |   where { Evaluate any sugaring here. }
+ -- |
+ -- | - - - - - - - - - - - - -
+convertStmt :: (Int, Int, S.Stmt) -> (Int, Int, [C.Instr], [C.Block])
+convertStmt (reg0, blk0, (S.SAssign varId varExp)) =
+    let (reg1, blk1, instrList) = convertExp (reg0, blk0, varExp)
+    in (
+        (reg1),
+        (blk1),
+        -- Append the list of instructions generated by the expression to the store instruction.
+        instrList ++ [C.IStore (convertId varId) (C.Reg (reg1 - 1))],
+        []
+    )
+convertStmt (reg0, blk0, (S.SIf varId blk)) = 
+    let (reg1, blk1, cBlkList) = convertBlock (reg0 + 1, blk0 + 1, blk)
+    in (
+        reg1 + 1,
+        blk1 + 1,
+        [
+            C.ILoad (C.Reg reg0) (convertId varId),
+            C.IBranch (C.Reg reg0) (blk0 + 1) (blk1 + 1)
+        ],
+        mergeBlocks
+        (
+            let (C.Block _ _ls) = (last cBlkList)
+            in 
+                -- Append an unconditional branch to the last block in the block list 
+                --  that has been generated by the function, if and only if the block
+                --  does not end in a branch or return.
+                cBlkList ++ [
+                            (C.Block (blk1) 
+                            [
+                                C.IConst (C.Reg reg1) 0,
+                                C.IBranch (C.Reg reg1) (blk1 + 1) (blk1 + 1)
+                            ])
+                        ]
+                --case (last ls) of 
+                --    (C.IBranch _ _ _)   ->  []
+                --    (C.IReturn _)       ->  []
+                --    _                   ->  
+        )
+    )
+convertStmt (reg0, blk0, (S.SIfElse varId blkl blkr)) = 
+    let (reg1, blk1, cBlkListl) = convertBlock (reg0 + 1, blk0 + 1, blkl)
+        (reg2, blk2, cBlkListr) = convertBlock (reg1 + 1, blk1 + 1, blkr)
+    in (
+        reg2 + 1,
+        blk2 + 1,
+        [
+            C.ILoad (C.Reg reg0) (convertId varId),
+            C.IBranch (C.Reg reg0) (blk0 + 1) (blk1 + 1)
+        ],
+        mergeBlocks 
+        (
+            -- Append an unconditional branch to the last block in each of the block lists 
+            --  that have been generated by the function, if and only if the blocks
+            --  do not end in a branch or return.
+            let (C.Block _ _lsl) = Just (last cBlkListl)
+                (C.Block _ _lsr) = (last cBlkListr)
+            in 
+                cBlkListl ++ cBlkListr ++
+                --case (last lsl) of 
+                --    (C.IBranch _ _ _)   ->  []
+                --    (C.IReturn _)       ->  []
+                --    _                   ->  [
+                        [C.Block (blk1) [
+                            C.IConst (C.Reg reg1) 0,
+                            C.IBranch (C.Reg reg1) (blk2 + 1) (blk2 + 1)
+                        ]]
+                 ++ 
+                --case (last lsr) of 
+                --    (C.IBranch _ _ _)   ->  []
+                --    (C.IReturn _)       ->  []
+                --    _                   ->  [
+                        [C.Block (traceShow blk2 blk2) [
+                            C.IConst (C.Reg reg2) 0,
+                            C.IBranch (C.Reg reg2) (blk2 + 1) (blk2 + 1)
+                        ] ]
+        )
+    )
+convertStmt (reg0, blk0, (S.SReturn varId)) = 
+    (
+        reg0 + 1, 
+        blk0, 
+        [
+            C.ILoad (C.Reg reg0) (convertId varId),
+            C.IReturn (C.Reg reg0)
+        ],
+        []
+    )
+convertStmt (reg0, blk0, (S.SWhile varId blk)) = 
+    let (reg1, blk1, cBlkList) = convertBlock (reg0 + 1, blk0 + 1, S.Block [(S.SIf varId blk)])
+        -- These three lines are inconsistant with the function pattern, I'm noob plz 4giff
+        (C.Block blkId lstBlkInstrs) = last cBlkList
+        truncLstBlk = take ((length lstBlkInstrs) - 2) lstBlkInstrs
+        newBlkList = (take ((length cBlkList) - 1) cBlkList) ++ [(C.Block blkId truncLstBlk)]
+        -- /End inconsistancy
+    in (
+        reg1 + 1,
+        blk1,
+        [
+            C.IConst (C.Reg reg0) 0,
+            C.IBranch (C.Reg reg0) (blk0 + 1) (blk0 + 1)
+        ],
+        mergeBlocks (
+                newBlkList ++ [C.Block (blk1 - 1) [
+                    C.IConst (C.Reg reg1) 0,
+                    C.IBranch (C.Reg reg1) (blk0 + 1) (blk0 + 1)
+            ]]
+        ) 
+    )
+
+newBlock :: (Int, Int, S.Block) -> (Int, Int, [C.Block])
+newBlock (reg0, blk0, sBlk) = 
+    convertBlock (reg0, blk0, sBlk)
+
+convertStmts :: (Int, Int, [S.Stmt]) -> (Int, Int, [(Int, [C.Instr])], [C.Block])
+convertStmts (reg0, blk0, []) = (reg0, blk0, [], [])
+convertStmts (reg0, blk0, (stmt:stmts)) = 
+    let (reg1, blk1, instrList1, blks1) = convertStmt (reg0, blk0, stmt)
+        (reg2, blk2, blkInstrList1, blks2) = convertStmts (reg1, blk1, stmts)
+    in (reg2, blk2, ((blk0, instrList1) : blkInstrList1), blks1 ++ blks2)
+
+
+convertBlock :: (Int, Int, S.Block) -> (Int, Int, [C.Block])
+convertBlock (reg0, blk0, (S.Block [])) = (reg0, blk0, [])
+convertBlock (reg0, blk0, (S.Block sStmts)) = 
+    let (reg1, blk1, blkInstrList, blks) = convertStmts (reg0, blk0, sStmts)
+        newBlocks = (map (\(blk, instrs) -> C.Block blk instrs) (mergeIBlocks blkInstrList)) ++ blks
+        sorted = sortBy (comparing (\(C.Block blkId _) -> blkId)) newBlocks
+    in (reg1, blk1, sorted)
+    
+
+mergeIBlocks :: [(Int, [C.Instr])] -> [(Int, [C.Instr])]
+mergeIBlocks blkInstrs = 
+    let a = (\y -> filter (\(blk, _) -> blk == y) blkInstrs)
+        maxId = maximumBy (comparing (\(blkId, _) -> blkId)) blkInstrs
+        blkInstrList = unfoldr (\b -> if (b < 0) then Nothing else Just ((a b), b - 1)) (fst maxId)
+        filteredList = filter (\x -> not (null x)) blkInstrList
+    in map (\ls@(l:_) -> ((fst (l)), (foldr (++) [] (map snd ls)))) filteredList
+
+
+mergeBlocks :: [C.Block] -> [C.Block]
+mergeBlocks blkInstrs = 
+    let a = (\y -> filter (\(C.Block blk _) -> blk == y) blkInstrs)
+        (C.Block maxId _) = maximumBy (comparing (\(C.Block blkId _) -> blkId)) blkInstrs
+        blkInstrList = unfoldr (\b -> if (b < 0) then Nothing else Just ((a b), b - 1)) maxId
+        filteredList = filter (\x -> not (null x)) blkInstrList
+    in map (\ls@((C.Block bId _):_) -> (C.Block bId (foldr (++) [] (map (\(C.Block _ bInstrs) -> bInstrs) ls)))) filteredList
+
+
 convertFunc :: S.Function -> C.Function
-convertFunc (S.Function sId sArgs sVars sBlock) -- not sure what to do with vars
-  = C.Function cId cArgs ([initBlock] ++ funcBlocks)
-          -- convert function id
-    where cId     = (convertId sId)
-          -- convert arg list
-          cArgs   = (map convertId sArgs)
-          -- load zero to a reg
-          (nextReg, loadZero) = instConst 0 0
-          -- init vars to 0
-          cVars = map convertId sVars
-          storeTuples = map (instStore 0) cVars
-          storeInsts = map snd storeTuples
-          -- unconditional branch to succeeding block
-          branchInst = C.IBranch (C.Reg 0) 1 1
-          -- make block to hold initial instructions
-          initBlock = C.Block 0 ([loadZero] ++ storeInsts ++ [branchInst])
-          -- convert block; starting reg 1, block 0
-          (_, _, funcBlocks) = (convertBlock sBlock nextReg 1)
-
--- | Convert source block to list of core blocks (stmts may yield blocks)
-convertBlock :: S.Block -> Int -> Int -> (Int, Int, [C.Block])
-convertBlock (S.Block stmts) rNum bNum
-  =   let (rNum1, inst, bNum1, sBlocks) = convertStmts stmts rNum (bNum + 1)
-      in  (rNum1, bNum1, (C.Block bNum inst) : sBlocks)
-
--- | Convert a list of source stmts to core inst list and block list
--- | args: stmt list, next free reg num, next free block num
--- | returns: next free reg num, inst list
--- | next free block num, converted block list
-convertStmts :: [S.Stmt] -> Int -> Int-> (Int, [C.Instr], Int, [C.Block])
-convertStmts [] rNum bNum
-  = (rNum, [], bNum, [])
-convertStmts (s : ss) rNum bNum
-          -- base call
-  =   let (rNum1, inst1, bNum1, b1) = convertStmt s rNum bNum
-          -- recursive call
-          (rNum2, inst2, bNum2, b2) = convertStmts ss rNum1 bNum1
-      in  (rNum2, inst1 ++ inst2, bNum2, b1 ++ b2)
-
--- | Convert source stmt to core inst list and block list
--- | args: stmt, next free reg, next free block num
--- | returns: next free reg, inst list,
--- | next free block num, converted block list
-convertStmt :: S.Stmt -> Int -> Int-> (Int, [C.Instr], Int, [C.Block])
-convertStmt stmt rNum bNum
-  = case stmt of
-      --return statement
-      S.SReturn sId ->
-              -- convert return id
-        let   cId = convertId sId
-              -- load inst
-              ( _ , loadInst) = instLoad rNum cId
-               -- ret inst
-              (rNum2, retInst) = instRet rNum
-        in    (rNum2, [loadInst, retInst], bNum, [])
-      -- assignment statment
-      S.SAssign sId e ->  
-              -- convert assignee id
-        let   cId = convertId sId 
-              (rNum1, eInst) = convertExp e rNum
-              -- prepare store inst
-              (rNum2, storeInst) = instStore (rNum1 - 1) cId
-        in    (rNum2, (eInst ++ [storeInst]), bNum, []) 
-      -- if statement
-      S.SIf sId sb1 ->
-              -- convert condition id
-        let   cId = convertId sId 
-              -- load inst
-              (rNum1, ldInst) = instLoad rNum cId
-              -- branch inst
-              (rNum2, brInst) = instBranch (rNum1 - 1) bNum bNum1
-              -- block to exec if cond satisfied
-              (rNum3, bNum1, cb1) = convertBlock sb1 rNum2 bNum
-              -- block to exec if cond not satisfied (branch to succ block)
-              branch = C.IBranch (C.Reg 0) (bNum1 + 1) (bNum1 + 1)
-              (rNum4, bNum2, cb2) = (rNum3, bNum1 + 1, [(C.Block bNum1 [branch])] )
-        in    (rNum4, [ldInst, brInst], bNum2, cb1 ++ cb2)
-      -- if else statement
-      S.SIfElse sId sb1 sb2 ->
-              -- convert id
-        let   cId = convertId sId
-              -- load inst
-              (rNum1, ldInst) = instLoad rNum cId
-              -- branch inst
-              (rNum2, brInst) = instBranch (rNum1 - 1)  bNum bNum1
-              -- convert blocks to execute based on condition
-              (rNum3, bNum1, cb1) = convertBlock sb1 rNum2 bNum
-              (rNum4, bNum2, cb2) = convertBlock sb2 rNum3 bNum1
-        in    (rNum4, [ldInst, brInst], bNum2, cb1 ++ cb2)
-
--- | Convert source expression into instruction list
--- | args: source exp, next free reg
--- | returns: next free register, inst list
-convertExp :: S.Exp -> Int -> (Int, [C.Instr])
-convertExp e rNum
-  = case e of
-      -- constant exp
-      S.XNum i ->
-              -- load const inst
-        let   (rNum1, lcInst) = instConst rNum i
-        in    (rNum1, [lcInst] )
-      -- id exp
-      S.XId sId ->
-        let   cId = convertId sId
-              -- create load inst
-              (rNum1, ldInst) = instLoad rNum cId
-        in    (rNum1, [ldInst] )
-      -- application exp
-      S.XApp fId args ->
-        let   cfId = convertId fId
-              -- convert arg id's
-              cArgs = map convertId args
-              -- load inst for all args
-              (rNum1, ldInst, argRegs) = instLoadMany rNum cArgs 
-              -- call inst
-              (rNum2, callInst) = instCall rNum1 cfId argRegs
-        in    (rNum2, ldInst ++ [callInst])
-      -- operator exp
-      S.XOp sOp e1 e2 ->
-        let cOp = convertOp sOp
-            -- convert e1 and e2 to yield instruction sets and intermediate registers
-            (rNum1, inst1) = convertExp e1 rNum
-            (rNum2, inst2) = convertExp e2 rNum1
-            -- create operator inst
-            (rNum3, opInst) = instOp cOp rNum2 (rNum1 - 1) (rNum2 - 1)
-            -- concat inst1, inst2 and final operator instruction
-        in  (rNum3, inst1 ++ inst2 ++ [opInst])
-
--- | Convert source operator to core operator
-convertOp :: S.Op -> C.OpArith
-convertOp op
-  =   case op of
-        S.OpAdd   -> C.OpAdd
-        S.OpSub   -> C.OpSub
-        S.OpMul   -> C.OpMul
-        S.OpDiv   -> C.OpDiv
-        S.OpLt    -> C.OpLt
-        S.OpGt    -> C.OpGt
-        S.OpEq    -> C.OpEq
+convertFunc (S.Function fId fArgIds _ fBlk) =
+    let (_, _, fBlks) = convertBlock (1, 1, fBlk)
+    in (C.Function (convertId fId) (map convertId fArgIds) fBlks)
 
 -- | Convert a source identifier to a core identifier.
 convertId :: S.Id -> C.Id
 convertId (S.Id str) = C.Id str
 
--- | Initialise a list of variables given a register containing init value
---initVars :: [C.Id] -> Int -> (Int, [C.Inst])
---initVars vars regNum
---  = 
-
--- | Create load const inst
-instConst :: Int -> Int -> (Int, C.Instr)
-instConst rNum n = (rNum + 1, C.IConst (C.Reg rNum) n )
-
--- | Create load inst from var id
-instLoad :: Int -> C.Id -> (Int, C.Instr)
-instLoad rNum vId = (rNum + 1, C.ILoad (C.Reg rNum) vId )
-
--- | Create list of load inst's from var id list
-instLoadMany :: Int -> [C.Id] -> (Int, [C.Instr], [C.Reg])
-instLoadMany rNum [] = (rNum, [], [])
-instLoadMany rNum (v : vs)
-            -- base call
-  =   let   (rNum1, ldInst1) = instLoad rNum v
-            -- recursive call
-            (rNum2, instList, argRegs) = instLoadMany rNum1 vs
-      in    (rNum2, [ldInst1] ++ instList, (C.Reg rNum) : argRegs)
-
--- | Create store inst from var id, reg
-instStore :: Int -> C.Id -> (Int, C.Instr)
-instStore rNum vId = (rNum + 1, C.IStore vId (C.Reg rNum) )
-
--- | Create op inst 
-instOp :: C.OpArith -> Int -> Int -> Int -> (Int, C.Instr)
-instOp op rNumRet rNum1 rNum2 
-  = (rNumRet + 1, C.IArith op (C.Reg rNumRet) (C.Reg rNum1) (C.Reg rNum2) )
-
--- | Create branch inst
-instBranch :: Int -> Int -> Int -> (Int, C.Instr)
-instBranch rNum b1 b2 
-  = (rNum + 1, C.IBranch (C.Reg rNum) b1 b2 )
-
--- | Create return statement
-instRet :: Int -> (Int, C.Instr)
-instRet rNum = (rNum + 1, C.IReturn (C.Reg rNum) )
-
--- | Create call inst
-instCall :: Int -> C.Id -> [C.Reg] -> (Int, C.Instr)
-instCall rNum fId args 
-  = (rNum + 1, C.ICall (C.Reg rNum) fId args)
+convertOp :: S.Op -> C.OpArith
+convertOp S.OpAdd = C.OpAdd
+convertOp S.OpSub = C.OpSub
+convertOp S.OpMul = C.OpMul
+convertOp S.OpDiv = C.OpDiv
+convertOp S.OpLt = C.OpLt
+convertOp S.OpGt = C.OpGt
+convertOp S.OpEq = C.OpEq

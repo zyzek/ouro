@@ -1,0 +1,53 @@
+
+fun  factorial(n)
+vars cond, tmp
+{       
+        cond = (n == 0);
+
+        if cond
+        then {  tmp = 1;
+                return tmp;
+        }
+        else {
+                tmp = (n - 1);
+                tmp = (factorial(tmp) * n);
+        }
+
+        alluh = 5;
+
+        if cond
+        then {
+                notcond = 0;
+
+                if cond
+                then {
+                        lelele = 5;
+                }
+        }
+        else {
+                notcond = 1;
+        }
+
+        if cond
+        then {
+                tmp = 5001;
+        }
+
+        if notcond
+        then {
+                return tmp;
+        }
+        else {
+                tmp = 5001;
+        }
+
+        return tmp;
+}
+
+
+fun  main(n)
+vars tmp
+{       
+        tmp = factorial(n);
+        return  tmp;
+}
