@@ -53,6 +53,7 @@ data Op
         | OpLt
         | OpGt
         | OpEq
+        | OpNeq
         deriving (Show, Eq)
 
 

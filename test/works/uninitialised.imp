@@ -1,0 +1,12 @@
+fun foo()
+vars x
+{
+	return x;
+}
+
+fun main()
+vars tmp
+{
+	tmp = foo();
+	return tmp;
+}

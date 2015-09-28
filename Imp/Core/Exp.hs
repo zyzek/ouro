@@ -40,6 +40,7 @@ data OpArith
         | OpLt
         | OpGt
         | OpEq
+        | OpNeq
         deriving Show
 
 

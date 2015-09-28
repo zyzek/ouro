@@ -163,5 +163,6 @@ ops
         , ("/",  OpDiv)
         , ("<",  OpLt)
         , (">",  OpGt)
-        , ("==", OpEq) ]       
+        , ("==", OpEq)
+        , ("!=", OpNeq) ]       
 

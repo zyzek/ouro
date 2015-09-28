@@ -119,6 +119,7 @@ arithCalc op op1 op2 = case op of
             OpLt    -> if (op1 < op2) then 1 else 0
             OpGt    -> if (op1 > op2) then 1 else 0
             OpEq    -> if (op1 == op2) then 1 else 0
+            OpNeq   -> if (op1 /= op2) then 1 else 0
 
 arithOp :: Env -> OpArith -> Reg -> Reg -> Reg -> Env
 arithOp env op dst op1Reg op2Reg = 
