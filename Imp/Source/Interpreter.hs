@@ -89,14 +89,16 @@ step sArgs@(StepArgs env funcs func (Block blockId (i:is)) gReg) =
     let newArgs = setBlock sArgs $ Block blockId is
     in case i of
         IReturn rReg                    -> copyReg env gReg rReg
-        ICall dst funcId argsList       -> step $ setEnv newArgs $ call env dst funcs (lookupFunc funcId funcs) argsList
+        ICall dst funcId argsList       -> step $ setEnv newArgs $ 
+                                            call env dst funcs (lookupFunc funcId funcs) argsList
         IConst dst val                  -> step $ setEnv newArgs $ setReg env dst val
         ILoad dst varId                 -> step $ setEnv newArgs $ loadVar env dst varId
         IStore varId src                -> step $ setEnv newArgs $ storeReg env varId src
         IArith op dst op1 op2           -> step $ setEnv newArgs $ arithOp env op dst op1 op2
-        IBranch regCond blk1Id blk2Id   -> if (getReg env regCond /= 0)
-                                            then step $ setBlock sArgs $ lookupBlock blk1Id $ fBlocks func
-                                            else step $ setBlock sArgs $ lookupBlock blk2Id $ fBlocks func
+        IBranch regCond blk1Id blk2Id   -> 
+            if (getReg env regCond /= 0)
+             then step $ setBlock sArgs $ lookupBlock blk1Id $ fBlocks func
+             else step $ setBlock sArgs $ lookupBlock blk2Id $ fBlocks func
 
  
 lookupFunc :: Id -> [Function] -> Function
