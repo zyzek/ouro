@@ -50,6 +50,7 @@ atoms
         , ("<",         KOp "<")
         , (">",         KOp ">")
         , ("==",        KOp "==")
+        , ("!=",        KOp "!=")
 
           -- punctuation
         , ("(",         KRoundBra)

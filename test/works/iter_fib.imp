@@ -1,0 +1,28 @@
+
+fun  fib(n)
+vars cond, tmp, pred, prepred
+{       
+        pred = 1;
+        prepred = 0;
+
+        cond = (n != 0);
+        while cond
+        {
+                tmp = pred;
+                pred = (prepred + pred);
+                prepred = tmp;
+                
+                n = (n - 1);
+                cond = (n != 0);
+        }
+
+        return prepred;
+}
+
+
+fun  main(n)
+vars tmp
+{       
+        tmp = fib(n);
+        return  tmp;
+}
