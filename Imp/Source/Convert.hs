@@ -4,7 +4,6 @@ import qualified Imp.Source.Exp         as S
 import qualified Imp.Core.Exp           as C
 import Data.List
 import Data.Ord
-import Debug.Trace
 
 
  -- | Convert a program from the source to core languages.
@@ -241,6 +240,7 @@ convertStmt (reg0, blk0, (S.SWhile varId blk)) =
     )
 
 
+-- | Convert a list of source statements to a list of core block properties and core blocks.
 convertStmts :: (Int, Int, [S.Stmt]) -> (Int, Int, [(Int, [C.Instr])], [C.Block])
 convertStmts (reg0, blk0, []) = (reg0, blk0, [], [])
 convertStmts (reg0, blk0, (stmt:stmts)) = 
@@ -248,7 +248,7 @@ convertStmts (reg0, blk0, (stmt:stmts)) =
         (reg2, blk2, blkInstrList1, blks2) = convertStmts (reg1, blk1, stmts)
     in (reg2, blk2, ((blk0, instrList1) : blkInstrList1), blks1 ++ blks2)
 
-
+-- | Convert a source block to list of core blocks.
 convertBlock :: (Int, Int, S.Block) -> (Int, Int, [C.Block])
 convertBlock (reg0, blk0, (S.Block [])) = (reg0, blk0, [])
 convertBlock (reg0, blk0, (S.Block sStmts)) = 
@@ -257,7 +257,7 @@ convertBlock (reg0, blk0, (S.Block sStmts)) =
         sorted = sortBy (comparing (\(C.Block blkId _) -> blkId)) newBlocks
     in (reg1, blk1, sorted)
     
-
+-- | Merge core block properties that have the same ids together
 mergeIBlocks :: [(Int, [C.Instr])] -> [(Int, [C.Instr])]
 mergeIBlocks blkInstrs = 
     let a = (\y -> filter (\(blk, _) -> blk == y) blkInstrs)
@@ -266,7 +266,7 @@ mergeIBlocks blkInstrs =
         filteredList = filter (\x -> not (null x)) blkInstrList
     in map (\ls@(l:_) -> ((fst (l)), (foldr (++) [] (map snd ls)))) filteredList
 
-
+-- | Merge core blocks that have the same block ids together.
 mergeBlocks :: [C.Block] -> [C.Block]
 mergeBlocks blkInstrs = 
     let a = (\y -> filter (\(C.Block blk _) -> blk == y) blkInstrs)
@@ -289,6 +289,7 @@ convertFunc (S.Function fId fArgIds fVarIds fBlk) =
 convertId :: S.Id -> C.Id
 convertId (S.Id str) = C.Id str
 
+-- | Convert a source operation to a core operation.
 convertOp :: S.Op -> C.OpArith
 convertOp S.OpAdd = C.OpAdd
 convertOp S.OpSub = C.OpSub
