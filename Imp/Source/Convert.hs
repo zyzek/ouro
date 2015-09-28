@@ -240,9 +240,6 @@ convertStmt (reg0, blk0, (S.SWhile varId blk)) =
         ) 
     )
 
-newBlock :: (Int, Int, S.Block) -> (Int, Int, [C.Block])
-newBlock (reg0, blk0, sBlk) = 
-    convertBlock (reg0, blk0, sBlk)
 
 convertStmts :: (Int, Int, [S.Stmt]) -> (Int, Int, [(Int, [C.Instr])], [C.Block])
 convertStmts (reg0, blk0, []) = (reg0, blk0, [], [])
