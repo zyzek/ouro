@@ -279,10 +279,14 @@ mergeBlocks blkInstrs =
     in map (\ls@((C.Block bId _):_) -> (C.Block bId (foldr (++) [] (map (\(C.Block _ bInstrs) -> bInstrs) ls)))) filteredList
 
 
+-- | Convert a source function to a core function.
 convertFunc :: S.Function -> C.Function
-convertFunc (S.Function fId fArgIds _ fBlk) =
+convertFunc (S.Function fId fArgIds fVarIds fBlk) =
     let (_, _, fBlks) = convertBlock (1, 1, fBlk)
-    in (C.Function (convertId fId) (map convertId fArgIds) fBlks)
+        newBlk = (C.Block 0 ((C.IConst (C.Reg 0) 0)
+         : (map (\x -> C.IStore (convertId x) (C.Reg 0)) fVarIds)
+         ++ [C.IBranch (C.Reg 0) 1 1]))
+    in (C.Function (convertId fId) (map convertId fArgIds) (newBlk:fBlks))
 
 -- | Convert a source identifier to a core identifier.
 convertId :: S.Id -> C.Id
