@@ -66,7 +66,7 @@ main
          ["-checklib", file]
           | isSuffixOf ".imp" file
           -> do contents     <- readFile file
-                str          <- S.preprocess contents
+                str          <- S.preprocess contents file
                 case S.programOfString str of
                  Nothing -> error "parse error"
                  Just prog
