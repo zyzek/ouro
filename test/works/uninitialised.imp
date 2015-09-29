@@ -7,6 +7,5 @@ vars x
 fun main()
 vars tmp
 {
-	tmp = foo();
-	return tmp;
+	return foo();
 }

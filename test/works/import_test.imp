@@ -1,8 +1,6 @@
-#include "lib/math.imp"
+#include "math"
 
 fun main(x, y)
 {
-	
 	return max(x, y);
-
 }

@@ -1,0 +1,52 @@
+fun  factorial(n)
+vars cond, tmp, heythere, notcond, lelele
+{       
+    if (n == 0) then
+    {  
+        return 1;
+    }
+    else 
+    {
+        tmp = (n - 1);
+        tmp = (factorial(tmp) * n);
+    }
+
+    heythere = 5;
+
+    if (n == 0) then 
+    {
+        notcond = 0;
+
+        if (n == 0) then 
+        {
+            lelele = 5;
+        }
+    }
+    else
+    {
+        notcond = 1;
+    }
+
+    if (n == 0) then 
+    {
+        tmp = 5001;
+    }
+
+    if notcond then 
+    {
+        return tmp;
+    }
+    else
+    {
+        tmp = 5001;
+    }
+
+    return tmp;
+}
+
+
+fun  main(n)
+vars tmp
+{       
+    return  factorial(n);
+}
