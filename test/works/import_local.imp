@@ -1,6 +1,6 @@
-#include "./math"
+#include "../../lib/math"
 
 fun main(x, y)
 {
-	return max(x, y);
+    return max(x, y);
 }

@@ -1,0 +1,31 @@
+#include "math"
+
+fun  main(a, b, c, d)
+vars a2, b2, c2, d2
+{       
+    tmp = max(a, b);
+    a = min(a, b);
+    b = tmp;
+
+    tmp = max(c, d);
+    c = min(c, d);
+    d = tmp;
+
+    a2 = min(a, c);
+    b2 = min(a, d);
+    b2 = min(b2, b);
+    c2 = min(d, b);
+    d2 = max(d, b);
+
+    a = a2;
+    b = b2;
+    c = c2;
+    d = d2;
+
+    a = (a * 1000);
+    b = (b * 100);
+    c = (c * 10);
+    d = (d * 1);
+
+    return ((a + b) + (c + d));
+}
