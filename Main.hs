@@ -6,6 +6,7 @@ import qualified Imp.Source.Check               as S
 import qualified Imp.Source.Check.Error         as S
 import qualified Imp.Source.Convert             as S
 import qualified Imp.Source.Interpreter         as S
+import qualified Imp.Source.Preprocessor        as S
 
 import qualified Data.Algorithm.Diff            as Diff
 import qualified Data.Algorithm.DiffOutput      as Diff
@@ -27,7 +28,7 @@ main
          ["-lex",   file]
           | isSuffixOf ".imp" file 
           -> do str     <- readFile file
-                let out = Text.ppShow $ S.lexer str
+                let out = Text.ppShow $ S.lexer (S.preprocess str)
                 showResult out (file ++ ".lex")
 
           | otherwise
@@ -37,7 +38,7 @@ main
          ["-parse", file]
           | isSuffixOf ".imp" file
           -> do str     <- readFile file
-                let out = Text.ppShow $ S.programOfString str
+                let out = Text.ppShow $ S.programOfString (S.preprocess str)
                 showResult out (file ++ ".parse")
 
           | otherwise
@@ -47,7 +48,7 @@ main
          ["-check", file]
           | isSuffixOf ".imp" file
           -> do str     <- readFile file
-                case S.programOfString str of
+                case S.programOfString (S.preprocess str) of
                  Nothing -> error "parse error"
                  Just prog
                   -> do let out = unlines 
@@ -62,7 +63,7 @@ main
          ["-convert", file]
           | isSuffixOf ".imp" file
           -> do str     <- readFile file
-                case S.programOfString str of
+                case S.programOfString (S.preprocess str) of
                  Nothing -> error "parse error"
                  Just progSource
                   -> do let core = S.convertProgram progSource
