@@ -328,3 +328,4 @@ convertOp S.OpNeq = C.OpNeq
 convertOp S.OpPow = C.OpPow
 convertOp S.OpAnd = C.OpAnd
 convertOp S.OpOr = C.OpOr
+convertOp S.OpMod = C.OpMod

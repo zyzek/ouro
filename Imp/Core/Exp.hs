@@ -37,6 +37,7 @@ data OpArith
         | OpSub
         | OpMul
         | OpDiv
+        | OpMod
         | OpPow
         | OpLt
         | OpGt

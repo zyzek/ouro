@@ -116,6 +116,7 @@ arithCalc op op1 op2 = case op of
             OpSub   -> op1 - op2
             OpMul   -> op1 * op2
             OpDiv   -> quot op1 op2
+            OpMod   -> mod op1 op2
             OpPow   -> op1 ^ op2
             OpLt    -> if (op1 < op2) then 1 else 0
             OpGt    -> if (op1 > op2) then 1 else 0

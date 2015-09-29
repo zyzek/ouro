@@ -50,6 +50,7 @@ data Op
         | OpSub
         | OpMul
         | OpDiv
+        | OpMod
         | OpPow
         | OpLt
         | OpGt
