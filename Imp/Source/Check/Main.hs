@@ -70,13 +70,13 @@ checkIdDefsStmt vars funsigs stmt
  = case stmt of
     SAssign var expr  -> (checkIdDefsVar vars var) 
                          ++ (checkIdDefsExp vars funsigs expr)
-    SIf var block     -> (checkIdDefsVar vars var)
+    SIf expr block     -> (checkIdDefsExp vars funsigs expr)
                          ++ (checkIdDefsBlock vars funsigs block)
-    SIfElse var b1 b2 -> (checkIdDefsVar vars var) 
+    SIfElse expr b1 b2 -> (checkIdDefsExp vars funsigs expr) 
                          ++ (checkIdDefsBlock vars funsigs b1) 
                          ++ (checkIdDefsBlock vars funsigs b2)
-    SReturn var       -> checkIdDefsVar vars var
-    SWhile var b      -> (checkIdDefsVar vars var)
+    SReturn expr       -> checkIdDefsExp vars funsigs expr
+    SWhile expr b      -> (checkIdDefsExp vars funsigs expr)
                         ++ (checkIdDefsBlock vars funsigs b)
 
 

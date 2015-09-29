@@ -21,11 +21,11 @@ data Block
 
 -- | Source Statements.
 data Stmt
-        = SAssign Id  Exp
-        | SIf     Id  Block
-        | SIfElse Id  Block Block
-        | SReturn Id
-        | SWhile Id Block
+        = SAssign Id   Exp
+        | SIf     Exp  Block
+        | SIfElse Exp  Block Block
+        | SReturn Exp
+        | SWhile  Exp Block
         deriving (Eq, Show)
 
 

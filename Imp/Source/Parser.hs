@@ -64,7 +64,7 @@ stmt
    --  must then fail: we have a dangling else with no 
    --  if-then to precede it.
  , do  only Kif
-       guard      <- ident
+       guard      <- expr
        only Kthen
        lbr        <- block
        only Kelse
@@ -73,19 +73,19 @@ stmt
 
    -- if-then
  , do  only Kif
-       guard      <- ident
+       guard      <- expr
        only Kthen
        br         <- block
        return     $ SIf guard br
 
   -- return
  , do  only Kreturn
-       i <- ident
+       i <- expr
        only KSemi
        return $ SReturn i
 
   , do only Kwhile
-       cond       <- ident
+       cond       <- expr
        body       <- block
        return $ SWhile cond body
  ]
