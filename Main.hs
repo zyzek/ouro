@@ -77,7 +77,7 @@ main
          ("-interpret":file:progArgs)
           | isSuffixOf ".imp" file
           -> do str     <- readFile file
-                case S.programOfString str of
+                case S.programOfString (S.preprocess str) of
                  Nothing -> error "parse error"
                  Just progSource
                   -> do let core = S.convertProgram progSource
