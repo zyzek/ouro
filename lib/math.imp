@@ -1,5 +1,4 @@
 fun  min(x, y)
-vars cond
 {       
         if (x < y) then
         {
@@ -12,11 +11,8 @@ vars cond
 }
 
 fun  max(x, y)
-vars cond
 {       
-        cond = (x > y);
-
-        if cond then
+        if (x > y) then
         {
                 return x;
         }
@@ -41,155 +37,91 @@ vars result
 
 }
 
-fun  pow(x, y)
-vars tmp
-{       
-        tmp = (y == 0);
-        if tmp then
-        {
-                tmp = 1;
-                return tmp;
-        }
-
-        tmp = 1;
-        while y
-        {
-                tmp = (tmp * x);
-                y = (y - 1);
-        }
-        return tmp;
-}
-
-fun  mod(x, y)
-vars tmp
-{       
-        tmp = (x / y);
-        tmp = (x - (tmp * y));
-        return tmp;
-}
-
 fun  fromBase(x, y)
-vars tmp, ten, ctr, tmp1, tmp2, ret
+vars next, ctr, ret, ten
 {       
-        tmp = (y > 10);
-
-        if tmp then
+        if ((y > 10) | (y < 2)) then
         {
-                tmp = 0;
-                return tmp;
+                return 0;
         }
 
         ten = 10;
         ret = 0;
-        tmp = x;
+        next = x;
         ctr = 1;
 
-        while tmp
+        while next
         {
-                tmp1 = mod(tmp, ten);
-                tmp1 = ((pow(y, ctr) * tmp1) / y);
-                tmp2 = ctr;
-                ret = (ret + tmp1);
+                ret = (ret + (((y ^ ctr) * (next % ten)) / y));
                 ctr = (ctr + 1);
-                tmp = (tmp / 10);
+                next = (next / 10);
         }
         return ret;
 }
 
 fun  toBase(x, y)
-vars tmp, ten, ctr, tmp1, tmp2, ret
+vars next, ctr, ret, ten
 {       
-        tmp = (y > 10);
-
-        if tmp then
+        if ((y > 10) | (y < 2)) then
         {
-                tmp = 0;
-                return tmp;
+                return 0;
         }
 
         ten = 10;
         ret = 0;
-        tmp = x;
+        next = x;
         ctr = 1;
 
-        while tmp
+        while next
         {
-                tmp1 = mod(tmp, y);
-                tmp1 = ((pow(ten, ctr) * tmp1) / ten);
-                tmp2 = ctr;
-                ret = (ret + tmp1);
+                ret = (ret + (((ten ^ ctr) * (next % y)) / ten));
                 ctr = (ctr + 1);
-                tmp = (tmp / 10);
+                next = (next / 10);
         }
         return ret;
 }
 
 fun  floor(x, y)
-vars tmp
 {              
-        tmp = mod(x, y);
-        tmp = (x - tmp);
-        return tmp;
+        return (x - (x % y));
 }
 
 fun  ceil(x, y)
-vars tmp
 {              
-        tmp = mod(x, y);
-        tmp = ((x - tmp) + y);
-        return tmp;
+        return ((x - (x % y)) + y);
 }
 
 fun  round(x, y)
-vars tmp
 {             
         x = (x + (y / 2));
-        tmp = mod(x, y);
-        tmp = (x - tmp);
-        return tmp;
+        y = (x % y);
+        return (x - y);
 }
 
 fun  trunc(x, y)
-vars tmp, ten, pw, ctr
 {              
-        
-        ten = 10;
-        pw = pow(ten, y);
-        tmp = (x / pw);
-        tmp = (tmp * pw);
-        return tmp;
+        return ((x / (10 ^ y)) * (10 ^ y));
 }
 
-fun  sigFigs(x, y)
-vars tmp, ten, pw, ctr, cond
+fun  sigfigs(x, y)
+vars ctr, cond
 {            
-        ten = 10;
         ctr = 0;
         cond = x;
         while cond
         {
-                cond = (cond / ten);
+                cond = (cond / 10);
                 ctr = (ctr + 1);
         }
-        y = (ctr - y);
-        pw = pow(ten, y);
-        tmp = (x / pw);
-        tmp = (tmp * pw);
-        return tmp;
+        return ((x / (10 ^ (ctr - y))) * (10 ^ (ctr - y)));
 }
-
-fun  ~(x)
-vars tmp
-{            
-        tmp = (0 - x);
-        return tmp;
-}
-
 
 
 
 fun  main()
 vars tmp, tmp1
 {       
-        return min(tmp, tmp1);
+        tmp = 1234567;
+        tmp1 = 3;
+        return sigfigs(tmp, tmp1);
 }
