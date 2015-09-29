@@ -2,7 +2,7 @@ module Imp.Source.Preprocessor where
 import Imp.Parsec
 
 
-preprocess :: String -> IO String -- (IO String, String)
+preprocess :: String -> IO String
 preprocess source
  = let (paths, rest) 
         = case (parse includes source) of
