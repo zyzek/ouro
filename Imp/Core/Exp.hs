@@ -45,6 +45,8 @@ data OpArith
         | OpNeq
         | OpOr
         | OpAnd
+        | OpNot
+        | OpNeg
         deriving Show
 
 

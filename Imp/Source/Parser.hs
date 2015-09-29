@@ -110,14 +110,19 @@ expr
  , do   i        <- ident
         return   $ XId i
 
-        -- operation
+        -- binary operation
  , do   only KRoundBra
         e1       <- expr
-        op       <- oper
+        op       <- binoper
         e2       <- expr
         only KRoundKet
-        return   $ XOp op e1 e2
- 
+        return   $  XOpBin op e1 e2
+      
+        -- unary operation
+ , do   op       <- unoper
+        e        <- expr
+        return   $  XOpUn op e
+
  , do   only KRoundBra
         e        <- expr
         only KRoundKet
@@ -206,12 +211,19 @@ idents
 
 
 -- | Parse an operator.
-oper :: Parser Token Op
-oper
+binoper :: Parser Token OpBin
+binoper
  = alts
  [ do   only    (KOp str)
         return  op
- | (str, op)    <- ops]
+ | (str, op)    <- binops]
+
+unoper :: Parser Token OpUn
+unoper
+ = alts
+ [ do   only    (KOp str)
+        return  op
+ | (str, op)    <- unops]
 
 
 --addOp :: Parser Token Op
@@ -227,8 +239,8 @@ oper
 --              , only (KOp "!=") ]
 
 -- | Operator names.
-ops :: [(String, Op)]
-ops
+binops :: [(String, OpBin)]
+binops
  =      [ ("+",  OpAdd)
         , ("-",  OpSub)
         , ("*",  OpMul)
@@ -240,5 +252,9 @@ ops
         , ("==", OpEq)
         , ("!=", OpNeq)
         , ("|",  OpOr)
-        , ("&",  OpAnd) ]       
+        , ("&",  OpAnd) ]
+
+unops :: [(String, OpUn)]
+unops
+ =      [ ("!",  OpNot) ]       
 
