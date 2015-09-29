@@ -32,7 +32,7 @@ zero
  = MkParser $ \_ -> []
 
 
--- | A parser that consumes the fist token of the input, failing if there
+-- | A parser that consumes the first token of the input, failing if there
 --   aren't any.
 item  :: Parser token token
 item    
@@ -76,7 +76,10 @@ only token
 
 -- | Parse just the given character.
 char :: Char -> Parser Char Char
-char c  = satisfies (== c) 
+char c  = satisfies (== c)
+
+notChars :: [Char] -> Parser Char Char
+notChars cs = satisfies (\c -> not (elem c cs))
 
 
 -- | Parse a digit.
