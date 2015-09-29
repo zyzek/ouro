@@ -187,7 +187,7 @@ convertStmt (reg0, blk0, (S.SIfElse expr blkl blkr)) =
         reg3,
         blk3 + 1,
         condList ++ [
-            C.IBranch (C.Reg (reg1 - 1)) (blk0 + 1) (blk1 + 1)
+            C.IBranch (C.Reg (reg1 - 1)) (blk1 + 1) (blk2 + 1)
         ],
         mergeBlocks 
         (
