@@ -257,5 +257,6 @@ binops
 
 unops :: [(String, OpUn)]
 unops
- =      [ ("!",  OpNot) ]       
+ =      [ ("!",  OpNot)
+        , ("-",  OpNeg) ]       
 
