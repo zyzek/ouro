@@ -28,7 +28,7 @@ main
          ["-lex",   file]
           | isSuffixOf ".imp" file 
           -> do contents   <- readFile file
-                str        <- S.preprocess contents
+                str        <- S.preprocess contents file
                 let out = Text.ppShow $ S.lexer str
                 showResult out (file ++ ".lex")
 
@@ -39,7 +39,7 @@ main
          ["-parse", file]
           | isSuffixOf ".imp" file
           -> do contents   <- readFile file
-                str     <- S.preprocess contents
+                str     <- S.preprocess contents file
                 let out = Text.ppShow $ S.programOfString str
                 showResult out (file ++ ".parse")
 
@@ -50,7 +50,7 @@ main
          ["-check", file]
           | isSuffixOf ".imp" file
           -> do contents     <- readFile file
-                str          <- S.preprocess contents
+                str          <- S.preprocess contents file
                 case S.programOfString str of
                  Nothing -> error "parse error"
                  Just prog
@@ -66,7 +66,7 @@ main
          ["-convert", file]
           | isSuffixOf ".imp" file
           -> do contents     <- readFile file
-                str          <- S.preprocess contents
+                str          <- S.preprocess contents file
                 case S.programOfString str of
                  Nothing -> error "parse error"
                  Just progSource
@@ -81,7 +81,7 @@ main
          ("-interpret":file:progArgs)
           | isSuffixOf ".imp" file
           -> do contents   <- readFile file
-                str        <- S.preprocess contents
+                str        <- S.preprocess contents file
                 case S.programOfString str of
                  Nothing -> error "parse error"
                  Just progSource
