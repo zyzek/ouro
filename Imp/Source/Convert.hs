@@ -337,6 +337,7 @@ convertOpBin S.OpNeq = C.OpNeq
 convertOpBin S.OpPow = C.OpPow
 convertOpBin S.OpAnd = C.OpAnd
 convertOpBin S.OpOr = C.OpOr
+convertOpBin S.OpXor = C.OpXor
 convertOpBin S.OpMod = C.OpMod
 
 convertOpUn :: S.OpUn -> C.OpArith

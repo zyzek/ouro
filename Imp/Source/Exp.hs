@@ -59,6 +59,7 @@ data OpBin
         | OpNeq
         | OpOr
         | OpAnd
+        | OpXor
         deriving (Show, Eq)
 
 data OpUn

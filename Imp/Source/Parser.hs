@@ -252,7 +252,8 @@ binops
         , ("==", OpEq)
         , ("!=", OpNeq)
         , ("|",  OpOr)
-        , ("&",  OpAnd) ]
+        , ("&",  OpAnd) 
+        , ("x|", OpXor)]
 
 unops :: [(String, OpUn)]
 unops

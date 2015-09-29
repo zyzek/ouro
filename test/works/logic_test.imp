@@ -1,16 +1,9 @@
-fun not(a)
-{
-	return (a == 0);
-}
-
 fun xor(a, b)
-vars result
 {
-	return ((not(a) & b) | (a & not(b)));
+	return ((!a & b) | (a & !b));
 }
 
 fun main(a, b)
-vars result
 {
-	return xor(a, b);
+    return ((a x| b) & xor(a, b));
 }
