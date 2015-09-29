@@ -56,10 +56,15 @@ atoms
         , ("&",         KOp "&")
         , ("x|",        KOp "x|")
 
+        , ("==",        KOp "==")
+        , ("<=",        KOp "<=")
+        , (">=",        KOp ">=")
+        , ("!=",        KOp "!=")
+
+        -- These must appear later, 
+        -- as they are prefixes of other operators
         , ("<",         KOp "<")
         , (">",         KOp ">")
-        , ("==",        KOp "==")
-        , ("!=",        KOp "!=")
         , ("!",         KOp "!")
         
 
@@ -80,4 +85,6 @@ atoms
         , ("else",      Kelse)
         , ("return",    Kreturn) 
         , ("while",     Kwhile)
+        , ("true",      Ktrue)
+        , ("false",     Kfalse)
         ] 

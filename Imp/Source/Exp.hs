@@ -57,6 +57,8 @@ data OpBin
         | OpGt
         | OpEq
         | OpNeq
+        | OpGeq
+        | OpLeq
         | OpOr
         | OpAnd
         | OpXor

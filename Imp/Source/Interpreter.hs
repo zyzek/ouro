@@ -120,6 +120,8 @@ arithCalc op op1 op2 = case op of
             OpPow   -> op1 ^ op2
             OpLt    -> if (op1 < op2) then 1 else 0
             OpGt    -> if (op1 > op2) then 1 else 0
+            OpLeq   -> if (op1 <= op2) then 1 else 0
+            OpGeq   -> if (op1 >= op2) then 1 else 0
             OpEq    -> if (op1 == op2) then 1 else 0
             OpNeq   -> if (op1 /= op2) then 1 else 0
             OpOr    -> if (op1 /= 0) then op1 else op2

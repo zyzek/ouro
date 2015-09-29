@@ -26,6 +26,8 @@ data Token
         | Kelse                 -- else
         | Kreturn               -- return
         | Kwhile                -- while
+        | Ktrue                 -- true
+        | Kfalse                -- false
         deriving (Show, Eq)
 
 
@@ -34,6 +36,8 @@ takeNum :: Token -> Maybe Int
 takeNum tt
  = case tt of
         KNum n  -> Just n
+        Ktrue   -> Just 1
+        Kfalse  -> Just 0
         _       -> Nothing
 
 

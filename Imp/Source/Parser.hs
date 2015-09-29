@@ -250,6 +250,8 @@ binops
         , ("<",  OpLt)
         , (">",  OpGt)
         , ("==", OpEq)
+        , (">=", OpGeq)
+        , ("<=", OpLeq)
         , ("!=", OpNeq)
         , ("|",  OpOr)
         , ("&",  OpAnd) 

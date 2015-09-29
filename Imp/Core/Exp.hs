@@ -43,6 +43,8 @@ data OpArith
         | OpGt
         | OpEq
         | OpNeq
+        | OpGeq
+        | OpLeq
         | OpOr
         | OpAnd
         | OpXor

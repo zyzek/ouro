@@ -1,0 +1,172 @@
+fun  factorial(n)
+vars count, total
+{       
+    total = 1;
+    count = 0;
+
+    while (count < n) 
+    {       
+        count = (count + 1);
+        total = (total * count);
+    }
+    
+    return total;
+}
+
+
+fun  binom(n, r)
+vars d
+{   
+    d = (n - r);
+    return (factorial(n) / (factorial(d) * factorial(r)));
+}
+
+
+fun perm(n, r)
+vars d
+{
+	d = (n - r);
+	return (factorial(n) / factorial(d));
+}
+
+
+fun catalan(n)
+vars m
+{
+	m = (2 * n);
+	return (binom(m, n) / (n + 1));
+}
+
+
+fun sqrt(n)
+vars val
+{
+	while ((val^2) <= n)
+	{
+		val = (val + 1);
+	}
+
+	return (val - 1);	
+}
+
+
+fun isPrime(n)
+vars max, factor
+{
+	max = sqrt(n);
+	factor = 2;
+
+	while (factor <= max) 
+	{
+		if !(n % factor) then
+		{
+			return false;
+		}
+
+		factor = (factor + 1);
+	} 
+
+	if (n <= 1) then {return false;} else {return true;}
+}
+
+
+fun prime(n)
+vars pcount, cand
+{
+	if (n < 1) then
+	{
+		return 0;
+	}
+
+	cand = 1;
+
+	while (pcount < n) 
+	{
+		cand = (cand + 1);
+
+		if isPrime(cand) then
+		{
+			pcount = (pcount + 1);
+		}
+	}
+
+	return cand;
+}
+
+fun numPrimeDivisors(n) 
+vars i, p, k
+{
+	i = 1;
+	p = prime(i);
+
+	while (n > 1) {
+		if !(n % p) then
+		{
+			k = (k + 1);
+			n = (n / p);
+		}
+		else
+		{
+			i = (i + 1);
+			p = prime(i);
+		}
+	}
+
+	return k;
+}
+
+fun phi(n) 
+vars i, p, k, pPhi, result
+{
+	i = 1;
+	p = prime(i);
+	result = 1;
+
+	while (n > 1) {
+		if !(n % p) then
+		{
+			k = (k + 1);
+			n = (n / p);
+		}
+		else
+		{
+			if (k > 0) then
+			{
+				pPhi = ((p^(k - 1)) * (p - 1));
+				result = (result * pPhi);
+				k = 0;
+			}
+
+			i = (i + 1);
+			p = prime(i);
+		}
+	}
+
+	if (k > 0) then
+		{
+			pPhi = ((p^(k - 1)) * (p - 1));
+			result = (result * pPhi);
+			k = 0;
+		}
+
+	return result;
+}
+
+
+fun gcd(a, b)
+vars c 
+{
+
+	if !(a % b) then 
+	{
+		return b;
+	}
+
+	r = (a % b);
+	return gcd(b, r);
+}
+
+fun triangular(n) 
+{
+	return (((n + 1) * n) / 2);
+}
