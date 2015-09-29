@@ -1,0 +1,6 @@
+fun main()
+vars tmp
+{
+	tmp = ( (((1 + ((2 * 5) / 3)) - 7) != -3) );
+	return tmp;
+}

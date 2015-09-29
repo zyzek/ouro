@@ -37,10 +37,13 @@ data OpArith
         | OpSub
         | OpMul
         | OpDiv
+        | OpPow
         | OpLt
         | OpGt
         | OpEq
         | OpNeq
+        | OpOr
+        | OpAnd
         deriving Show
 
 

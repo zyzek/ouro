@@ -2,8 +2,8 @@
 -- | Parser combinators.
 module Imp.Parsec where
 import Control.Monad
-import Control.Applicative
-  hiding (some, many)
+-- import Control.Applicative
+--   hiding (some, many)
 
 -------------------------------------------------------------------------------
 --   A parser is a function that takes a list of input tokens, and produces
@@ -139,7 +139,7 @@ alts (a : as)      = alt a (alts as)
 
 
 -- | Try to apply one of the parsers in the given list,
---   using the default parser if none succeed.
+--   using the default parser iff none succeed.
 altss :: [Parser token a] -> Parser token a -> Parser token a
 altss [] def       = def
 altss (a : as) def = alt a (altss as def)
@@ -199,6 +199,7 @@ many parserA
 -- | Parse a natural number.
 nat :: Parser Char Int
 nat = fmap read (many digit)
+
 
 
 -------------------------------------------------------------------------------

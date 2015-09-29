@@ -3,6 +3,7 @@ module Imp.Source.Parser where
 import Imp.Source.Exp
 import Imp.Source.Tokens
 import Imp.Parsec
+--import Data.Maybe   
 
 
 -- | Whole program.
@@ -116,12 +117,71 @@ expr
         e2       <- expr
         only KRoundKet
         return   $ XOp op e1 e2
+ 
+ , do   only KRoundBra
+        e        <- expr
+        only KRoundKet
+        return   $  e
  ]
+
+
+--compL :: Parser Token Exp
+--compL  
+-- = do    l       <- addL
+--         r       <- some compR
+--         return SOMETHING
+
+--compR :: Parser Token Exp
+--comparative 
+-- = do    op      <- compOp
+--         r       <- addL
+--         return SOMETHING
+
+
+--addL :: Parser Token Exp
+--addL
+-- = do    l       <- multL
+--         r       <- some addR
+--         return SOMETHING
+
+--addR :: Parser Token Exp
+--addR 
+-- = do    op      <- addOp
+--         r       <- multL
+--         return SOMETHING
+
+
+--multL :: Parser Token Exp
+--multL 
+-- = do    l       <- opBase
+--         r       <- some multR
+--         return SOMETHING
+
+--multR :: Parser Token Exp
+--multR
+-- = do    op      <- multOp
+--         r       <- opBase
+--         return SOMETHING
+
+
+--opBase :: Parser Token Exp
+--opBase = alt num expr         
+
+
+--chainOp :: Op -> [Exp] -> Maybe Exp
+--chainOp _ [] = Nothing
+--chainOp op [e] = Just e
+--chainOp op e1:rest =  op e1 $ fromJust $ chainOp op rest
 
 
 -- | Parse a number.
 num   :: Parser Token Int
 num = from takeNum
+
+--numExpr :: Parser Token Exp
+--numExpr = do  n   <- num
+--              return (XNum n)
+
 
 
 -- | Parse an identifier.
@@ -154,6 +214,18 @@ oper
  | (str, op)    <- ops]
 
 
+--addOp :: Parser Token Op
+--addOp = alt (only (KOp "+")) (only (KOp "-"))
+
+--multOp :: Parser Token Op
+--multOp = alt (only (KOp "*")) (only (KOp "/"))
+
+--compOp :: Parser Token Op
+--compOp = alts [ only (KOp "<")
+--              , only (KOp ">")
+--              , only (KOp "==")
+--              , only (KOp "!=") ]
+
 -- | Operator names.
 ops :: [(String, Op)]
 ops
@@ -161,8 +233,11 @@ ops
         , ("-",  OpSub)
         , ("*",  OpMul)
         , ("/",  OpDiv)
+        , ("^",  OpPow)
         , ("<",  OpLt)
         , (">",  OpGt)
         , ("==", OpEq)
-        , ("!=", OpNeq) ]       
+        , ("!=", OpNeq)
+        , ("|",  OpOr)
+        , ("&",  OpAnd) ]       
 
