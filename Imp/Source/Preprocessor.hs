@@ -1,16 +1,21 @@
 module Imp.Source.Preprocessor where
 import Imp.Parsec
+import Data.List
+import Data.List.Utils
 
 
-preprocess :: String -> IO String
-preprocess source
+preprocess :: String -> String -> IO String -- (IO String, String)
+preprocess source main
  = let (paths, rest) 
         = case (parse includes source) of
             [] -> ([], source)
             l  -> head l
        readFileAddLine path
-        = do contents <- readFile path
-             return $ contents ++ "\n"
+        = if ((head path) == '.') 
+           then (do contents <- readFile ((intercalate "/" (init (split "/" main))) ++ path ++ ".imp")
+                    return $ contents ++ "\n")
+           else (do contents <- readFile ("lib/" ++ path ++ ".imp")
+                    return $ contents ++ "\n")
        allContents 
         = do contents <- fmap concat $ mapM readFileAddLine paths
              return contents
