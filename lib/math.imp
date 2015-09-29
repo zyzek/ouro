@@ -27,7 +27,16 @@ vars cond
 fun  not(x)
 vars cond
 {       
-        return (x == 0);
+        cond = (x == 0);
+        return cond;
+}
+
+fun xor(a, b)
+vars result
+{
+        result = ((not(a) & b) | (a & not(b))); 
+        return result;
+
 }
 
 fun  fromBase(x, y)

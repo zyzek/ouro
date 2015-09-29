@@ -1,0 +1,8 @@
+#include "lib/math.imp"
+
+fun main(x, y)
+{
+	
+	return max(x, y);
+
+}

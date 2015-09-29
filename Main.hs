@@ -27,8 +27,9 @@ main
          -- Lex a file.
          ["-lex",   file]
           | isSuffixOf ".imp" file 
-          -> do str     <- readFile file
-                let out = Text.ppShow $ S.lexer (S.preprocess str)
+          -> do contents   <- readFile file
+                str        <- S.preprocess contents
+                let out = Text.ppShow $ S.lexer str
                 showResult out (file ++ ".lex")
 
           | otherwise
@@ -37,8 +38,9 @@ main
          -- Parse a file.
          ["-parse", file]
           | isSuffixOf ".imp" file
-          -> do str     <- readFile file
-                let out = Text.ppShow $ S.programOfString (S.preprocess str)
+          -> do contents   <- readFile file
+                str     <- S.preprocess contents
+                let out = Text.ppShow $ S.programOfString str
                 showResult out (file ++ ".parse")
 
           | otherwise
@@ -47,8 +49,9 @@ main
          -- Check a file.
          ["-check", file]
           | isSuffixOf ".imp" file
-          -> do str     <- readFile file
-                case S.programOfString (S.preprocess str) of
+          -> do contents     <- readFile file
+                str          <- S.preprocess contents
+                case S.programOfString str of
                  Nothing -> error "parse error"
                  Just prog
                   -> do let out = unlines 
@@ -62,8 +65,9 @@ main
           -- Convert a file.
          ["-convert", file]
           | isSuffixOf ".imp" file
-          -> do str     <- readFile file
-                case S.programOfString (S.preprocess str) of
+          -> do contents     <- readFile file
+                str          <- S.preprocess contents
+                case S.programOfString str of
                  Nothing -> error "parse error"
                  Just progSource
                   -> do let core = S.convertProgram progSource
@@ -76,8 +80,9 @@ main
           -- Interpret a file.
          ("-interpret":file:progArgs)
           | isSuffixOf ".imp" file
-          -> do str     <- readFile file
-                case S.programOfString (S.preprocess str) of
+          -> do contents   <- readFile file
+                str        <- S.preprocess contents
+                case S.programOfString str of
                  Nothing -> error "parse error"
                  Just progSource
                   -> do let core = S.convertProgram progSource
