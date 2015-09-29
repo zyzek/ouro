@@ -1,4 +1,5 @@
 fun  min(x, y)
+vars cond
 {       
         if (x < y) then
         {
@@ -11,6 +12,7 @@ fun  min(x, y)
 }
 
 fun  max(x, y)
+vars cond
 {       
         if (x > y) then
         {
@@ -105,14 +107,4 @@ vars ctr, cond
                 ctr = (ctr + 1);
         }
         return ((x / (10 ^ (ctr - y))) * (10 ^ (ctr - y)));
-}
-
-
-
-fun  main()
-vars tmp, tmp1
-{       
-        tmp = 1234567;
-        tmp1 = 3;
-        return sigfigs(tmp, tmp1);
 }
