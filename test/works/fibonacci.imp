@@ -1,38 +1,27 @@
-
 fun  fib(n)
-vars cond, pred, prepred
+vars pred, prepred
 {       
-        cond = (n == 0);
-
-        if cond 
-        then {  pred = 0;
-                return pred;
+    if (n == 0) then
+    {
+        return 0;
+    }
+    else
+    {
+        if (n == 1) then
+        {
+            return 1;
         }
-        else {
-                cond = (n == 1);
+        else
+        {
+            pred = (n - 1);
+            prepred = (n - 2);
 
-                if cond
-                then {
-                        pred = 1;
-                        return pred;
-                }
-                else {
-                        pred = (n - 1);
-                        prepred = (n - 2);
-
-                        pred = fib(pred);
-                        prepred = fib(prepred);
-                        cond = (pred + prepred);
-
-                        return cond;
-                }
+            return (fib(pred) + fib(prepred));
         }
+    }
 }
 
-
 fun  main(n)
-vars tmp
 {       
-        tmp = fib(n);
-        return  tmp;
+    return  fib(n);
 }
