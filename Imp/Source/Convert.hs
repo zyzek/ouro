@@ -79,17 +79,26 @@ convertExp (reg0, blk0, S.XApp varId argIds) =
     -- Create the list of load instructions
           loadInstrs = map (\(reg, varId2) -> C.ILoad reg (convertId varId2)) idsAndArgs
 
-convertExp (reg0, blk0, (S.XOp op exp1 exp2)) = 
-    -- Evaluate the two expressions passed into XOp
+convertExp (reg0, blk0, (S.XOpBin op exp1 exp2)) = 
+    -- Evaluate the two expressions passed into XOpBin
     let (reg1, blk1, instrList1) = convertExp (reg0, blk0, exp1)
         (reg2, blk2, instrList2) = convertExp (reg1, blk1, exp2)
     in (
         (reg2 + 1),
         (blk2),
-        -- Join the two instruction lists and add the arithmatic instruction
+        -- Join the two instruction lists and add the arithmetic instruction
         instrList1 ++ instrList2 ++ [
-            C.IArith (convertOp op) (C.Reg reg2) (C.Reg (reg1 - 1)) (C.Reg (reg2 - 1))
+            C.IArith (convertOpBin op) (C.Reg reg2) (C.Reg (reg1 - 1)) (C.Reg (reg2 - 1))
         ]
+    )
+
+convertExp (reg0, blk0, (S.XOpUn op expr)) =
+    -- Evaluate the expression operated on by XOpUn
+    let (reg, blk, instrList) = convertExp (reg0, blk0, expr)
+    in (
+        (reg + 1),
+        (blk),
+        instrList ++ [C.IArith (convertOpUn op) (C.Reg reg) (C.Reg (reg - 1)) (C.Reg (reg - 1))]
     )
 
  -- | - - - - - - - - - - - - -
@@ -244,7 +253,7 @@ convertStmt (reg0, blk0, (S.SReturn expr)) =
     )
 convertStmt (reg0, blk0, (S.SWhile expr blk)) = 
     let (reg1, blk1, cBlkList) = convertBlock (reg0 + 1, blk0 + 1, S.Block [(S.SIf expr blk)])
-        -- These three lines are inconsistant with the function pattern, I'm noob plz 4giff
+        -- These three lines are inconsistent with the function pattern, I'm noob plz 4giff
         (C.Block blkId lstBlkInstrs) = last cBlkList
         truncLstBlk = take ((length lstBlkInstrs) - 2) lstBlkInstrs
         newBlkList = (take ((length cBlkList) - 1) cBlkList) ++ [(C.Block blkId truncLstBlk)]
@@ -316,16 +325,22 @@ convertId :: S.Id -> C.Id
 convertId (S.Id str) = C.Id str
 
 -- | Convert a source operation to a core operation.
-convertOp :: S.Op -> C.OpArith
-convertOp S.OpAdd = C.OpAdd
-convertOp S.OpSub = C.OpSub
-convertOp S.OpMul = C.OpMul
-convertOp S.OpDiv = C.OpDiv
-convertOp S.OpLt = C.OpLt
-convertOp S.OpGt = C.OpGt
-convertOp S.OpEq = C.OpEq
-convertOp S.OpNeq = C.OpNeq
-convertOp S.OpPow = C.OpPow
-convertOp S.OpAnd = C.OpAnd
-convertOp S.OpOr = C.OpOr
-convertOp S.OpMod = C.OpMod
+convertOpBin :: S.OpBin -> C.OpArith
+convertOpBin S.OpAdd = C.OpAdd
+convertOpBin S.OpSub = C.OpSub
+convertOpBin S.OpMul = C.OpMul
+convertOpBin S.OpDiv = C.OpDiv
+convertOpBin S.OpLt = C.OpLt
+convertOpBin S.OpGt = C.OpGt
+convertOpBin S.OpEq = C.OpEq
+convertOpBin S.OpNeq = C.OpNeq
+convertOpBin S.OpPow = C.OpPow
+convertOpBin S.OpAnd = C.OpAnd
+convertOpBin S.OpOr = C.OpOr
+convertOpBin S.OpXor = C.OpXor
+convertOpBin S.OpMod = C.OpMod
+
+convertOpUn :: S.OpUn -> C.OpArith
+convertOpUn S.OpNot = C.OpNot
+convertOpUn S.OpNeg = C.OpNeg
+

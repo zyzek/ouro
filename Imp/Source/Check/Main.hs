@@ -86,7 +86,8 @@ checkIdDefsExp vars funsigs expr
     XNum _            -> []
     XId i             -> checkIdDefsVar vars i
     XApp i args       -> checkFuncApp vars funsigs i args
-    XOp _ e1 e2       -> (checkIdDefsExp vars funsigs e1)
+    XOpUn _ e         -> checkIdDefsExp vars funsigs e
+    XOpBin _ e1 e2    -> (checkIdDefsExp vars funsigs e1)
                          ++ (checkIdDefsExp vars funsigs e2)
 
 

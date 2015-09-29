@@ -31,10 +31,11 @@ data Stmt
 
 -- | Source Expressions.
 data Exp
-        = XNum  Int
-        | XId   Id
-        | XApp  Id [Id]
-        | XOp   Op Exp Exp
+        = XNum    Int
+        | XId     Id
+        | XApp    Id [Id]
+        | XOpBin  OpBin Exp Exp
+        | XOpUn   OpUn Exp
         deriving (Eq, Show)
 
 
@@ -45,7 +46,7 @@ data Id
 
 
 -- | Source Operators.
-data Op
+data OpBin
         = OpAdd
         | OpSub
         | OpMul
@@ -58,6 +59,12 @@ data Op
         | OpNeq
         | OpOr
         | OpAnd
+        | OpXor
+        deriving (Show, Eq)
+
+data OpUn
+        = OpNeg
+        | OpNot
         deriving (Show, Eq)
 
 

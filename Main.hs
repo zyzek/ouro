@@ -62,6 +62,22 @@ main
           | otherwise
           -> error $ "Cannot check " ++ file
 
+         -- Check a library (no main function)
+         ["-checklib", file]
+          | isSuffixOf ".imp" file
+          -> do contents     <- readFile file
+                str          <- S.preprocess contents
+                case S.programOfString str of
+                 Nothing -> error "parse error"
+                 Just prog
+                  -> do let out = unlines 
+                                $ map (\err -> "Error: " ++ S.prettyError err)
+                                $ S.checkLibrary prog
+                        showResult out (file ++ ".check")
+
+          | otherwise
+          -> error $ "Cannot check " ++ file
+
           -- Convert a file.
          ["-convert", file]
           | isSuffixOf ".imp" file
