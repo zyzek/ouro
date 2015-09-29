@@ -1,5 +1,5 @@
 Set: 14th Sep                        Due: 9th Oct 5pm
-[=|=|=|=|=|=|=|=|=|=|=|=|>| | | | | | | | | | | | | ]
+[=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|>| | | | | | | | | ]
              ^ 20th        ^ 27th        ^ 4th
 
 
@@ -9,6 +9,27 @@ Make the Code Style Consistent and Beautiful
 	Ask Ben RE: why some tokens have lower-case second letters,
 				and some have upper case, else make it consistent
 
+
+
+Get expressions working in function arguments
+
+Document invocation and new language features in README
+
+Add more informative error checking
+
+Extension Tasks
+
+	Infix Notation
+		Determine precedence levels, esp unary operators
+		Generalise precedence system to an enumerated hierarchy
+
+
+	☑ While Loops
+
+Tests
+	Succeeding Tests (minimum 10)
+
+	Failing Tests (minimum 2)
 
 ☑ Input Language Parsing + Syntax and Semantics Analysis 	17th Sep
 	☑ Input Language Parsing								15th Sep
@@ -28,7 +49,7 @@ Make the Code Style Consistent and Beautiful
 	 ☑ Duplicated Variable/Argument Definitions
 	 ☑ No Main Function
 	 ☑ Syntax Error
-	 	I'm guessing this means the parse failed? Shall ask Ben.
+	 	This just means the parse failed.
 	 	Adding more informative error messages
 	 	might require nested Monads so that the type
 	 	being passed around is Either Parser -- plus an Error
@@ -40,7 +61,7 @@ Intermediate Code Generation
 		--PARTIAL-- Work out how to require Functions and Blocks 
 		to be constituted of non-empty Block and Instr lists.
 	
-	Variable Zero Initialisation
+	☑ Variable Zero Initialisation
 
 	☑ Basic Block Enumeration
 	
@@ -69,21 +90,3 @@ Intermediate Code Generation
 		☑ Branch
 		☑ Return
 		☑ Call
-
-
-Extension Task
-	Choose One Or Both
-
-	Infix Notation
-		If we define the grammar correctly, should
-		be able to achieve operator precedence without extra
-		work, I suspect.
-
-	While Loops
-	-- PARTIAL -- Parsing working.
-
-
-Tests
-	Succeeding Tests (minimum 10)
-
-	Failing Tests (minimum 2)

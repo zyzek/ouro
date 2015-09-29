@@ -13,6 +13,33 @@ vars count, total
     return total;
 }
 
+fun fibonacci(n)
+vars tmp, pred, prepred, sign
+{
+	if (n < 0) then 
+	{ 
+		n = -n;
+		sign = (((n % 2) * 2) - 1);
+	}
+	else 
+	{
+		sign = 1;
+	} 
+	pred = 1;
+	prepred = 0;
+
+	while (n != 0)
+	{
+		tmp = pred;
+		pred = (prepred + pred); 
+		prepred = tmp;
+
+		n = (n - 1);
+	}
+
+	return (prepred * sign);
+}
+
 
 fun  binom(n, r)
 vars d
