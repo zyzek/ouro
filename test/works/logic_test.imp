@@ -1,0 +1,31 @@
+fun not(a)
+vars cond, one, zero
+{
+	cond = (a == 0);
+	one = 1;
+	zero = 0; 
+
+	if cond then
+	{
+		return one;
+	}
+	else 
+	{
+		return zero;
+	}
+}
+
+fun xor(a, b)
+vars result
+{
+	result = ((not(a) & b) | (a & not(b))); 
+	return result;
+
+}
+
+fun main(a, b)
+vars result
+{
+	result = xor(a, b);
+	return result;
+}

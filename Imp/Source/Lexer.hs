@@ -43,14 +43,22 @@ token
 atoms :: [(String, Token)]
 atoms
  =      [ -- operators
-          ("+",         KOp "+")
-        , ("-",         KOp "-")
+          ("^",         KOp "^")
+
         , ("*",         KOp "*")
         , ("/",         KOp "/")
+
+        , ("+",         KOp "+")
+        , ("-",         KOp "-")
+
+        , ("|",         KOp "|")
+        , ("&",         KOp "&")
+
         , ("<",         KOp "<")
         , (">",         KOp ">")
         , ("==",        KOp "==")
         , ("!=",        KOp "!=")
+        
 
           -- punctuation
         , ("(",         KRoundBra)

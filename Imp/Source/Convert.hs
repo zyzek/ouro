@@ -325,3 +325,6 @@ convertOp S.OpLt = C.OpLt
 convertOp S.OpGt = C.OpGt
 convertOp S.OpEq = C.OpEq
 convertOp S.OpNeq = C.OpNeq
+convertOp S.OpPow = C.OpPow
+convertOp S.OpAnd = C.OpAnd
+convertOp S.OpOr = C.OpOr
