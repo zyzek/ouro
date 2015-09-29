@@ -11,8 +11,8 @@ preprocess source main
             [] -> ([], source)
             l  -> head l
        readFileAddLine path
-        = if ((head path) == '.') 
-           then (do contents <- readFile ((intercalate "/" (init (split "/" main))) ++ path ++ ".imp")
+        = if ((head path) == '.' || (head path) == '/') 
+           then (do contents <- readFile ((intercalate "/" (init (split "/" main))) ++ "/" ++ path ++ ".imp")
                     return $ contents ++ "\n")
            else (do contents <- readFile ("lib/" ++ path ++ ".imp")
                     return $ contents ++ "\n")
