@@ -17,7 +17,7 @@ vars i
 
 	while (i < 10) 
 	{
-		print triangular(p);
+		print triangular(i);
 		i (+)= 1;
 	}
 

@@ -104,6 +104,7 @@ convertExp (reg0, blk0, stmt) =
                 S.XAssign  varId expr        -> convertStmt (reg0, blk0, S.SAssign varId expr)
                 S.XFAssign varId funcId expr -> convertStmt (reg0, blk0, S.SFAssign varId funcId expr)
                 S.XBAssign varId op     expr -> convertStmt (reg0, blk0, S.SBAssign varId op expr)
+                -- Next line should never happen.
                 _                            -> convertStmt (reg0, blk0, S.SExp (S.XNum 0))
     in (
         (reg1),
