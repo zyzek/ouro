@@ -1,0 +1,13 @@
+#include "./one"
+#include "./multincluded"
+
+fun main()
+vars x
+{
+	print mult();
+	one();
+	two();
+	three();
+	
+	return 0;
+}

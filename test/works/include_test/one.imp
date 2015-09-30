@@ -1,0 +1,7 @@
+#include "./two"
+
+fun one()
+{
+	print 1;
+	return 1;
+}

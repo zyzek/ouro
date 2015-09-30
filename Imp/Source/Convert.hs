@@ -282,7 +282,14 @@ convertStmt (reg, blk, (S.SPrint expr)) =
       ],
       []
      )
-
+convertStmt (reg, blk, (S.SExp expr)) =
+  let (reg1, blk1, condList) = convertExp (reg, blk, expr)
+  in (
+      reg1 + 1,
+      blk1,
+      condList,
+      []
+     )
 
 
 -- | Convert a list of source statements to a list of core block properties and core blocks.

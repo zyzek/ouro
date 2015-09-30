@@ -79,6 +79,7 @@ checkIdDefsStmt vars funsigs stmt
     SWhile expr b      -> (checkIdDefsExp vars funsigs expr)
                         ++ (checkIdDefsBlock vars funsigs b)
     SPrint expr        -> checkIdDefsExp vars funsigs expr
+    SExp expr          -> checkIdDefsExp vars funsigs expr
 
 
 checkIdDefsExp :: [Id] -> [(Id, Int)] -> Exp -> [Error]

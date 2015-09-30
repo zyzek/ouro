@@ -1,5 +1,4 @@
 #include "numbers"
-#include "math"
 
 fun main(a, b)
 vars gcd, prod, p
