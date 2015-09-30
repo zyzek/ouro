@@ -87,4 +87,5 @@ atoms
         , ("while",     Kwhile)
         , ("true",      Ktrue)
         , ("false",     Kfalse)
+        , ("print",     Kprint)
         ] 

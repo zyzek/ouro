@@ -26,6 +26,7 @@ data Token
         | Kelse                 -- else
         | Kreturn               -- return
         | Kwhile                -- while
+        | Kprint                -- print
         | Ktrue                 -- true
         | Kfalse                -- false
         deriving (Show, Eq)

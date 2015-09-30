@@ -85,10 +85,17 @@ stmt
        only KSemi
        return $ SReturn i
 
+  -- while
   , do only Kwhile
        cond       <- expr
        body       <- block
-       return $ SWhile cond body
+       return     $  SWhile cond body
+
+  -- print
+  , do only Kprint
+       e          <- expr
+       only KSemi
+       return     $  SPrint e
  ]
 
 
