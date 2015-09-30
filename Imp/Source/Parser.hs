@@ -141,6 +141,11 @@ expr
         arg_list <- exprArgs
         return   $ XApp i arg_list
 
+        -- ouroboros operation
+ , do   only Kouro
+        arg_list <- exprArgs
+        return   $ XCApp arg_list
+
         -- single identifier
  , do   i        <- ident
         return   $ XId i

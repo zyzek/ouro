@@ -180,7 +180,7 @@ fun gcd(a, b)
         return b;
     }
 
-    return gcd(b, (a % b));
+    return @(b, (a % b));
 }
 
 fun triangular(n) 
@@ -199,11 +199,11 @@ fun ackermann(m, n)
     {
         if !n then 
         {
-            return ackermann((m - 1), 1);
+            return @((m - 1), 1);
         }
         else
         {
-            return ackermann((m - 1), ackermann(m, (n - 1)));
+            return @((m - 1), @(m, (n - 1)));
         }
     }
 }
@@ -220,5 +220,5 @@ fun knuthUpArrow(a, b, p)
         return a;
     }
 
-    return knuthUpArrow(a, knuthUpArrow(a, (b - 1), p), (p - 1));
+    return @(a, @(a, (b - 1), p), (p - 1));
 }

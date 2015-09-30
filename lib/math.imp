@@ -81,8 +81,7 @@ fun  ceil(x, y)
 
 fun  round(x, y)
 {         
-    x (+)= (y / 2);
-    return (x - (x % y));
+    return floor((x + (y / 2)), y);
 }
 
 fun  trunc(x, y)

@@ -1,6 +1,0 @@
-#include "math"
-
-fun main(x, y)
-{
-	return max(x, y);
-}

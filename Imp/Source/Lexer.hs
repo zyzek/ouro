@@ -78,6 +78,7 @@ atoms
         , ("=",         KEquals)
   
           -- keywords
+        , ("@",         Kouro)
         , ("fun",       Kfun)
         , ("vars",      Kvars)
         , ("if",        Kif)
