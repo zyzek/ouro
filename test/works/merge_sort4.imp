@@ -3,28 +3,32 @@
 fun  main(a, b, c, d)
 vars a2, b2, c2, d2
 {       
+
     tmp = max(a, b);
-    a = min(a, b);
+    a (min)= b;
     b = tmp;
 
     tmp = max(c, d);
-    c = min(c, d);
+    c (min)= d;
     d = tmp;
 
-    a2 = min(a, c);
-    b2 = min(a, d);
-    b2 = min(b2, b);
-    c2 = min(d, b);
-    d2 = max(d, b);
+    
+    aR  = min(a, c);
+    aO  = max(a, c);
+    b2  = min(aO, d);
+    b22 = min(b, aO);
+    bR  = min(b2, b22);
+    cR  = max(b2, b22);
+    dR  = max(d, b);
 
-    a = a2;
-    b = b2;
-    c = c2;
-    d = d2;
+    a = aR;
+    b = bR;
+    c = cR;
+    d = dR;
 
     print a;
     print b;
     print c;
 
-    return d;
+    d
 }

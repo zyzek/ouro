@@ -1,30 +1,16 @@
 fun  min(x, y)
 {       
-    if (x < y) then
-    {
-        return x;
-    }
-    else
-    {
-        return y;
-    }
+    ?((x < y), x, y)
 }
 
 fun  max(x, y)
 {       
-    if (x > y) then
-    {
-        return x;
-    }
-    else
-    {
-        return y;
-    }
+    ?((x > y), x, y)
 }
 
 fun  not(x)
 {       
-    return (x == 0);
+    (x == 0)
 }
 
 fun  fromBase(x, y)
@@ -45,7 +31,8 @@ vars next, ctr, ret
         ctr (+)= 1;
         next (/)= 10;
     }
-    return ret;
+    
+    ret
 }
 
 fun  toBase(x, y)
@@ -66,27 +53,28 @@ vars next, ctr, ret
         ctr (+)= 1;
         next (/)= 10;
     }
-    return ret;
+
+    ret
 }
 
 fun  floor(x, y)
 {          
-    return (x - (x % y));
+    (x - (x % y))
 }
 
 fun  ceil(x, y)
 {          
-    return ((x - (x % y)) + y);
+    ((x - (x % y)) + y)
 }
 
 fun  round(x, y)
 {         
-    return floor((x + (y / 2)), y);
+    floor((x + (y / 2)), y)
 }
 
 fun  trunc(x, y)
 {          
-    return ((x / (10 ^ y)) * (10 ^ y));
+    ((x / (10 ^ y)) * (10 ^ y))
 }
 
 fun  sigfigs(x, y)
@@ -99,15 +87,16 @@ vars ctr, cond
         cond (/)= 10;
         ctr (+)= 1;
     }
-    return ((x / (10 ^ (ctr - y))) * (10 ^ (ctr - y)));
+
+    ((x / (10 ^ (ctr - y))) * (10 ^ (ctr - y)))
 }
 
 fun abs(x)
 {
-    if (x >= 0) then {return x;} else {return -x;}
+    ?((x >= 0), x, -x)
 }
 
 fun clamp(x, low, high)
 {
-    return min(max(x, low), high);
+    min(max(x, low), high)
 }

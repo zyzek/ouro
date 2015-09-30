@@ -9,7 +9,7 @@ vars total
         n (-)= 1;
     }
     
-    return total;
+    total
 }
 
 
@@ -37,25 +37,25 @@ vars tmp, pred, prepred, sign
         n (-)= 1;
     }
 
-    return (prepred * sign);
+    (prepred * sign)
 }
 
 
 fun perm(n, r)
 {
-    return (factorial(n) / factorial((n - r)));
+    (factorial(n) / factorial((n - r)))
 }
 
 
 fun  binom(n, r)
 {   
-    return (perm(n,r) / factorial(r));
+    (perm(n,r) / factorial(r))
 }
 
 
 fun catalan(n)
 {
-    return (binom((2 * n), n) / (n + 1));
+    (binom((2 * n), n) / (n + 1))
 }
 
 
@@ -68,7 +68,7 @@ vars val
         val (+)= 1;
     }
 
-    return (val - 1);    
+    (val - 1)
 }
 
 
@@ -88,7 +88,7 @@ vars max, factor
         factor (+)= 1;
     } 
 
-    return (n > 1);
+    (n > 1)
 }
 
 
@@ -105,14 +105,10 @@ vars pcount, cand
     while (pcount < n) 
     {
         cand (+)= 1;
-
-        if isPrime(cand) then
-        {
-            pcount (+)= 1;
-        }
+        pcount (+)= isPrime(cand);
     }
 
-    return cand;
+    cand
 }
 
 fun numPrimeDivisors(n) 
@@ -134,7 +130,7 @@ vars i, p, k
         }
     }
 
-    return k;
+    k
 }
 
 fun phi(n) 
@@ -152,73 +148,23 @@ vars i, p, k, pPhi, result
 		}
 		else
 		{
-			if (k > 0) then
-			{
-				result (*)= ((p ^ (k - 1)) * (p - 1));
-				k = 0;
-			}
+			result (*)= ((k > 0) * ((p ^ (k - 1)) * (p - 1)));
+			k = !(k > 0);
 
 			i (+)= 1;
 			p = prime(i);
 		}
 	}
 
-	if (k > 0) then
-		{
-			result (*)= ((p ^ (k - 1)) * (p - 1));
-			k = 0;
-		}
-
-	return result;
+	(result * ((k > 0) * ((p ^ (k - 1)) * (p - 1))))
 }
 
 
-fun gcd(a, b)
-{
-    if !(a % b) then 
-    {
-        return b;
-    }
+fun gcd(a,b){?(!(a%b),b,@(b,(a%b)))}
 
-    return @(b, (a % b));
-}
 
-fun triangular(n) 
-{
-    return (((n + 1) * n) / 2);
-}
+fun triangular(n){(((n+1)*n)/2)}
 
-fun ackermann(m, n)
-{
+fun ackermann(m, n){?(!m,(n+1),?(!n,@((m-1),1),@((m-1),@(m,(n-1)))))}
 
-    if !m then
-    {
-        return (n + 1);
-    }
-    else 
-    {
-        if !n then 
-        {
-            return @((m - 1), 1);
-        }
-        else
-        {
-            return @((m - 1), @(m, (n - 1)));
-        }
-    }
-}
-
-fun knuthUpArrow(a, b, p) 
-{
-    if (p == 1) then
-    {
-        return (a ^ b);
-    }
-
-    if (b == 1) then
-    {
-        return a;
-    }
-
-    return @(a, @(a, (b - 1), p), (p - 1));
-}
+fun knuthUpArrow(a,b,p){?((p==1),(a^b),?((b==1),a,@(a,@(a,(b-1),p),(p-1))))}

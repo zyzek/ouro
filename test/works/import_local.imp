@@ -1,6 +1,2 @@
 #include "../../lib/math"
-
-fun main(x, y)
-{
-    return max(x, y);
-}
+fun main(x, y){max(x, y)}
