@@ -3,6 +3,7 @@ import Data.List.Utils
 import Imp.Core.Exp
 import Data.Maybe
 import Data.List
+import Debug.Trace
 
 
 data Env = Env { eReg :: [(Reg, Int)], eVar :: [(Id, Int)] } deriving Show
@@ -54,6 +55,7 @@ storeReg :: Env -> Id -> Reg -> Env
 storeReg env varId src
  = setVar env varId (getReg env src)
 
+
 makeNRegs :: Int -> [Reg]
 makeNRegs n
  = unfoldr (\b -> if b == 0 then Nothing else Just (Reg b, b - 1)) n
@@ -99,6 +101,7 @@ step sArgs@(StepArgs env funcs func (Block blockId (i:is)) gReg) =
             if (getReg env regCond /= 0)
              then step $ setBlock sArgs $ lookupBlock blk1Id $ fBlocks func
              else step $ setBlock sArgs $ lookupBlock blk2Id $ fBlocks func
+        IPrint pReg                     -> trace (show (getReg env pReg)) (step newArgs)
 
  
 lookupFunc :: Id -> [Function] -> Function

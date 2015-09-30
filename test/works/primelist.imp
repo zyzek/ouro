@@ -1,0 +1,13 @@
+#include "numbers"
+
+fun main(n)
+vars counter
+{
+	while (counter < n)
+	{
+		counter = (counter + 1);
+		print prime(counter);
+	}
+
+	return 0;
+}

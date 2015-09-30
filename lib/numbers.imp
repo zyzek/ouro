@@ -179,7 +179,7 @@ vars i, p, k, pPhi, result
 
 
 fun gcd(a, b)
-vars c 
+vars r 
 {
 
 	if !(a % b) then 
