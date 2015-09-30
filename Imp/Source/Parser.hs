@@ -47,10 +47,18 @@ vars
 
 block :: Id -> Parser Token Block
 block curFuncId
- = do   only KBraceBra
+ = alts
+ [ 
+   do   only KBraceBra
         stmt_list      <- (some (stmt curFuncId))
         only KBraceKet
         return         $ Block stmt_list
+ , do   only KBraceBra
+        stmt_list      <- (some (stmt curFuncId))
+        e              <- expr curFuncId
+        only KBraceKet
+        return         $ Block (stmt_list ++ [SReturn e])
+ ]
 
 
 stmt :: Id -> Parser Token Stmt
