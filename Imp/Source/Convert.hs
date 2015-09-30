@@ -87,7 +87,6 @@ convertExp (reg0, blk0, (S.XOpBin op exp1 exp2)) =
             C.IArith (convertOpBin op) (C.Reg reg2) (C.Reg (reg1 - 1)) (C.Reg (reg2 - 1))
         ]
     )
-
 convertExp (reg0, blk0, (S.XOpUn op expr)) =
     -- Evaluate the expression operated on by XOpUn
     let (reg, blk, instrList) = convertExp (reg0, blk0, expr)
@@ -96,10 +95,22 @@ convertExp (reg0, blk0, (S.XOpUn op expr)) =
         (blk),
         instrList ++ [C.IArith (convertOpUn op) (C.Reg reg) (C.Reg (reg - 1)) (C.Reg (reg - 1))]
     )
+convertExp (reg0, blk0, stmt) =
+    let (reg1, blk1, instrList, _) = 
+            case stmt of 
+                S.XAssign  varId expr        -> convertStmt (reg0, blk0, S.SAssign varId expr)
+                S.XFAssign varId funcId expr -> convertStmt (reg0, blk0, S.SFAssign varId funcId expr)
+                S.XBAssign varId op     expr -> convertStmt (reg0, blk0, S.SBAssign varId op expr)
+                _                            -> convertStmt (reg0, blk0, S.SExp (S.XNum 0))
+    in (
+        (reg1),
+        (blk1),
+        instrList
+    )
 
  -- | - - - - - - - - - - - - -
  -- | 
- -- | Convert Expression
+ -- | Convert Statement
  -- | 
  -- | Converts a source statement into a list of core instructions and core blocks.
  -- |

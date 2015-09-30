@@ -141,6 +141,36 @@ expr curFuncId
         arg_list <- exprArgs curFuncId
         return   $ XApp i arg_list
 
+        -- Assign expression
+ , do   only KRoundBra
+        i        <- ident
+        only KEquals
+        e          <- expr curFuncId
+        only KRoundKet
+        return     $ XAssign i e
+
+        -- FAssign expression
+ , do   only KRoundBra
+        i          <- ident
+        only KRoundBra
+        f          <- ident
+        only KRoundKet
+        only KEquals
+        e          <- expr curFuncId
+        only KRoundKet
+        return     $ XFAssign i f e
+
+        -- BAssign expression
+ , do   only KRoundBra
+        i          <- ident
+        only KRoundBra
+        f          <- binoper
+        only KRoundKet
+        only KEquals
+        e          <- expr curFuncId
+        only KRoundKet
+        return     $ XBAssign i f e
+
         -- ouroboros operation
  , do   only Kouro
         arg_list <- exprArgs curFuncId

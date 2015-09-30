@@ -81,7 +81,7 @@ checkIdDefsStmt vars funsigs stmt
                               ++ (checkIdDefsBlock vars funsigs b2)
     SReturn expr            -> checkIdDefsExp vars funsigs expr
     SWhile expr b           -> (checkIdDefsExp vars funsigs expr)
-                             ++ (checkIdDefsBlock vars funsigs b)
+                              ++ (checkIdDefsBlock vars funsigs b)
     SPrint expr        -> checkIdDefsExp vars funsigs expr
     SExp expr          -> checkIdDefsExp vars funsigs expr
 
@@ -89,12 +89,18 @@ checkIdDefsStmt vars funsigs stmt
 checkIdDefsExp :: [Id] -> [(Id, Int)] -> Exp -> [Error]
 checkIdDefsExp vars funsigs expr
  = case expr of
-    XNum _            -> []
-    XId i             -> checkIdDefsVar vars i
-    XApp i args       -> checkFuncApp vars funsigs i args
-    XOpUn _ e         -> checkIdDefsExp vars funsigs e
-    XOpBin _ e1 e2    -> (checkIdDefsExp vars funsigs e1)
-                         ++ (checkIdDefsExp vars funsigs e2)
+    XNum _              -> []
+    XId i               -> checkIdDefsVar vars i
+    XApp i args         -> checkFuncApp vars funsigs i args
+    XOpUn _ e           -> checkIdDefsExp vars funsigs e
+    XOpBin _ e1 e2      -> (checkIdDefsExp vars funsigs e1)
+                          ++ (checkIdDefsExp vars funsigs e2)
+    XAssign i e         -> (checkIdDefsVar vars i)
+                          ++ (checkIdDefsExp vars funsigs e)
+    XFAssign i _ e      -> (checkIdDefsVar vars i) 
+                          ++ (checkIdDefsExp vars funsigs e)
+    XBAssign i _ e      -> (checkIdDefsVar vars i) 
+                          ++ (checkIdDefsExp vars funsigs e)
 
 
 -- | Check that a function is defined, has the correct number of arguments, which must each exist.
