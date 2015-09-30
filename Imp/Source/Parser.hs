@@ -30,6 +30,13 @@ args
         only KRoundKet
         return arg_list
 
+exprArgs :: Parser Token [Exp]
+exprArgs
+ = do   only KRoundBra
+        arg_list       <- (alt exprs (result []))
+        only KRoundKet
+        return arg_list
+
 
 vars :: Parser Token [Id]
 vars
@@ -55,6 +62,22 @@ stmt
        e          <- expr
        only KSemi
        return     $ SAssign i e
+ , do  i          <- ident
+       only KRoundBra
+       f          <- ident
+       only KRoundKet
+       only KEquals
+       e          <- expr
+       only KSemi
+       return     $ SFAssign i f e
+ , do  i          <- ident
+       only KRoundBra
+       f          <- binoper
+       only KRoundKet
+       only KEquals
+       e          <- expr
+       only KSemi
+       return     $ SBAssign i f e
 
    -- if-then-else
    --  Must appear before if-then; Since if-then is a prefix 
@@ -115,7 +138,7 @@ expr
         -- function application
         -- Must appear before single identifier: see above
  , do   i        <- ident
-        arg_list <- args
+        arg_list <- exprArgs
         return   $ XApp i arg_list
 
         -- single identifier
@@ -208,7 +231,7 @@ ident
         return  $ Id i
 
 
--- | Parse arguments separated by commas.
+-- | Parse arguments as Ids separated by commas.
 idents :: Parser Token [Id]
 idents
  = alts
@@ -218,6 +241,20 @@ idents
         return  $ i : is
 
  , do   i       <- ident
+        return  [i]
+ ]
+
+
+-- | Parse arguments as Expressions separated by commas.
+exprs :: Parser Token [Exp]
+exprs
+ = alts
+ [ do   i       <- expr
+        only KComma
+        is      <- exprs
+        return  $ i : is
+
+ , do   i       <- expr
         return  [i]
  ]
 
