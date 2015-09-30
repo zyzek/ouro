@@ -19,7 +19,8 @@ data Token
         | KEquals               -- '='
 
         -- Keywords
-        | Kouro                 -- @
+        | KOuroboros            -- @
+        | KTernary              -- ?
         | Kfun                  -- fun
         | Kvars                 -- vars
         | Kif                   -- if

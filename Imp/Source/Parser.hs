@@ -172,9 +172,20 @@ expr curFuncId
         return     $ XBAssign i f e
 
         -- ouroboros operation
- , do   only Kouro
+ , do   only KOuroboros
         arg_list <- exprArgs curFuncId
         return   $ XApp curFuncId arg_list
+
+        -- ternary operation
+ , do   only KTernary
+        only KRoundBra
+        a          <- expr curFuncId
+        only KComma
+        b          <- expr curFuncId
+        only KComma
+        c          <- expr curFuncId
+        only KRoundKet
+        return   $ XTernary a b c
 
         -- single identifier
  , do   i        <- ident

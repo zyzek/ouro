@@ -43,6 +43,7 @@ data Exp
         | XAssign  Id Exp
         | XFAssign Id Id Exp
         | XBAssign Id OpBin Exp
+        | XTernary Exp Exp Exp
         deriving (Eq, Show)
 
 

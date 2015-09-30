@@ -101,6 +101,9 @@ checkIdDefsExp vars funsigs expr
                           ++ (checkIdDefsExp vars funsigs e)
     XBAssign i _ e      -> (checkIdDefsVar vars i) 
                           ++ (checkIdDefsExp vars funsigs e)
+    XTernary e1 e2 e3   -> (checkIdDefsExp vars funsigs e1)
+                          ++ (checkIdDefsExp vars funsigs e2)
+                          ++ (checkIdDefsExp vars funsigs e3)
 
 
 -- | Check that a function is defined, has the correct number of arguments, which must each exist.
