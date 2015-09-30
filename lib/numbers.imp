@@ -41,19 +41,17 @@ vars tmp, pred, prepred, sign
 }
 
 
-fun  binom(n, r)
-vars d
-{   
-    d = (n - r);
-    return (factorial(n) / (factorial(d) * factorial(r)));
-}
-
-
 fun perm(n, r)
 vars d
 {
 	d = (n - r);
 	return (factorial(n) / factorial(d));
+}
+
+
+fun  binom(n, r)
+{   
+    return (perm(n,r) / factorial(r));
 }
 
 
@@ -196,4 +194,49 @@ vars c
 fun triangular(n) 
 {
 	return (((n + 1) * n) / 2);
+}
+
+fun ackermann(m, n)
+vars mdec, ndec 
+{
+	if !m then
+	{
+		return (n + 1);
+	}
+	else 
+	{
+		mdec = (m - 1);
+		
+		if !n then 
+		{
+			ndec = 1;
+			return ackermann(mdec, ndec);
+		}
+		else
+		{
+			ndec = (n - 1);
+			ndec = ackermann(m, ndec);
+			return ackermann(mdec, ndec);
+		}
+	}
+}
+
+fun knuthUpArrow(a, b, p) 
+vars r, pdec, bdec
+{
+	if (p == 1) then
+	{
+		return (a^b);
+	}
+
+	if (b == 1) then
+	{
+		return a;
+	}
+
+	pdec = (p - 1);
+	bdec = (b - 1);
+
+	r = knuthUpArrow(a, bdec, p);
+	return knuthUpArrow(a, r, pdec);
 }
