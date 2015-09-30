@@ -22,10 +22,9 @@ vars a2, b2, c2, d2
     c = c2;
     d = d2;
 
-    a = (a * 1000);
-    b = (b * 100);
-    c = (c * 10);
-    d = (d * 1);
+    print a;
+    print b;
+    print c;
 
-    return ((a + b) + (c + d));
+    return d;
 }

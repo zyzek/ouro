@@ -2,10 +2,6 @@
 #include "math"
 
 fun main(a, b)
-vars gcd, prod, p
 {
-	p = phi(a);
-	prod = (a*b);
-	gcd = gcd(a, b);
-	return (((isPrime(gcd) * (prime(a) * prime(b))) + numPrimeDivisors(prod)) + p);
+	return (((isPrime(gcd(a, b)) * (prime(a) * prime(b))) + numPrimeDivisors((a * b))) + phi(a));
 }

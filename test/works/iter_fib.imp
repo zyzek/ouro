@@ -1,5 +1,4 @@
-
-fun  fib(n)
+fun  main(n)
 vars tmp, pred, prepred
 {       
     pred = 1;
@@ -8,17 +7,11 @@ vars tmp, pred, prepred
     while (n != 0)
     {
         tmp = pred;
-        pred = (prepred + pred);
+        pred (+)= prepred;
         prepred = tmp;
         
-        n = (n - 1);
+        n (-)= 1;
     }
 
     return prepred;
-}
-
-
-fun  main(n)
-{       
-    return  fib(n);
 }
