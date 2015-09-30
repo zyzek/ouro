@@ -47,11 +47,10 @@ vars tmp
     b = tmp;
 
 
-    a = (a * 10000);
-    b = (b * 1000);
-    c = (c * 100);
-    d = (d * 10);
-    e = (e * 1);
+    print a;
+    print b;
+    print c;
+    print d;
 
-    return (((a + b) + (c + d)) + e);
+    return e;
 }

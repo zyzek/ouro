@@ -5,7 +5,7 @@ vars counter
 {
 	while (counter < n)
 	{
-		counter = (counter + 1);
+		counter (+)= 1;
 		print prime(counter);
 	}
 

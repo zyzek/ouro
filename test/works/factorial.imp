@@ -1,17 +1,4 @@
-fun  factorial(n)
-vars tmp
-{       
-    if (n == 0) then
-    {
-        return 1;
-    }
-    else
-    {
-        return (factorial((n - 1)) * n);
-    }
-}
-
-fun  main(n)
-{       
-    return factorial(n);
+fun main(n)
+{ 
+    return ((n == 0) | (main((n - 1)) * n));
 }
