@@ -1,10 +1,27 @@
 #include "numbers"
 
-fun main(a, b)
-vars gcd, prod, p
+fun main()
+vars p
 {
-	p = phi(a);
-	prod = (a*b);
-	gcd = gcd(a, b);
-	return (((isPrime(gcd) * (prime(a) * prime(b))) + numPrimeDivisors(prod)) + p);
+	print ackermann(2, 2);
+	print fibonacci(-4);
+	print catalan(5);
+	print sqrt(256);
+	print isPrime(47);
+	print isPrime(20);
+	print prime(10);
+	print numPrimeDivisors(1024);
+	print phi(36);
+	print gcd(13, 299);
+	print gcd(20, 45);
+
+	while (p < 10) 
+	{
+		print triangular(p);
+		p (+)= 1;
+	}
+
+	print knuthUpArrow(3, 2, 2);
+
+	return -123;
 }

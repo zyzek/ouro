@@ -2,12 +2,11 @@ fun  factorial(n)
 vars count, total
 {       
     total = 1;
-    count = 0;
 
     while (count < n) 
     {       
-        count = (count + 1);
-        total = (total * count);
+        count (+)= 1;
+        total (*)= count;
     }
     
     return total;
@@ -34,7 +33,7 @@ vars tmp, pred, prepred, sign
 		pred = (prepred + pred); 
 		prepred = tmp;
 
-		n = (n - 1);
+		n (-)= 1;
 	}
 
 	return (prepred * sign);
@@ -42,10 +41,8 @@ vars tmp, pred, prepred, sign
 
 
 fun perm(n, r)
-vars d
 {
-	d = (n - r);
-	return (factorial(n) / factorial(d));
+	return (factorial(n) / factorial((n - r)));
 }
 
 
@@ -56,10 +53,8 @@ fun  binom(n, r)
 
 
 fun catalan(n)
-vars m
 {
-	m = (2 * n);
-	return (binom(m, n) / (n + 1));
+	return (binom((2 * n), n) / (n + 1));
 }
 
 
@@ -68,7 +63,7 @@ vars val
 {
 	while ((val^2) <= n)
 	{
-		val = (val + 1);
+		val (+)= 1;
 	}
 
 	return (val - 1);	
@@ -88,7 +83,7 @@ vars max, factor
 			return false;
 		}
 
-		factor = (factor + 1);
+		factor (+)= 1;
 	} 
 
 	if (n <= 1) then {return false;} else {return true;}
@@ -107,11 +102,11 @@ vars pcount, cand
 
 	while (pcount < n) 
 	{
-		cand = (cand + 1);
+		cand (+)= 1;
 
 		if isPrime(cand) then
 		{
-			pcount = (pcount + 1);
+			pcount (+)= 1;
 		}
 	}
 
@@ -127,12 +122,12 @@ vars i, p, k
 	while (n > 1) {
 		if !(n % p) then
 		{
-			k = (k + 1);
-			n = (n / p);
+			k (+)= 1;
+			n (/)= p;
 		}
 		else
 		{
-			i = (i + 1);
+			i (+)= 1;
 			p = prime(i);
 		}
 	}
@@ -150,27 +145,25 @@ vars i, p, k, pPhi, result
 	while (n > 1) {
 		if !(n % p) then
 		{
-			k = (k + 1);
-			n = (n / p);
+			k (+)= 1;
+			n (/)= p;
 		}
 		else
 		{
 			if (k > 0) then
 			{
-				pPhi = ((p^(k - 1)) * (p - 1));
-				result = (result * pPhi);
+				result (*)= ((p^(k - 1)) * (p - 1));
 				k = 0;
 			}
 
-			i = (i + 1);
+			i (+)= 1;
 			p = prime(i);
 		}
 	}
 
 	if (k > 0) then
 		{
-			pPhi = ((p^(k - 1)) * (p - 1));
-			result = (result * pPhi);
+			result (*)= ((p^(k - 1)) * (p - 1));
 			k = 0;
 		}
 
@@ -179,16 +172,12 @@ vars i, p, k, pPhi, result
 
 
 fun gcd(a, b)
-vars r 
 {
-
 	if !(a % b) then 
 	{
 		return b;
 	}
-
-	r = (a % b);
-	return gcd(b, r);
+	return gcd(b, (a % b));
 }
 
 fun triangular(n) 
@@ -197,26 +186,20 @@ fun triangular(n)
 }
 
 fun ackermann(m, n)
-vars mdec, ndec 
 {
 	if !m then
 	{
 		return (n + 1);
 	}
-	else 
+	else
 	{
-		mdec = (m - 1);
-		
 		if !n then 
 		{
-			ndec = 1;
-			return ackermann(mdec, ndec);
+			return ackermann((m - 1), 1);
 		}
 		else
 		{
-			ndec = (n - 1);
-			ndec = ackermann(m, ndec);
-			return ackermann(mdec, ndec);
+			return ackermann( (m - 1), ackermann(m, (n - 1)) );
 		}
 	}
 }
@@ -234,9 +217,6 @@ vars r, pdec, bdec
 		return a;
 	}
 
-	pdec = (p - 1);
-	bdec = (b - 1);
-
-	r = knuthUpArrow(a, bdec, p);
-	return knuthUpArrow(a, r, pdec);
+	r = knuthUpArrow(a, (b - 1), p);
+	return knuthUpArrow(a, r, (p - 1));
 }
