@@ -68,16 +68,20 @@ checkIdDefsBlock vars funsigs (Block stmts)
 checkIdDefsStmt :: [Id] -> [(Id, Int)] -> Stmt -> [Error]
 checkIdDefsStmt vars funsigs stmt
  = case stmt of
-    SAssign var expr  -> (checkIdDefsVar vars var) 
-                         ++ (checkIdDefsExp vars funsigs expr)
-    SIf expr block     -> (checkIdDefsExp vars funsigs expr)
-                         ++ (checkIdDefsBlock vars funsigs block)
-    SIfElse expr b1 b2 -> (checkIdDefsExp vars funsigs expr) 
-                         ++ (checkIdDefsBlock vars funsigs b1) 
-                         ++ (checkIdDefsBlock vars funsigs b2)
-    SReturn expr       -> checkIdDefsExp vars funsigs expr
-    SWhile expr b      -> (checkIdDefsExp vars funsigs expr)
-                        ++ (checkIdDefsBlock vars funsigs b)
+    SAssign var expr        -> (checkIdDefsVar vars var) 
+                              ++ (checkIdDefsExp vars funsigs expr)
+    SFAssign var _ expr     -> (checkIdDefsVar vars var) 
+                              ++ (checkIdDefsExp vars funsigs expr)
+    SBAssign var _ expr     -> (checkIdDefsVar vars var) 
+                              ++ (checkIdDefsExp vars funsigs expr)
+    SIf expr block          -> (checkIdDefsExp vars funsigs expr)
+                              ++ (checkIdDefsBlock vars funsigs block)
+    SIfElse expr b1 b2      -> (checkIdDefsExp vars funsigs expr) 
+                              ++ (checkIdDefsBlock vars funsigs b1) 
+                              ++ (checkIdDefsBlock vars funsigs b2)
+    SReturn expr            -> checkIdDefsExp vars funsigs expr
+    SWhile expr b           -> (checkIdDefsExp vars funsigs expr)
+                             ++ (checkIdDefsBlock vars funsigs b)
 
 
 checkIdDefsExp :: [Id] -> [(Id, Int)] -> Exp -> [Error]
@@ -92,14 +96,24 @@ checkIdDefsExp vars funsigs expr
 
 
 -- | Check that a function is defined, has the correct number of arguments, which must each exist.
-checkFuncApp :: [Id] -> [(Id, Int)] -> Id -> [Id] -> [Error]
+--checkFuncApp :: [Id] -> [(Id, Int)] -> Id -> [Id] -> [Error]
+--checkFuncApp vars funsigs name args
+-- = case lookup name funsigs of
+--   Just numargs     -> if (length args) /= numargs
+--                        then (ErrorFuncSig (idString name) numargs):argsdef
+--                        else argsdef
+--   Nothing          -> (ErrorFuncUndef (idString name)):argsdef
+--   where argsdef = (concat (map (checkIdDefsVar vars) args))
+
+-- | Check that a function is defined, has the correct number of arguments, which must each exist.
+checkFuncApp :: [Id] -> [(Id, Int)] -> Id -> [Exp] -> [Error]
 checkFuncApp vars funsigs name args
  = case lookup name funsigs of
    Just numargs     -> if (length args) /= numargs
                         then (ErrorFuncSig (idString name) numargs):argsdef
                         else argsdef
    Nothing          -> (ErrorFuncUndef (idString name)):argsdef
-   where argsdef = (concat (map (checkIdDefsVar vars) args))
+   where argsdef = (concat (map (checkIdDefsExp vars funsigs) args))
 
 
 -- | Check that a variable is defined. No need to pass in function signatures if this is a variable. 
