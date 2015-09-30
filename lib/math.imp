@@ -27,54 +27,44 @@ fun  not(x)
     return (x == 0);
 }
 
-fun xor(a, b)
-vars result
-{
-    result = ((not(a) & b) | (a & not(b))); 
-    return result;
-
-}
-
 fun  fromBase(x, y)
-vars next, ctr, ret, ten
+vars next, ctr, ret
 {       
     if ((y > 10) | (y < 2)) then
     {
         return 0;
     }
 
-    ten = 10;
     ret = 0;
     next = x;
     ctr = 1;
 
     while next
     {
-        ret = (ret + (((y ^ ctr) * (next % ten)) / y));
-        ctr = (ctr + 1);
-        next = (next / 10);
+        ret (+)= (((y ^ ctr) * (next % 10)) / y);
+        ctr (+)= 1;
+        next (/)= 10;
     }
     return ret;
 }
 
 fun  toBase(x, y)
-vars next, ctr, ret, ten
+vars next, ctr, ret
 {       
     if ((y > 10) | (y < 2)) then
     {
         return 0;
     }
 
-    ten = 10;
     ret = 0;
     next = x;
     ctr = 1;
 
     while next
     {
-        ret = (ret + (((ten ^ ctr) * (next % y)) / ten));
-        ctr = (ctr + 1);
-        next = (next / 10);
+        ret (+)= (((10 ^ ctr) * (next % y)) / 10);
+        ctr (+)= 1;
+        next (/)= 10;
     }
     return ret;
 }
@@ -91,9 +81,8 @@ fun  ceil(x, y)
 
 fun  round(x, y)
 {         
-    x = (x + (y / 2));
-    y = (x % y);
-    return (x - y);
+    x (+)= (y / 2);
+    return (x - (x % y));
 }
 
 fun  trunc(x, y)
@@ -108,8 +97,8 @@ vars ctr, cond
     cond = x;
     while cond
     {
-        cond = (cond / 10);
-        ctr = (ctr + 1);
+        cond (/)= 10;
+        ctr (+)= 1;
     }
     return ((x / (10 ^ (ctr - y))) * (10 ^ (ctr - y)));
 }
@@ -120,8 +109,6 @@ fun abs(x)
 }
 
 fun clamp(x, low, high)
-vars lower
 {
-    lower = max(x, low);
-    return min(lower, high);
+    return min(max(x, low), high);
 }
