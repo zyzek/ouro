@@ -38,7 +38,6 @@ data Exp
         = XNum    Int
         | XId     Id
         | XApp    Id [Exp]
-        | XCApp   [Exp]
         | XOpBin  OpBin Exp Exp
         | XOpUn   OpUn Exp
         deriving (Eq, Show)

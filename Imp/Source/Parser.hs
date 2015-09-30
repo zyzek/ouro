@@ -19,7 +19,7 @@ function
             i          <- ident
             arg_list   <- args
             var_list   <- vars
-            b          <- block
+            b          <- block i
             return     $ Function i arg_list var_list b
 
 
@@ -30,10 +30,10 @@ args
         only KRoundKet
         return arg_list
 
-exprArgs :: Parser Token [Exp]
-exprArgs
+exprArgs :: Id -> Parser Token [Exp]
+exprArgs curFuncId
  = do   only KRoundBra
-        arg_list       <- (alt exprs (result []))
+        arg_list       <- (alt (exprs curFuncId) (result []))
         only KRoundKet
         return arg_list
 
@@ -45,21 +45,21 @@ vars
              return v_list)
         (result [])
 
-block :: Parser Token Block
-block 
+block :: Id -> Parser Token Block
+block curFuncId
  = do   only KBraceBra
-        stmt_list      <- (some stmt)
+        stmt_list      <- (some (stmt curFuncId))
         only KBraceKet
         return         $ Block stmt_list
 
 
-stmt :: Parser Token Stmt
-stmt
+stmt :: Id -> Parser Token Stmt
+stmt curFuncId
  = alts 
  [ -- assignment
    do  i          <- ident
        only KEquals
-       e          <- expr
+       e          <- expr curFuncId
        only KSemi
        return     $ SAssign i e
  , do  i          <- ident
@@ -67,7 +67,7 @@ stmt
        f          <- ident
        only KRoundKet
        only KEquals
-       e          <- expr
+       e          <- expr curFuncId
        only KSemi
        return     $ SFAssign i f e
  , do  i          <- ident
@@ -75,7 +75,7 @@ stmt
        f          <- binoper
        only KRoundKet
        only KEquals
-       e          <- expr
+       e          <- expr curFuncId
        only KSemi
        return     $ SBAssign i f e
 
@@ -88,48 +88,48 @@ stmt
    --  must then fail: we have a dangling else with no 
    --  if-then to precede it.
  , do  only Kif
-       guard      <- expr
+       guard      <- expr curFuncId
        only Kthen
-       lbr        <- block
+       lbr        <- block curFuncId
        only Kelse
-       rbr        <- block
+       rbr        <- block curFuncId
        return     $ SIfElse guard lbr rbr
 
    -- if-then
  , do  only Kif
-       guard      <- expr
+       guard      <- expr curFuncId
        only Kthen
-       br         <- block
+       br         <- block curFuncId
        return     $ SIf guard br
 
   -- return
  , do  only Kreturn
-       i <- expr
+       i <- expr curFuncId
        only KSemi
        return $ SReturn i
 
   -- while
   , do only Kwhile
-       cond       <- expr
-       body       <- block
+       cond       <- expr curFuncId
+       body       <- block curFuncId
        return     $  SWhile cond body
 
   -- print
   , do only Kprint
-       e          <- expr
+       e          <- expr curFuncId
        only KSemi
        return     $  SPrint e
 
   -- naked expression
-  , do   e        <- expr
+  , do   e        <- expr curFuncId
          only KSemi 
          return   $  SExp e
  ]
 
 
 -- | Parse an expression.
-expr  :: Parser Token Exp
-expr
+expr  :: Id -> Parser Token Exp
+expr curFuncId
  = alts 
  [      -- number
    do   n        <- num
@@ -138,13 +138,13 @@ expr
         -- function application
         -- Must appear before single identifier: see above
  , do   i        <- ident
-        arg_list <- exprArgs
+        arg_list <- exprArgs curFuncId
         return   $ XApp i arg_list
 
         -- ouroboros operation
  , do   only Kouro
-        arg_list <- exprArgs
-        return   $ XCApp arg_list
+        arg_list <- exprArgs curFuncId
+        return   $ XApp curFuncId arg_list
 
         -- single identifier
  , do   i        <- ident
@@ -152,19 +152,19 @@ expr
 
         -- binary operation
  , do   only KRoundBra
-        e1       <- expr
+        e1       <- expr curFuncId
         op       <- binoper
-        e2       <- expr
+        e2       <- expr curFuncId
         only KRoundKet
         return   $  XOpBin op e1 e2
       
         -- unary operation
  , do   op       <- unoper
-        e        <- expr
+        e        <- expr curFuncId
         return   $  XOpUn op e
 
  , do   only KRoundBra
-        e        <- expr
+        e        <- expr curFuncId
         only KRoundKet
         return   $  e
  ]
@@ -251,15 +251,15 @@ idents
 
 
 -- | Parse arguments as Expressions separated by commas.
-exprs :: Parser Token [Exp]
-exprs
+exprs :: Id -> Parser Token [Exp]
+exprs curFuncId
  = alts
- [ do   i       <- expr
+ [ do   i       <- expr curFuncId
         only KComma
-        is      <- exprs
+        is      <- exprs curFuncId
         return  $ i : is
 
- , do   i       <- expr
+ , do   i       <- expr curFuncId
         return  [i]
  ]
 
