@@ -119,6 +119,11 @@ stmt
        e          <- expr
        only KSemi
        return     $  SPrint e
+
+  -- naked expression
+  , do   e        <- expr
+         only KSemi 
+         return   $  SExp e
  ]
 
 

@@ -1,0 +1,5 @@
+fun mult()
+{
+	print 10;
+	return 10;
+}

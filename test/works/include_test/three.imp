@@ -1,0 +1,7 @@
+#include "./one"
+
+fun three()
+{
+	print 3;
+	return 3;
+}
