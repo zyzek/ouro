@@ -5,9 +5,13 @@ fun main()
 vars x
 {
 	print mult();
-	one();
-	two();
-	three();
+	
+	x = one();
+	y = two();
+	x = three();
+	
+	print (x + y);
+
 	
 	return 0;
 }

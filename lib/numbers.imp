@@ -62,6 +62,7 @@ fun catalan(n)
 fun sqrt(n)
 vars val
 {
+
     while ((val^2) <= n)
     {
         val (+)= 1;
@@ -139,44 +140,41 @@ vars i, p, k
 fun phi(n) 
 vars i, p, k, pPhi, result
 {
-    i = 1;
-    p = prime(i);
-    result = 1;
+	i = 1;
+	p = prime(i);
+	result = 1;
 
-    while (n > 1) {
-        if !(n % p) then
-        {
-            k (+)= 1;
-            n (/)= p;
-        }
-        else
-        {
-            if (k > 0) then
-            {
-                pPhi = ((p ^ (k - 1)) * (p - 1));
-                result = (result * pPhi);
-                k = 0;
-            }
+	while (n > 1) {
+		if !(n % p) then
+		{
+			k (+)= 1;
+			n (/)= p;
+		}
+		else
+		{
+			if (k > 0) then
+			{
+				result (*)= ((p ^ (k - 1)) * (p - 1));
+				k = 0;
+			}
 
-            i (+)= 1;
-            p = prime(i);
-        }
-    }
+			i (+)= 1;
+			p = prime(i);
+		}
+	}
 
-    if (k > 0) then
-    {
-        pPhi = ((p ^ (k - 1)) * (p - 1));
-        result (*)= pPhi;
-        k = 0;
-    }
+	if (k > 0) then
+		{
+			result (*)= ((p ^ (k - 1)) * (p - 1));
+			k = 0;
+		}
 
-    return result;
+	return result;
 }
 
 
 fun gcd(a, b)
 {
-
     if !(a % b) then 
     {
         return b;
@@ -192,6 +190,7 @@ fun triangular(n)
 
 fun ackermann(m, n)
 {
+
     if !m then
     {
         return (n + 1);

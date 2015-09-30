@@ -1,6 +1,27 @@
 #include "numbers"
 
-fun main(a, b)
+fun main()
+vars i
 {
-	return (((isPrime(gcd(a, b)) * (prime(a) * prime(b))) + numPrimeDivisors((a * b))) + phi(a));
+	print ackermann(2, 2);
+	print fibonacci(-4);
+	print catalan(5);
+	print sqrt(256);
+	print isPrime(47);
+	print isPrime(20);
+	print prime(10);
+	print numPrimeDivisors(1024);
+	print phi(36);
+	print gcd(13, 299);
+	print gcd(20, 45);
+
+	while (i < 10) 
+	{
+		print triangular(p);
+		i (+)= 1;
+	}
+
+	print knuthUpArrow(3, 2, 2);
+
+	return -123;
 }
