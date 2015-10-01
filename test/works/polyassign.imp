@@ -1,0 +1,10 @@
+fun one() { 1 }
+
+fun main()
+vars a, b, c
+{
+   a, b, c = one(), (1 + 1), 3;
+   b, c = c, b;
+	
+   (a + b)^c
+}

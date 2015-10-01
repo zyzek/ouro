@@ -1,17 +1,13 @@
 fun  main(n)
-vars tmp, pred, prepred
+vars next, curr
 {       
-    pred = 1;
-    prepred = 0;
+    next = 1;
 
     while (n != 0)
     {
-        tmp = pred;
-        pred (+)= prepred;
-        prepred = tmp;
-        
+        curr, next = next, curr + next;     
         n (-)= 1;
     }
 
-    prepred
+    curr
 }

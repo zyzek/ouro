@@ -22,6 +22,7 @@ data Block
 -- | Source Statements.
 data Stmt
         = SAssign     Id   Exp
+        | SPolyAssign [Id] [Exp]
         | SFAssign    Id   Id    Exp
         | SBAssign    Id   OpBin Exp
         | SIf         Exp  Block

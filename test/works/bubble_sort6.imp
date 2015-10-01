@@ -1,0 +1,24 @@
+#include "math"
+
+fun  main(a, b, c, d, e)
+{       
+    a, b = min(a, b), max(a, b);
+    b, c = min(b, c), max(b, c);
+    c, d = min(c, d), max(c, d);
+    d, e = min(d, e), max(d, e);
+
+    a, b = min(a, b), max(a, b);
+    b, c = min(b, c), max(b, c);
+    c, d = min(c, d), max(c, d);
+
+    a, b = min(a, b), max(a, b);
+    b, c = min(b, c), max(b, c);
+
+    a, b = min(a, b), max(a, b);
+
+    print a;
+    print b;
+    print c;
+    print d;
+    e
+}

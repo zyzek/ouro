@@ -112,6 +112,15 @@ convertExp (reg0, blk0, stmt) =
         blkList
     )
 
+-- | Convert a list of source statements to a list of core block properties and core blocks.
+convertExpsRegs :: (Int, Int, [S.Exp]) -> (Int, Int, [C.Block], [Int])
+convertExpsRegs (reg0, blk0, []) = (reg0, blk0, [], [])
+convertExpsRegs (reg0, blk0, (xp:xps)) = 
+    let (reg1, blk1, blks1) = convertExp (reg0, blk0, xp)
+        (reg2, blk2, blks2, regs) = convertExpsRegs (reg1, blk1, xps)
+    in (reg2, blk2, blks1 ++ blks2, (reg1-1):regs)
+
+
  -- | - - - - - - - - - - - - -
  -- | 
  -- | Convert Statement
@@ -157,6 +166,15 @@ convertStmt (reg0, blk0, (S.SAssign varId varExp)) =
         (reg1),
         (blk1),
         blkList ++ [C.Block blk1 [C.IStore (convertId varId) (C.Reg (reg1 - 1))]]
+    )
+convertStmt (reg0, blk0, (S.SPolyAssign ids exprs)) =
+    let (reg1, blk1, blkList, regs) = convertExpsRegs (reg0, blk0, exprs)
+        storeInstrList 
+         = map (\(i, r) -> C.IStore (convertId i) (C.Reg r)) (zip ids regs)
+    in (
+        (reg1),
+        (blk1),
+        blkList ++ [C.Block blk1 storeInstrList]
     )
 convertStmt (reg0, blk0, (S.SFAssign varId funcId expr)) =
     let (reg1, blk1, blkList) = convertExp (reg0, blk0, S.XApp funcId [expr, (S.XId varId)])

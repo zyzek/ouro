@@ -3,7 +3,6 @@ module Imp.Source.Parser where
 import Imp.Source.Exp
 import Imp.Source.Tokens
 import Imp.Parsec
---import Data.Maybe   
 
 
 -- | Whole program.
@@ -71,6 +70,15 @@ stmt curFuncId
        e          <- expr curFuncId
        only KSemi
        return     $ SAssign i e
+ 
+   -- multiple assignment
+ , do  is         <- idents
+       only KEquals
+       e          <- exprs curFuncId
+       only KSemi
+       return     $  SPolyAssign is e
+
+   -- function assignment
  , do  i          <- ident
        only KRoundBra
        f          <- ident
@@ -79,6 +87,8 @@ stmt curFuncId
        e          <- expr curFuncId
        only KSemi
        return     $ SFAssign i f e
+
+   -- operator assignment
  , do  i          <- ident
        only KRoundBra
        f          <- binoper

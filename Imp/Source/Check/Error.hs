@@ -10,6 +10,7 @@ data Error
         | ErrorFuncSig      String Int
         | ErrorVarUndef     String
         | ErrorVarRedef     String
+        | ErrorPolyAssign   Int Int
         | ErrorSyntax
         deriving Eq
 
@@ -30,5 +31,7 @@ prettyError err
          -> "variable '" ++ i ++ "' undefined."
         ErrorVarRedef i
          -> "variable '" ++ i ++ "' redefined."
+        ErrorPolyAssign v e
+         -> (show e) ++ " expressions assigned to " ++ (show v) ++ " variables in poly-assignment."
         ErrorSyntax
          -> "Syntax Error."

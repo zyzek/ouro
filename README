@@ -27,14 +27,17 @@ What tasks did you complete?
     - Included math and number-theory toy libraries
   + Extended language semantics:
     - Expressions go where only ids could before
+    - Multiple-assignment:
+        a, b, c = 1, (1 + 1), three();
     - Generalised operator assignment: 
         x = x + 1;        <->   x (+)= 1;
         x = func(y, x);   <->   x (func)= y;
-    - Assignment statements return a value, thus can be evaluated as
+    - Single-assignments can can be evaluated as
       expressions for chained assignment.
     - Conditional Ternary Operator
     - "Ouroboros" recursion operator
     - Comments
+    - Print statement
   + Relatively extensive example code base.
 
 

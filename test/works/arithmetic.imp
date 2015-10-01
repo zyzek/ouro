@@ -29,9 +29,7 @@ fun three()
 fun main()
 vars a, b, c
 {
-	a = 1;
-	b = 2;
-	c = 4;
+	a, b, c = 1, 2, 4;
 
 	!true x| a + -(b - c) - three() * -?(1, 4, 0) ^ (2 * 2 / 4) == --15
 }
