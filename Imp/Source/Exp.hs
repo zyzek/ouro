@@ -35,12 +35,15 @@ data Stmt
 
 -- | Source Expressions.
 data Exp
-        = XNum    Int
-        | XId     Id
-        | XApp    Id [Exp]
-        | XCApp   [Exp]
-        | XOpBin  OpBin Exp Exp
-        | XOpUn   OpUn Exp
+        = XNum     Int
+        | XId      Id
+        | XApp     Id [Exp]
+        | XOpBin   OpBin Exp Exp
+        | XOpUn    OpUn Exp
+        | XAssign  Id Exp
+        | XFAssign Id Id Exp
+        | XBAssign Id OpBin Exp
+        | XTernary Exp Exp Exp
         deriving (Eq, Show)
 
 

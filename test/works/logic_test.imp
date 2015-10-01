@@ -1,9 +1,9 @@
 fun xor(a, b)
 {
-	return ((!a & b) | (a & !b));
+	(!a & b) | (a & !b)
 }
 
 fun main(a, b)
 {
-    return ((a x| b) & xor(a, b));
+    (a x| b) & xor(a, b)
 }

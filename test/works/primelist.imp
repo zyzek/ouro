@@ -8,6 +8,5 @@ vars counter
 		counter (+)= 1;
 		print prime(counter);
 	}
-
-	return 0;
+	0
 }

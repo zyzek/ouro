@@ -26,6 +26,6 @@ programOfString str
 
 
 -- | Parse an expr as a program.
-exprOfString  :: String -> Maybe Exp
-exprOfString str
- = lexParse PF.expr str
+exprOfString  :: Id -> String -> Maybe Exp
+exprOfString curFuncId str
+ = lexParse (PF.expr curFuncId) str

@@ -4,46 +4,46 @@ fun  main(a, b, c, d, e)
 vars tmp
 {       
     tmp = max(a, b);
-    a = min(a, b);
+    a (min)= b;
     b = tmp;
 
     tmp = max(b, c);
-    b = min(b, c);
+    b (min)= c;
     c = tmp;
 
     tmp = max(c, d);
-    c = min(c, d);
+    c (min)= d;
     d = tmp;
 
     tmp = max(d, e);
-    d = min(d, e);
+    d (min)= e;
     e = tmp;
 
 
     tmp = max(a, b);
-    a = min(a, b);
+    a (min)= b;
     b = tmp;
 
     tmp = max(b, c);
-    b = min(b, c);
+    b (min)= c;
     c = tmp;
 
     tmp = max(c, d);
-    c = min(c, d);
+    c (min)= d;
     d = tmp;
 
 
     tmp = max(a, b);
-    a = min(a, b);
+    a (min)= b;
     b = max(a, tmp);
 
     tmp = max(b, c);
-    b = min(b, c);
+    b (min)= c;
     c = tmp;
 
 
     tmp = max(a, b);
-    a = min(a, b);
+    a (min)= b;
     b = tmp;
 
 
@@ -51,6 +51,5 @@ vars tmp
     print b;
     print c;
     print d;
-
-    return e;
+    e
 }

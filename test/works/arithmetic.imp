@@ -1,6 +1,6 @@
 fun three()
 {
-	return 3;
+	3
 }
 
 fun main()
@@ -10,6 +10,6 @@ vars a, b, c
 	b = 2;
 	c = 4;
 
-	return !true x| a + -(b - c) - three() * -4 ^ (2 * 2 / 4) == --15;
+	!true x| a + -(b - c) - three() * -4 ^ (2 * 2 / 4) == --15
 }
 

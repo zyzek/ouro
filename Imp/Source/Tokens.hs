@@ -17,9 +17,10 @@ data Token
         | KComma                -- ','
         | KSemi                 -- ';'
         | KEquals               -- '='
+        | KAt                   -- '@'
+        | KQMark                -- '?'
 
         -- Keywords
-        | Kouro                 -- @
         | Kfun                  -- fun
         | Kvars                 -- vars
         | Kif                   -- if

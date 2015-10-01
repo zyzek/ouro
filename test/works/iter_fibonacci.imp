@@ -13,5 +13,5 @@ vars tmp, pred, prepred
         n (-)= 1;
     }
 
-    return prepred;
+    prepred
 }

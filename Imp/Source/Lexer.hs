@@ -76,9 +76,10 @@ atoms
         , (",",         KComma)
         , (";",         KSemi)
         , ("=",         KEquals)
+        , ("@",         KAt)
+        , ("?",         KQMark)
   
           -- keywords
-        , ("@",         Kouro)
         , ("fun",       Kfun)
         , ("vars",      Kvars)
         , ("if",        Kif)

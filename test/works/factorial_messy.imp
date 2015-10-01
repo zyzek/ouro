@@ -7,8 +7,8 @@ vars cond, tmp, heythere, notcond, lelele
     }
     else 
     {
-        tmp = (n - 1);
-        tmp = (factorial(tmp) * n);
+        tmp = n - 1;
+        tmp = factorial(tmp) * n;
     }
 
     heythere = 5;
