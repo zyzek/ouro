@@ -1,5 +1,15 @@
-fun main()
+fun three()
 {
-	return ( (( (1 + -( -(--2 * -5) / -3) ) + -7) != --3) );
+	return 3;
+}
+
+fun main()
+vars a, b, c
+{
+	a = 1;
+	b = 2;
+	c = 4;
+
+	return !true x| a + -(b - c) - three() * -4 ^ (2 * 2 / 4) == --15;
 }
 

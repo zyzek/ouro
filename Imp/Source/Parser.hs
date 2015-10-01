@@ -127,106 +127,10 @@ stmt
  ]
 
 
--- | Parse an expression.
-expr  :: Parser Token Exp
-expr
- = alts 
- [      -- number
-   do   n        <- num
-        return   $ XNum n
-
-        -- function application
-        -- Must appear before single identifier: see above
- , do   i        <- ident
-        arg_list <- exprArgs
-        return   $ XApp i arg_list
-
-        -- ouroboros operation
- , do   only Kouro
-        arg_list <- exprArgs
-        return   $ XCApp arg_list
-
-        -- single identifier
- , do   i        <- ident
-        return   $ XId i
-
-        -- binary operation
- , do   only KRoundBra
-        e1       <- expr
-        op       <- binoper
-        e2       <- expr
-        only KRoundKet
-        return   $  XOpBin op e1 e2
-      
-        -- unary operation
- , do   op       <- unoper
-        e        <- expr
-        return   $  XOpUn op e
-
- , do   only KRoundBra
-        e        <- expr
-        only KRoundKet
-        return   $  e
- ]
-
-
---compL :: Parser Token Exp
---compL  
--- = do    l       <- addL
---         r       <- some compR
---         return SOMETHING
-
---compR :: Parser Token Exp
---comparative 
--- = do    op      <- compOp
---         r       <- addL
---         return SOMETHING
-
-
---addL :: Parser Token Exp
---addL
--- = do    l       <- multL
---         r       <- some addR
---         return SOMETHING
-
---addR :: Parser Token Exp
---addR 
--- = do    op      <- addOp
---         r       <- multL
---         return SOMETHING
-
-
---multL :: Parser Token Exp
---multL 
--- = do    l       <- opBase
---         r       <- some multR
---         return SOMETHING
-
---multR :: Parser Token Exp
---multR
--- = do    op      <- multOp
---         r       <- opBase
---         return SOMETHING
-
-
---opBase :: Parser Token Exp
---opBase = alt num expr         
-
-
---chainOp :: Op -> [Exp] -> Maybe Exp
---chainOp _ [] = Nothing
---chainOp op [e] = Just e
---chainOp op e1:rest =  op e1 $ fromJust $ chainOp op rest
-
 
 -- | Parse a number.
 num   :: Parser Token Int
 num = from takeNum
-
---numExpr :: Parser Token Exp
---numExpr = do  n   <- num
---              return (XNum n)
-
 
 
 -- | Parse an identifier.
@@ -280,18 +184,6 @@ unoper
  | (str, op)    <- unops]
 
 
---addOp :: Parser Token Op
---addOp = alt (only (KOp "+")) (only (KOp "-"))
-
---multOp :: Parser Token Op
---multOp = alt (only (KOp "*")) (only (KOp "/"))
-
---compOp :: Parser Token Op
---compOp = alts [ only (KOp "<")
---              , only (KOp ">")
---              , only (KOp "==")
---              , only (KOp "!=") ]
-
 -- | Operator names.
 binops :: [(String, OpBin)]
 binops
@@ -316,3 +208,114 @@ unops
  =      [ ("!",  OpNot)
         , ("-",  OpNeg) ]       
 
+
+binopprecs :: [(Int, [(String, OpBin)])]
+binopprecs
+ =      [ (1, [ ("|",  OpOr)
+              , ("&",  OpAnd)
+              , ("x|", OpXor)
+              ]
+          )
+        , (2, [ ("<=", OpLeq)
+              , (">=", OpGeq)
+              , (">",  OpGt)
+              , ("<",  OpLt)
+              , ("==", OpEq)
+              , ("!=", OpNeq)
+              ]
+          )
+        , (3, [ ("+",  OpAdd)
+              , ("-",  OpSub)
+              ]
+          )
+        , (4, [ ("*",  OpMul)
+              , ("/",  OpDiv)
+              , ("%",  OpMod)
+              ]
+          )
+        , (5, [ ("^", OpPow) 
+              ]
+          )
+        ]
+
+precOp :: Int -> Parser Token OpBin
+precOp prec 
+ = case lookup prec binopprecs of
+    Just ops -> alts
+                 [ do   only  (KOp str)
+                        return op
+                 | (str, op)  <- ops ]
+    Nothing     -> zero
+
+expr :: Parser Token Exp
+expr = opL 1
+
+-- This is a bit of a hack: prefer a more elegant way than manually
+--   specifying that the precedence of atoms is maximal.
+opL :: Int -> Parser Token Exp
+opL 6
+ = alts 
+ [
+   numExpr
+ , parenExpr
+ , unaryOp
+ , appExpr -- function application must appear before single identifier
+ , ouroExpr 
+ , identExpr
+ ]
+
+opL prec
+ =  do   l                   <- opL (prec + 1)
+         es                  <- some (opR prec)
+         return              $  case es of 
+                                 []   -> l
+                                 _    -> chainPartOps (reverse es) l
+        
+opR :: Int -> Parser Token Exp
+opR prec
+ = do  op                   <- precOp prec
+       r                    <- opL (prec + 1)
+       return               $  XOpBin op (XNum (-999)) r
+
+-- single identifier
+identExpr :: Parser Token Exp
+identExpr = do  i        <- ident
+                return   $  XId i
+
+-- ouroboros operation
+ouroExpr :: Parser Token Exp
+ouroExpr = do   only Kouro
+                arg_list <- exprArgs
+                return   $ XCApp arg_list
+
+-- function application
+appExpr :: Parser Token Exp
+appExpr = do   i        <- ident
+               arg_list <- exprArgs
+               return   $ XApp i arg_list
+
+-- numeric literal
+numExpr :: Parser Token Exp
+numExpr = do  n   <- num
+              return (XNum n)
+
+-- parenthesised expression
+parenExpr :: Parser Token Exp
+parenExpr = do only KRoundBra
+               e     <- expr
+               only KRoundKet
+               return e
+
+-- prefix operator
+unaryOp :: Parser Token Exp
+unaryOp = do op      <- unoper
+             e       <- opL 6
+             return $ XOpUn op e
+
+-- Take a string of binary operations and glue them together.
+-- Each operation is substituted into the LHS of the one following.
+-- The remaining LHS is filled with the expression passed in.  
+chainPartOps :: [Exp] -> Exp -> Exp
+chainPartOps [XOpBin op _ e2] l = (XOpBin op l e2) 
+chainPartOps ((XOpBin op _ e2):rest) l = (XOpBin op (chainPartOps rest l) e2)
+chainPartOps _ _ = (XNum (-999))
