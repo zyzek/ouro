@@ -3,27 +3,19 @@
 fun main()
 vars i
 {
-	print ackermann(2, 2);
-	print fibonacci(-4);
-	print catalan(5);
-	print sqrt(256);
-	print isPrime(47);
-	print isPrime(20);
-	print coprime(10, 5);
-	print coprime(13, 7);
-	print prime(10);
-	print numPrimeDivisors(1024);
-	print phi(36);
-	print gcd(13, 299);
-	print gcd(20, 45);
-
+	print fibonacci(-4), catalan(5), sqrt(256);
+	print isPrime(47), isPrime(20), coprime(10, 5), coprime(13, 7);
+	print prime(10), numPrimeDivisors(1024);
+	print;
+	
 	while (i < 10) 
 	{
-		print triangular(i);
+		print triangular(i)*prime(i);
 		i (+)= 1;
 	}
+	print;
 
-	print uparrow(3, 2, 2);
-
+	print gcd(13, 299), gcd(20, 45), phi(36);
+	print ackermann(2, 2), uparrow(3, 2, 2);
 	return -123;
 }

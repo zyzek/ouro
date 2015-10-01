@@ -112,7 +112,16 @@ convertExp (reg0, blk0, stmt) =
         blkList
     )
 
--- | Convert a list of source statements to a list of core block properties and core blocks.
+
+-- | Convert a list of source expressions to a list of core block properties and core blocks.
+convertExps :: (Int, Int, [S.Exp]) -> (Int, Int, [C.Block])
+convertExps (reg0, blk0, []) = (reg0, blk0, [])
+convertExps (reg0, blk0, (xp:xps)) = 
+    let (reg1, blk1, blks1) = convertExp (reg0, blk0, xp)
+        (reg2, blk2, blks2) = convertExps (reg1, blk1, xps)
+    in (reg2, blk2, blks1 ++ blks2)
+
+-- | Plus return a list of registers holding the final value of each block.
 convertExpsRegs :: (Int, Int, [S.Exp]) -> (Int, Int, [C.Block], [Int])
 convertExpsRegs (reg0, blk0, []) = (reg0, blk0, [], [])
 convertExpsRegs (reg0, blk0, (xp:xps)) = 
@@ -301,12 +310,13 @@ convertStmt (reg0, blk0, (S.SWhile expr blk)) =
             C.IBranch (C.Reg reg1) (blk0 + 1) (blk0 + 1)
         ]]
     )
-convertStmt (reg, blk, (S.SPrint expr)) =
-  let (reg1, blk1, blkList) = convertExp (reg, blk, expr)
+convertStmt (reg, blk, (S.SPrint exprs)) =
+  let (reg1, blk1, blkList, regs) = convertExpsRegs (reg, blk, exprs)
+      printRegs = map (\r -> (C.Reg r)) regs
   in (
       reg1,
       blk1,
-      blkList ++ [C.Block blk1 [C.IPrint (C.Reg (reg1 - 1))]]
+      blkList ++ [C.Block blk1 [C.IPrint printRegs]]
      )
 convertStmt (reg, blk, (S.SExp expr)) =
   let (reg1, blk1, blkList) = convertExp (reg, blk, expr)

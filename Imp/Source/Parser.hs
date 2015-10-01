@@ -135,9 +135,9 @@ stmt curFuncId
 
   -- print
   , do only Kprint
-       e          <- expr curFuncId
+       es          <- (alt (exprs curFuncId) (result []))
        only KSemi
-       return     $  SPrint e
+       return     $  SPrint es
 
   -- naked expression
   , do   e        <- expr curFuncId

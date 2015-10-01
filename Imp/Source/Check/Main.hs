@@ -91,7 +91,7 @@ checkIdDefsStmt vars funsigs stmt
     SWhile expr b           ->    (checkIdDefsExp vars funsigs expr)
                                ++ (checkIdDefsBlock vars funsigs b)
 
-    SPrint expr             ->    checkIdDefsExp vars funsigs expr
+    SPrint exprs            ->    concat (map (checkIdDefsExp vars funsigs) exprs)
     SExp expr               ->    checkIdDefsExp vars funsigs expr
 
 

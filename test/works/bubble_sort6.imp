@@ -16,9 +16,6 @@ fun  main(a, b, c, d, e)
 
     a, b = min(a, b), max(a, b);
 
-    print a;
-    print b;
-    print c;
-    print d;
-    e
+    print a, b, c, d, e;
+    return 0;
 }

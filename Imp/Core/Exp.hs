@@ -28,7 +28,7 @@ data Instr
         | IBranch       Reg Int Int             -- ^ br
         | IReturn       Reg                     -- ^ ret
         | ICall         Reg Id [Reg]            -- ^ call
-        | IPrint        Reg                     -- ^ print
+        | IPrint        [Reg]                   -- ^ print
         deriving Show
 
 

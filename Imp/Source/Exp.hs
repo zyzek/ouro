@@ -29,7 +29,7 @@ data Stmt
         | SIfElse     Exp  Block Block
         | SReturn     Exp
         | SWhile      Exp Block
-        | SPrint  Exp
+        | SPrint  [Exp]
         | SExp    Exp
         deriving (Eq, Show)
 

@@ -112,7 +112,9 @@ step sArgs@(StepArgs env funcs func (Block blockId (i:is)) gReg) =
             if (getReg env regCond /= 0)
              then step $ setBlock sArgs $ lookupBlock blk1Id $ fBlocks func
              else step $ setBlock sArgs $ lookupBlock blk2Id $ fBlocks func
-        IPrint pReg                     -> traceShow (getReg env pReg) (step newArgs)
+        IPrint pRegs                    -> trace 
+                                            (intercalate " " (map (\r -> show (getReg env r)) pRegs))
+                                            (step newArgs)
 
  
 lookupFunc :: Id -> [Function] -> Function
