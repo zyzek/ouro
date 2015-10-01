@@ -1,3 +1,16 @@
+"
+ xor is defined in the language as x|
+
+ Here we note a slight difference in the behaviour of the built-in
+ xor and the one defined in the function below.
+
+ x| returns the value of its nonzero argument, if exactly one of them 
+ evaluates to true.
+
+ The xor function here does not exhibit this value-preserving
+ characteristic, but the two are at least logically equivalent. 
+"
+
 fun xor(a, b)
 {
 	(!a & b) | (a & !b)

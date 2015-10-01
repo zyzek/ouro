@@ -21,7 +21,7 @@ vars i
 		i (+)= 1;
 	}
 
-	print knuthUpArrow(3, 2, 2);
+	print uparrow(3, 2, 2);
 
 	return -123;
 }

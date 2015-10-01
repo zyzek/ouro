@@ -1,2 +1,8 @@
 #include "../../lib/math"
+
+"
+ Include paths beginning with . or / are relative to the script
+ being run.
+"
+
 fun main(x, y){max(x, y)}

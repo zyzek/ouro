@@ -1,3 +1,8 @@
+"
+ The ternary operator ?(c, e1, e2)
+ returns the value of e1 iff c is true,
+ otherwise it returns the value of e2.
+"
 
 fun main(n)
 { 

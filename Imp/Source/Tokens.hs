@@ -6,7 +6,7 @@ module Imp.Source.Tokens where
 data Token
         = KNum  Int             -- Number
         | KId   String          -- Identifier
-        | KOp   String          -- Operators
+        | KOp   String          -- Operator
 
         -- Punctuation
         | KRoundBra             -- '('

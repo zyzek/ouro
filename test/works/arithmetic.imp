@@ -1,3 +1,26 @@
+"
+ A demonstration of operator precedence.
+ Atoms:
+   numeric literals
+   variable ids
+   function calls, including ouroboroi
+   ternary operations
+   unary operators applied to an expression
+   parenthetical expressions
+
+ Some of these atoms may themselves contain expressions
+ as sub-components.
+
+ The precedence order is then as follows:
+   Unary Operators;
+   Exponentiation;
+   Multiplication, Division, Modulus;
+   Addition and Subtraction;
+   Equality and Inequality comparators;
+   Logical operators.
+"
+
+
 fun three()
 {
 	3
@@ -10,6 +33,6 @@ vars a, b, c
 	b = 2;
 	c = 4;
 
-	!true x| a + -(b - c) - three() * -4 ^ (2 * 2 / 4) == --15
+	!true x| a + -(b - c) - three() * -?(1, 4, 0) ^ (2 * 2 / 4) == --15
 }
 

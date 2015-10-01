@@ -14,21 +14,34 @@ What tasks did you complete?
   Task 1 - Syntax and Semantics Analysis
   Task 2 - Intermediate Code Generation
   Task 3 - Interpreter
+  Task 4 - Infix Operators
   Task 5 - While Loops
 
   Other:
-  Richer operators: Extended arithmetic and logical operations, 
-    plus unary/binary distinction
-  Source file preprocessor for library importation
-  Extended language semantics allow expressions to go where
-    only ids could before, and other miscellaneous conveniences.
-  Relatively extensive example code base.
+  + Richer operators:
+    - Operator precedence;
+    - Extended arithmetic and logical operations;
+    - Unary/Binary operator distinction
+  + Source file preprocessor for library importation
+    - Handles circular dependencies
+    - Included math and number-theory toy libraries
+  + Extended language semantics:
+    - Expressions go where only ids could before
+    - Generalised operator assignment: 
+        x = x + 1;        <->   x (+)= 1;
+        x = func(y, x);   <->   x (func)= y;
+    - Assignment statements return a value, thus can be evaluated as
+      expressions for chained assignment.
+    - Conditional Ternary Operator
+    - "Ouroboros" recursion operator
+    - Comments
+  + Relatively extensive example code base.
 
 
 
 Did you get stuck, or couldn't work something out?
 
-  [I just can't stop updating]
+  Not enough time for everything we want to add!
 
 
 -------------------------------------------------------------------------------

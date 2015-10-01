@@ -55,26 +55,31 @@ vars next, ctr, ret
     ret
 }
 
+"Returns the greatest multiple of y not greater than x."
 fun  floor(x, y)
 {          
     x - x%y
 }
 
+"Returns the least multiple of y not less than x."
 fun  ceil(x, y)
 {          
     x - x%y + y
 }
 
+"Returns the nearest multiple of y to x."
 fun  round(x, y)
 {         
     floor(x + y/2, y)
 }
 
+"Truncate to the nearest multiple of 10^y."
 fun  trunc(x, y)
 {          
     (x / 10^y) * 10^y
 }
 
+"Return x to y significant figures of precision."
 fun  sigfigs(x, y)
 vars ctr, cond
 {        

@@ -1,2 +1,8 @@
 #include "math"
+
+"
+ If the path to the library does not begin with . or /,
+ the preprocessor looks in the lib/ directory to find it.
+"
+
 fun main(x, y){max(x, y)}

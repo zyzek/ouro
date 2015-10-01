@@ -17,6 +17,8 @@ lexer str
 tokens :: Parser Char [Token]
 tokens
  = do   some space
+        some quote
+        some space
         t  <- token
         some space
         ts <- alt tokens (return [])
@@ -32,11 +34,12 @@ token
                 return tok          -- For each (str, tok) pair, attempt
         | (str, tok)    <- atoms]   -- a match
 
- $ alt  (do     n   <- nat           -- Default parser: no prim match
-                return $ KNum n)     -- thus, token is either a num
+ $ alts [ do     n   <- nat           -- Default parser: no prim match
+                 return $ KNum n      -- thus, token is either a num
 
-        (do     str <- many alphanum -- or a variable/function ID
-                return $ KId str)
+        , do     str <- many alphanum -- or a variable/function ID
+                 return $ KId str
+        ]
 
 
 -- | Atomic tokens.

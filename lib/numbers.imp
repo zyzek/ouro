@@ -12,7 +12,10 @@ vars total
     total
 }
 
-
+"
+ Fibonacci Sequence,
+ Works with negative arguments.
+"
 fun fibonacci(n)
 vars tmp, pred, prepred, sign
 {
@@ -41,24 +44,29 @@ vars tmp, pred, prepred, sign
 }
 
 
+"Number of permutations of r things from n things."
 fun perm(n, r)
 {
     factorial(n) / factorial(n - r)
 }
 
-
+"The binomial coefficient; n choose r."
 fun  binom(n, r)
 {   
     perm(n,r) / factorial(r)
 }
 
 
+"
+ The catalan numbers can represent, among many other examples
+ the number of strings of 2n balanced brackets
+"
 fun catalan(n)
 {
     binom(2*n, n) / (n+1)
 }
 
-
+"Returns the greatest integer less than or equal to the square root of n."
 fun sqrt(n)
 vars val
 {
@@ -71,7 +79,7 @@ vars val
     val - 1
 }
 
-
+"Determines if a number is prime by simple trial division."
 fun isPrime(n)
 vars max, factor
 {
@@ -91,7 +99,11 @@ vars max, factor
     n > 1
 }
 
-
+"
+ Generates the n'th prime by checking each successive integer.
+ Super slow and crummy, but it's hard to write a sieve without lists.
+ There are good non-sieve primality tests but I forgot how they work. 
+"
 fun prime(n)
 vars pcount, cand
 {
@@ -111,6 +123,8 @@ vars pcount, cand
     cand
 }
 
+
+"Returns the number of prime divisors of n, including multiplicity."
 fun numPrimeDivisors(n) 
 vars i, p, k
 {
@@ -133,6 +147,11 @@ vars i, p, k
     k
 }
 
+
+"
+ Euler's totient function: returns the number of natural numbers
+ less than n which are coprime with it.
+"
 fun phi(n) 
 vars i, p, k, pPhi, result
 {
@@ -160,6 +179,7 @@ vars i, p, k, pPhi, result
 }
 
 
+"GCD by the euclidian algorithm."
 fun gcd(a,b)
 {
 	?( !(a%b),
@@ -168,11 +188,17 @@ fun gcd(a,b)
 	)
 }
 
+
 fun triangular(n)
 {
 	(n+1) * n / 2
 }
 
+
+"
+ The Ackermann function grows very quickly indeed.
+ Exercise prudence with its arguments.
+"
 fun ackermann(m, n)
 {
 	?( !m,
@@ -184,7 +210,13 @@ fun ackermann(m, n)
 	 )
 }
 
-fun knuthUpArrow(a,b,p)
+
+"
+ Knuth's up-arrow operation.
+ uparrow(a,b,p) is to uparrow(a,b,p-1) as a^b is to a*b
+ uparrow(a,b,1) is simply a^b.
+"
+fun uparrow(a,b,p)
 {
 	?( p==1,
 	   a^b,

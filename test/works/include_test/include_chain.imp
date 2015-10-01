@@ -1,6 +1,12 @@
 #include "./one"
 #include "./multincluded"
 
+
+"
+ Demonstrates multiple inclusion, and circular include resolution:
+ one.imp includes two.imp includes three.imp includes one.imp. But the
+ preprocessor stops at this last step, having already included one.imp
+"
 fun main()
 vars x
 {
@@ -10,7 +16,7 @@ vars x
 	y = two();
 	x = three();
 	
-	print (x + y);
+	print x + y;
 
 	
 	return 0;
