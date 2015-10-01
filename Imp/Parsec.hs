@@ -106,9 +106,11 @@ space    = plus (char ' ')
 
 -- | Parse text between quotation marks.
 quote   :: Parser Char String
-quote = do char '"'
+quote = do some space
+           char '"'
            q       <- some (notChars ['"'])
            char '"'
+           some space
            return q 
 
 

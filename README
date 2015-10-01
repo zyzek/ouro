@@ -32,6 +32,9 @@ What tasks did you complete?
     - Generalised operator assignment: 
         x = x + 1;        <->   x (+)= 1;
         x = func(y, x);   <->   x (func)= y;
+    - Functions as operators:
+              func(x, y);  <->  x [func] y;
+        func(a, b, c, d);  <->  a [func c,d] b;
     - Single-assignments can can be evaluated as
       expressions for chained assignment.
     - Conditional Ternary Operator

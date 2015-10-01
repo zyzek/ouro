@@ -76,6 +76,8 @@ atoms
         , (")",         KRoundKet)
         , ("{",         KBraceBra)
         , ("}",         KBraceKet)
+        , ("[",         KSquareBra)
+        , ("]",         KSquareKet)
         , (",",         KComma)
         , (";",         KSemi)
         , ("=",         KEquals)

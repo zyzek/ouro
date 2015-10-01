@@ -1,0 +1,22 @@
+"
+ Functions as operators:
+ 
+ Wrap a function in square brackets, and the first two args will be filled
+  by the operands on either side of the function.
+
+ Any remaining arguments will be filled by a comma-separated list of
+  expressions within the brackets, following the function identifier.
+"
+
+fun pm(x, y, m) { x + m*y }
+
+fun dpm(x, y, m, n) { m*x + n*y }
+
+fun pow(x, y) { x^y }
+
+fun main()
+{
+   print 1 [pm 12] 5;
+   print 1 [dpm 7, 8] 5;
+   4 [pow] 4
+}

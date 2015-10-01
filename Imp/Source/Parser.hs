@@ -268,10 +268,12 @@ precOp prec
 expr :: Id -> Parser Token Exp
 expr = opL 1
 
+atom :: Id -> Parser Token Exp
+atom = opL 7
 -- This is a bit of a hack: prefer a more elegant way than manually
 --   specifying that the precedence of atoms is maximal.
 opL :: Int -> Id -> Parser Token Exp
-opL 6 curFuncId
+opL 7 curFuncId
  = alts 
  [
    numExpr
@@ -294,18 +296,38 @@ opL prec curFuncId
                                  _    -> chainPartOps (reverse es) l
         
 opR :: Int -> Id -> Parser Token Exp
+opR 6 curFuncId
+ = do  XApp i (e1:_:arg_list)     <- funcOperator curFuncId
+       r                          <- atom curFuncId
+       return                     $  XApp i (e1:r:arg_list)
+
+
 opR prec curFuncId
  = do  op                   <- precOp prec
        r                    <- opL (prec + 1) curFuncId
        return               $  XOpBin op (XNum (-999)) r
 
+
+
+
 -- Take a string of binary operations and glue them together.
 -- Each operation is substituted into the LHS of the one following.
 -- The remaining LHS is filled with the expression passed in.  
 chainPartOps :: [Exp] -> Exp -> Exp
-chainPartOps [XOpBin op _ e2] l = (XOpBin op l e2) 
+chainPartOps [XOpBin op _ e2] l = (XOpBin op l e2)
+chainPartOps [XApp i (_:r)] l = (XApp i (l:r))
 chainPartOps ((XOpBin op _ e2):rest) l = (XOpBin op (chainPartOps rest l) e2)
+chainPartOps ((XApp i (_:r)):rest) l = (XApp i ((chainPartOps rest l):r))
 chainPartOps _ _ = (XNum (-999))
+
+
+funcOperator :: Id -> Parser Token Exp
+funcOperator curFuncId
+ = do     only KSquareBra
+          i          <- ident
+          arg_list   <- (alt (exprs curFuncId) (result []))
+          only KSquareKet
+          return    $ XApp i ((XNum (-1000)):(XNum (-1001)):arg_list)
 
 
 -- single identifier
@@ -340,7 +362,7 @@ parenExpr curFuncId = do only KRoundBra
 -- prefix operator
 unaryOp :: Id -> Parser Token Exp
 unaryOp curFuncId = do op      <- unoper
-                       e       <- opL 6 curFuncId
+                       e       <- atom curFuncId
                        return $ XOpUn op e
 
 -- Assign expression

@@ -9,6 +9,8 @@ vars i
 	print sqrt(256);
 	print isPrime(47);
 	print isPrime(20);
+	print coprime(10, 5);
+	print coprime(13, 7);
 	print prime(10);
 	print numPrimeDivisors(1024);
 	print phi(36);

@@ -18,5 +18,5 @@ fun xor(a, b)
 
 fun main(a, b)
 {
-    (a x| b) & xor(a, b)
+    (a x| b) & (a [xor] b)
 }

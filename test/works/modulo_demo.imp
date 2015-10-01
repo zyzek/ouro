@@ -1,0 +1,26 @@
+#include "modulo"
+
+fun reducedSystem(m)
+vars c
+{
+	while c < m {
+		c (+)= 1;
+		if invmod(c, m) { print c; }
+	}
+
+	return 0;
+}
+
+
+fun main()
+{
+	print reducedSystem(42);
+	print 3 [cong 10] 13;
+	print 10 [addmod 13] 27;
+	print 17 [mulmod 13] 7;
+	print 17 [mulmod 13] 13;
+	print 13 [mulmod 13] 16;
+	print mod(-4, 7);
+	print mod(10, 7);
+	return 5 [mulmod 8] invmod(5, 8);
+}

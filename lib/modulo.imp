@@ -1,0 +1,61 @@
+"
+ Modular arithmetic.
+"
+"The value of x modulo m."
+fun mod(x, m) 
+{
+	if x < 0
+	{
+		while x <= m { x (+)= m; } 
+		x (-)= m;
+	}
+	else
+	{
+		while x >= m { x (-)= m; }
+	}
+
+	return x;
+}
+
+"Determines whether x is congruent to y (mod m)."
+fun cong(x, y, m) { mod(x, m) - mod(y, m) == 0 }
+
+"Modular addition."
+fun addmod(x, y, m) { mod(mod(x,m) + mod(y,m), m) }
+
+"Modular multiplication."
+fun mulmod(x, y, m) { mod(mod(x,m) * mod(y,m), m) }
+
+"Modular exponentiation."
+fun powmod(x, y, m)
+vars c, e
+{
+	c, x = 1, mod(x, m);
+
+	while (e < y) {
+		e (+)= 1;
+		c = mod((x*c), m);
+	}
+
+	return c;
+}
+
+
+"Returns the multiplicative inverse of x (mod m), if it exists, else 0."
+fun invmod(x, m)
+vars t, tn, r, rn, q
+{
+	t, tn = 0, 1;
+	r, rn = m, x;
+
+	while rn != 0
+	{
+		q     = r / rn;
+		t, tn = tn, t - q*tn;
+		r, rn = rn, r - q*rn;
+	}
+
+	t (+)= (t < 0)*m;
+
+	return t*(r <= 1);
+}

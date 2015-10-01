@@ -123,6 +123,23 @@ vars pcount, cand
     cand
 }
 
+fun coprime(m, n)
+vars f
+{
+    f = m [gcd] n;
+
+    while f != 1 {
+        if f==m | f==n
+        {
+            return false;
+        }
+
+        m, n = m/f, n/f;
+    }
+
+    return true;
+}
+
 
 "Returns the number of prime divisors of n, including multiplicity."
 fun numPrimeDivisors(n) 

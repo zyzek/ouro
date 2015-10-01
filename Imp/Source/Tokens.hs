@@ -13,6 +13,8 @@ data Token
         | KRoundKet             -- ')'
         | KBraceBra             -- '{'
         | KBraceKet             -- '}'
+        | KSquareBra            -- '['
+        | KSquareKet            -- ']'
 
         | KComma                -- ','
         | KSemi                 -- ';'
