@@ -108,16 +108,16 @@ stmt curFuncId
    --  if-then to precede it.
  , do  only Kif
        guard      <- expr curFuncId
-       only Kthen
+       alt (only Kthen) (result Kthen)
        lbr        <- block curFuncId
-       only Kelse
+       alt (only Kelse) (result Kelse)
        rbr        <- block curFuncId
        return     $ SIfElse guard lbr rbr
 
    -- if-then
  , do  only Kif
        guard      <- expr curFuncId
-       only Kthen
+       alt (only Kthen) (result Kthen)
        br         <- block curFuncId
        return     $ SIf guard br
 

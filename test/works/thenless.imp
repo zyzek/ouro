@@ -1,0 +1,52 @@
+"
+ In conditionals, then and else keywords are completely optional.
+"
+
+fun main() 
+{
+	if true then
+	{
+		print 1;
+	}
+
+	if false
+	{
+		print 2;
+	}
+
+	if true then
+	{
+		print 3;
+	}
+	else
+	{
+		print 4;
+	}
+
+	if false then
+	{
+		print 5;
+	}
+	{
+		print 6;
+	}
+
+	if true
+	{
+		print 7;
+	}
+	else 
+	{
+		print 8;
+	}
+
+	if false
+	{
+		print 9;
+	}
+	{
+		print 10;
+	}
+
+	return 0;
+}

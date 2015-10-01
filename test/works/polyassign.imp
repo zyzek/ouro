@@ -1,3 +1,13 @@
+"
+ Multiple assignments evaluate the expressions on the right
+ hand side before placing the values in the variables.
+
+ This is not only convenient for condensing several assignments
+ down onto a single line, but the RHS can also involve the 
+ variables on the LHS. For example we can easily swap two variables
+ without having to keep a temporary variable around.
+"
+
 fun one() { 1 }
 
 fun main()
