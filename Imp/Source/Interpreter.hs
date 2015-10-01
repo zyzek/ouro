@@ -25,6 +25,17 @@ setFunc sArgs func = sArgs { sFunc = func }
 setBlock :: StepArgs -> Block -> StepArgs
 setBlock sArgs block = sArgs { sBlock = block }
 
+fId :: Function -> Id
+fId (Function funcId _ _) = funcId
+fIds :: Function -> [Id]
+fIds (Function _ fArgIds _) = fArgIds
+fBlocks :: Function -> [Block]
+fBlocks (Function _ _ funcBlocks) = funcBlocks
+
+bId :: Block -> Int
+bId (Block blkId _) = blkId
+bInstrs :: Block -> [Instr]
+bInstrs (Block _ blkInstrs) = blkInstrs
 
  -- Tools!!
 setReg :: Env -> Reg -> Int -> Env
@@ -94,7 +105,6 @@ step sArgs@(StepArgs env funcs func (Block blockId (i:is)) gReg) =
         ICall dst funcId argsList       -> step $ setEnv newArgs $ 
                                             call env dst funcs (lookupFunc funcId funcs) argsList
         IConst dst val                  -> step $ setEnv newArgs $ setReg env dst val
-        ICopy dst src                   -> step $ setEnv newArgs $ copyReg env dst src
         ILoad dst varId                 -> step $ setEnv newArgs $ loadVar env dst varId
         IStore varId src                -> step $ setEnv newArgs $ storeReg env varId src
         IArith op dst op1 op2           -> step $ setEnv newArgs $ arithOp env op dst op1 op2

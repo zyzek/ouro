@@ -9,13 +9,13 @@ data Program
 
 -- | Core Functions.
 data Function
-        = Function { fId :: Id, fIds :: [Id], fBlocks :: [Block] } 
+        = Function Id [Id] [Block] 
         deriving Show 
 
 
 -- | Core Blocks.
 data Block
-        = Block { bId :: Int, bInstrs :: [Instr] }  -- (Instr:[Instr])
+        = Block Int [Instr]
         deriving Show
         
 
@@ -29,7 +29,6 @@ data Instr
         | IReturn       Reg                     -- ^ ret
         | ICall         Reg Id [Reg]            -- ^ call
         | IPrint        Reg                     -- ^ print
-        | ICopy         Reg Reg                 -- ^ cpy
         deriving Show
 
 

@@ -226,8 +226,8 @@ convertStmt (reg0, blk0, (S.SIfElse expr blkl blkr)) =
              ++ [C.Block blk1 [C.IBranch (C.Reg (reg1 - 1)) (blk1 + 1) (blk2 + 1)]]
              ++ cBlkListl
              ++ cBlkListr
-             ++ [C.Block blk2 [C.ICopy (C.Reg (reg3 - 1)) (C.Reg (reg2 - 2))]]
-             ++ [C.Block blk3 [C.ICopy (C.Reg (reg3 - 1)) (C.Reg (reg3 - 2))]] ++
+             ++ [C.Block blk2 [C.IArith C.OpAdd (C.Reg (reg3 - 1)) (C.Reg (reg2 - 2)) (C.Reg 0)]]
+             ++ [C.Block blk3 [C.IArith C.OpAdd (C.Reg (reg3 - 1)) (C.Reg (reg3 - 2)) (C.Reg 0)]] ++
             case blk1Blk of
               Nothing ->  [
                             C.Block (blk2) [
