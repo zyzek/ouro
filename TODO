@@ -6,12 +6,7 @@ Set: 14th Sep                        Due: 9th Oct 5pm
 Make the Code Style Consistent and Beautiful
 	Line lengths <= 100 characters
 	Comment Everything
-	Ask Ben RE: why some tokens have lower-case second letters,
-				and some have upper case, else make it consistent
 
-
-
-Get expressions working in function arguments
 
 Document invocation and new language features in README
 
@@ -19,11 +14,9 @@ Add more informative error checking
 
 Extension Tasks
 
-	Infix Notation
+	☑ Infix Notation
 		Determine precedence levels, esp unary operators
 		Generalise precedence system to an enumerated hierarchy
-
-
 	☑ While Loops
 
 Tests

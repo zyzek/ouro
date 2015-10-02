@@ -73,12 +73,6 @@ checkStmtIds vars funsigs stmt
  = case stmt of
         SAssign targs exprs    ->    (checkAssign vars funsigs targs exprs)
 
-        SFAssign var _ expr    ->    (checkVarId vars var) 
-                                      ++ (checkExpIds vars funsigs expr)
-
-        SBAssign var _ expr    ->    (checkVarId vars var) 
-                                      ++ (checkExpIds vars funsigs expr)
-
         SWhile expr b          ->    (checkExpIds vars funsigs expr)
                                       ++ (checkBlockIds vars funsigs b)
 
@@ -112,12 +106,6 @@ checkExpIds vars funsigs expr
                                       ++ (checkExpIds vars funsigs e2)
 
         XAssign i e            ->    (checkVarId vars i)
-                                      ++ (checkExpIds vars funsigs e)
-
-        XFAssign i _ e         ->    (checkVarId vars i) 
-                                      ++ (checkExpIds vars funsigs e)
-
-        XBAssign i _ e         ->    (checkVarId vars i) 
                                       ++ (checkExpIds vars funsigs e)
 
         XTernary e1 e2 e3      ->    (checkExpIds vars funsigs e1)

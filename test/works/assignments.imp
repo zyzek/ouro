@@ -1,0 +1,85 @@
+"
+ There are several forms of assignment.
+
+ Enclose a function in square brackets, and follow it with an equals sign, and a RHS:
+
+ 	x [func]= y;
+
+ This is equivalent to:
+
+ 	x = func(x, y);
+
+ If we have a function op(w, x, y, z) which accepts more than two arguments, you can provide them
+  inside the operator brackets:
+
+ 	w [op y,z] x;
+
+
+ This also works for built-in binary operators:
+
+ 	x [^]= y;
+
+ Is equivalent to:  
+ 	
+ 	x = x^y;
+
+
+ An assignment expression evaluates to its left hand side so that you can include assignments
+  within larger expressions.
+ This is probably most convenient for setting a number of variables to the same value:
+
+ 	x = y = z = 10;
+
+ But the following is also valid:
+
+ 	x = y [+]= (x [*]= 10) - (y [op 1,2]= x) * z = 5;
+
+
+ If there is nothing to the left of an assignment's LHS, multiple assignments are possible.
+ These first evaluate the expressions on the RHS and then assign the results to the LHS in order.
+
+ 	x, y, z = z, x, y;
+ 	a, b [+]= 1, -1;
+ 	f, g [op]= g, g;
+
+ These don't have a definite value, so can't appear as expressions within larger statements.
+"
+
+
+fun plus(x, y)
+{
+	return x + y;
+}
+
+fun plusnum(x, y, z)
+{
+	return x + y + z;
+}
+
+fun multnum(x, y, z)
+{
+	return (x + y)*z;
+}
+
+fun main()
+vars w, x, y, z
+{
+	z = 1;
+	x = 10;
+
+	x, y = y, x;								"x = 0, y = 10"
+
+	z [plus]= y;								"z = 11"
+	
+	z [multnum 3]= x [+]= y = 100;				"y = 100, x = 100, z = 333"
+	
+	w = 10 + x [plusnum 1000]= y;               "x = 1200, w = 1210"
+
+	w [*]= y;									"w = 121000"
+
+	x, y [+]= 7, 5;								"x = 1207, y = 105"
+
+	z, w [plusnum 10]= 5, z;					"z = 348  w = 121343"
+
+	return z + x + y + w;						"return 348 + 1207 + 105 + 121343 = 123003"
+}

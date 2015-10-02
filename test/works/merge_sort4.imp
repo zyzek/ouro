@@ -5,11 +5,11 @@ vars a2, b2, c2, d2
 {       
 
     tmp = max(a, b);
-    a (min)= b;
+    a [min]= b;
     b = tmp;
 
     tmp = max(c, d);
-    c (min)= d;
+    c [min]= d;
     d = tmp;
 
     

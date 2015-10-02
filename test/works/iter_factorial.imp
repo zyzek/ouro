@@ -5,8 +5,8 @@ vars total
 
     while (n > 1) 
     {       
-        total (*)= n;
-        n (-)= 1;
+        total [*]= n;
+        n [-]= 1;
     }
     
     total

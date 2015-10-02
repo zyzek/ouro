@@ -202,8 +202,8 @@ chainPartOps xps l
  = case xps of
         [XOpBin op _ e2]        ->   XOpBin op l e2
         (XOpBin op _ e2):rest   ->   XOpBin op (chainPartOps rest l) e2
-        [XApp i (_:r)]          ->   XApp i (l:r)
-        (XApp i (_:r)):rest     ->   XApp i ((chainPartOps rest l):r)
+        [XApp f (_:r)]          ->   XApp f (l:r)
+        (XApp f (_:r)):rest     ->   XApp f ((chainPartOps rest l):r)
         _                       ->   (XNum (-999))
 
 
@@ -212,10 +212,10 @@ chainPartOps xps l
 funcop :: Id -> Parser Token Exp
 funcop curFuncId
  = do   only KSquareBra
-        i                       <- ident
+        f                       <- ident
         arg_list                <- alt (exprs curFuncId) (result [])
         only KSquareKet
-        return                  $  XApp i $ (XNum (-1000)):(XNum (-1001)):arg_list
+        return                  $  XApp f $ (XNum (-1000)):(XNum (-1001)):arg_list
 
 
 -- Parse operators of the given precedence level.
@@ -332,40 +332,39 @@ unaryOpExpr curFuncId
 -- | Assignment expression.
 assignExpr :: Id -> Parser Token Exp
 assignExpr curFuncId
- = do   only KRoundBra
-        i          <- ident
+ = do   i          <- ident
         only KEquals
         e          <- expr curFuncId
-        only KRoundKet
         return     $  XAssign i e
 
 
 -- | FAssign expression.
 fAssignExpr :: Id -> Parser Token Exp
 fAssignExpr curFuncId
- = do   only KRoundBra
+ = do   -- only KRoundBra
         i          <- ident
-        only KRoundBra
+        only KSquareBra
         f          <- ident
-        only KRoundKet
+        arg_list   <- alt (exprs curFuncId) (result [])
+        only KSquareKet
         only KEquals
         e          <- expr curFuncId
-        only KRoundKet
-        return     $  XFAssign i f e
+        -- only KRoundKet
+        return     $  XAssign i $ XApp f $ (XId i):e:arg_list
 
 
 -- | BAssign expression.
 bAssignExpr :: Id -> Parser Token Exp
 bAssignExpr curFuncId
- = do   only KRoundBra
+ = do   -- only KRoundBra
         i          <- ident
-        only KRoundBra
+        only KSquareBra
         o          <- binoper
-        only KRoundKet
+        only KSquareKet
         only KEquals
         e          <- expr curFuncId
-        only KRoundKet
-        return     $  XBAssign i o e
+        -- only KRoundKet
+        return     $  XAssign i $ XOpBin o (XId i) e
 
 
 -- | Ternary operation.
@@ -390,33 +389,37 @@ assignStmt :: Id -> Parser Token Stmt
 assignStmt curFuncId
  = do  is         <- idents
        only KEquals
-       e          <- exprs curFuncId
+       es         <- exprs curFuncId
        only KSemi
-       return     $  SAssign is e
+       return     $  SAssign is es
+
 
 -- | Function assignment.
 fassignStmt :: Id -> Parser Token Stmt
 fassignStmt curFuncId
- = do  i          <- ident
-       only KRoundBra
+ = do  is         <- idents
+       only KSquareBra
        f          <- ident
-       only KRoundKet
+       arg_list   <- alt (exprs curFuncId) (result [])
+       only KSquareKet
        only KEquals
-       e          <- expr curFuncId
+       es         <- exprs curFuncId
        only KSemi
-       return     $  SFAssign i f e
+       return     $  SAssign is $ map (\(i, e) -> XApp f ((XId i):e:arg_list)) (zip is es)
+
 
 -- | Operator assignment
 bassignStmt :: Id -> Parser Token Stmt
 bassignStmt curFuncId
- = do  i          <- ident
-       only KRoundBra
-       f          <- binoper
-       only KRoundKet
+ = do  is         <- idents
+       only KSquareBra
+       o          <- binoper
+       only KSquareKet
        only KEquals
-       e          <- expr curFuncId
+       es         <- exprs curFuncId
        only KSemi
-       return     $  SBAssign i f e
+       return     $  SAssign is $ map (\(i, e) -> XOpBin o (XId i) e) (zip is es)
+
 
 -- | if-then-else
 ifelseStmt :: Id -> Parser Token Stmt
@@ -429,6 +432,7 @@ ifelseStmt curFuncId
        rbr        <- block curFuncId
        return     $  SIfElse guard lbr rbr
 
+
 -- | if-then
 ifthenStmt :: Id -> Parser Token Stmt
 ifthenStmt curFuncId
@@ -438,6 +442,7 @@ ifthenStmt curFuncId
        br         <- block curFuncId
        return     $  SIf guard br
 
+
 -- | while
 whileStmt :: Id -> Parser Token Stmt
 whileStmt curFuncId
@@ -445,6 +450,7 @@ whileStmt curFuncId
        cond       <- expr curFuncId
        body       <- block curFuncId
        return     $  SWhile cond body
+
 
 -- | return
 returnStmt :: Id -> Parser Token Stmt
@@ -454,6 +460,7 @@ returnStmt curFuncId
        only KSemi
        return     $  SReturn i
 
+
 -- | print
 printStmt :: Id -> Parser Token Stmt
 printStmt curFuncId
@@ -461,6 +468,7 @@ printStmt curFuncId
       es          <- alt (exprs curFuncId) (result [])
       only KSemi
       return      $  SPrint es
+
 
 -- | naked expression
 exprStmt :: Id -> Parser Token Stmt

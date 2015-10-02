@@ -22,8 +22,6 @@ data Block
 -- | Source Statements.
 data Stmt
         = SAssign     [Id]   [Exp]
-        | SFAssign    Id   Id    Exp
-        | SBAssign    Id   OpBin Exp
         | SIf         Exp  Block
         | SIfElse     Exp  Block Block
         | SWhile      Exp Block
@@ -41,8 +39,6 @@ data Exp
         | XOpBin   OpBin Exp Exp
         | XOpUn    OpUn Exp
         | XAssign  Id Exp
-        | XFAssign Id Id Exp
-        | XBAssign Id OpBin Exp
         | XTernary Exp Exp Exp
         deriving (Eq, Show)
 

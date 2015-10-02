@@ -98,14 +98,8 @@ convertExp (reg0, blk0, (S.XTernary cond expr1 expr2)) =
         (blk1),
         blkList
     )
-convertExp (reg0, blk0, stmt) =
-    let (reg1, blk1, blkList) = 
-            case stmt of 
-                S.XAssign  varId expr        -> convertStmt (reg0, blk0, S.SAssign [varId] [expr])
-                S.XFAssign varId funcId expr -> convertStmt (reg0, blk0, S.SFAssign varId funcId expr)
-                S.XBAssign varId op     expr -> convertStmt (reg0, blk0, S.SBAssign varId op expr)
-                -- Next line should never happen.
-                _                            -> convertStmt (reg0, blk0, S.SExp (S.XNum 0))
+convertExp (reg0, blk0, (S.XAssign varId expr)) =
+    let (reg1, blk1, blkList) = convertStmt (reg0, blk0, S.SAssign [varId] [expr]) 
     in (
         (reg1),
         (blk1),
@@ -177,20 +171,6 @@ convertStmt (reg0, blk0, (S.SAssign ids exprs)) =
         (reg1),
         (blk1),
         blkList ++ [C.Block blk1 storeInstrList]
-    )
-convertStmt (reg0, blk0, (S.SFAssign varId funcId expr)) =
-    let (reg1, blk1, blkList) = convertExp (reg0, blk0, S.XApp funcId [expr, (S.XId varId)])
-    in (
-        (reg1),
-        (blk1),
-        blkList ++ [C.Block blk1 [C.IStore (convertId varId) (C.Reg (reg1 - 1))]]
-    )
-convertStmt (reg0, blk0, (S.SBAssign varId op expr)) =
-    let (reg1, blk1, blkList) = convertExp (reg0, blk0, S.XOpBin op (S.XId varId) expr)
-    in (
-        (reg1),
-        (blk1),
-        blkList ++ [C.Block blk1 [C.IStore (convertId varId) (C.Reg (reg1 - 1))]]
     )
 convertStmt (reg0, blk0, (S.SIf expr blk)) = 
     let (reg1, blk1, blkList) = convertExp (reg0, blk0, expr)

@@ -9,8 +9,8 @@ vars total
 
     while (n > 1) 
     {       
-        total (*)= n;
-        n (-)= 1;
+        total [*]= n;
+        n [-]= 1;
     }
     
     total*(n >= 0)
@@ -38,10 +38,10 @@ vars tmp, pred, prepred, sign
     while (n != 0)
     {
         tmp = pred;
-        pred (+)= prepred;
+        pred [+]= prepred;
         prepred = tmp;
         
-        n (-)= 1;
+        n [-]= 1;
     }
 
     prepred * sign
@@ -80,7 +80,7 @@ vars val
 
     while (val^2 <= n)
     {
-        val (+)= 1;
+        val [+]= 1;
     }
 
     val - 1
@@ -100,7 +100,7 @@ vars max, factor
             return false;
         }
 
-        factor (+)= 1;
+        factor [+]= 1;
     } 
 
     n > 1
@@ -123,8 +123,8 @@ vars pcount, cand
 
     while (pcount < n) 
     {
-        cand (+)= 1;
-        pcount (+)= isPrime(cand);
+        cand [+]= 1;
+        pcount [+]= isPrime(cand);
     }
 
     cand
@@ -161,12 +161,12 @@ vars i, p, k
     while (n > 1) {
         if !(n % p) then
         {
-            k (+)= 1;
-            n (/)= p;
+            k [+]= 1;
+            n [/]= p;
         }
         else
         {
-            i (+)= 1;
+            i [+]= 1;
             p = prime(i);
         }
     }
@@ -189,15 +189,15 @@ vars i, p, k, pPhi, result
 	while (n > 1) {
 		if !(n % p) then
 		{
-			k (+)= 1;
-			n (/)= p;
+			k [+]= 1;
+			n [/]= p;
 		}
 		else
 		{
-			result (*)= (k > 0) * p^(k-1) * (p-1);
+			result [*]= (k > 0) * p^(k-1) * (p-1);
 			k = !(k > 0);
 
-			i (+)= 1;
+			i [+]= 1;
 			p = prime(i);
 		}
 	}
