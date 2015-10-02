@@ -22,15 +22,15 @@ prettyError err
         ErrorNoMain     
          -> "No main function defined."
         ErrorFuncUndef i
-         -> "function '" ++ i ++ "' undefined."
+         -> "Function '" ++ i ++ "' undefined."
         ErrorFuncRedef i
-         -> "function '" ++ i ++ "' redefined."
+         -> "Function '" ++ i ++ "' redefined."
         ErrorFuncSig i n
-         -> "function '" ++ i ++ "' expects " ++ (show n) ++ " argument(s)." 
+         -> "Function '" ++ i ++ "' expects " ++ (show n) ++ " argument(s)." 
         ErrorVarUndef i
-         -> "variable '" ++ i ++ "' undefined."
+         -> "Variable '" ++ i ++ "' undefined."
         ErrorVarRedef i
-         -> "variable '" ++ i ++ "' redefined."
+         -> "Variable '" ++ i ++ "' redefined."
         ErrorPolyAssign v e
          -> (show e) ++ " expressions assigned to " ++ (show v) ++ " variables in poly-assignment."
         ErrorSyntax

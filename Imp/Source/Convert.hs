@@ -101,7 +101,7 @@ convertExp (reg0, blk0, (S.XTernary cond expr1 expr2)) =
 convertExp (reg0, blk0, stmt) =
     let (reg1, blk1, blkList) = 
             case stmt of 
-                S.XAssign  varId expr        -> convertStmt (reg0, blk0, S.SAssign varId expr)
+                S.XAssign  varId expr        -> convertStmt (reg0, blk0, S.SAssign [varId] [expr])
                 S.XFAssign varId funcId expr -> convertStmt (reg0, blk0, S.SFAssign varId funcId expr)
                 S.XBAssign varId op     expr -> convertStmt (reg0, blk0, S.SBAssign varId op expr)
                 -- Next line should never happen.
@@ -169,14 +169,7 @@ convertExpsRegs (reg0, blk0, (xp:xps)) =
  -- |
  -- | - - - - - - - - - - - - -
 convertStmt :: (Int, Int, S.Stmt) -> (Int, Int, [C.Block])
-convertStmt (reg0, blk0, (S.SAssign varId varExp)) =
-    let (reg1, blk1, blkList) = convertExp (reg0, blk0, varExp)
-    in (
-        (reg1),
-        (blk1),
-        blkList ++ [C.Block blk1 [C.IStore (convertId varId) (C.Reg (reg1 - 1))]]
-    )
-convertStmt (reg0, blk0, (S.SPolyAssign ids exprs)) =
+convertStmt (reg0, blk0, (S.SAssign ids exprs)) =
     let (reg1, blk1, blkList, regs) = convertExpsRegs (reg0, blk0, exprs)
         storeInstrList 
          = map (\(i, r) -> C.IStore (convertId i) (C.Reg r)) (zip ids regs)

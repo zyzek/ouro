@@ -21,14 +21,13 @@ data Block
 
 -- | Source Statements.
 data Stmt
-        = SAssign     Id   Exp
-        | SPolyAssign [Id] [Exp]
+        = SAssign     [Id]   [Exp]
         | SFAssign    Id   Id    Exp
         | SBAssign    Id   OpBin Exp
         | SIf         Exp  Block
         | SIfElse     Exp  Block Block
-        | SReturn     Exp
         | SWhile      Exp Block
+        | SReturn     Exp
         | SPrint  [Exp]
         | SExp    Exp
         deriving (Eq, Show)
@@ -54,7 +53,7 @@ data Id
         deriving (Show, Eq)
 
 
--- | Source Operators.
+-- | Source Binary Operators.
 data OpBin
         = OpAdd
         | OpSub
@@ -62,22 +61,21 @@ data OpBin
         | OpDiv
         | OpMod
         | OpPow
+
         | OpLt
         | OpGt
         | OpEq
         | OpNeq
         | OpGeq
         | OpLeq
+        
         | OpOr
         | OpAnd
         | OpXor
         deriving (Show, Eq)
 
+-- | Source Unary Operators.
 data OpUn
-        = OpNeg
-        | OpNot
+        = OpNeg              -- numeric negation (-)
+        | OpNot              -- logical negation (!)
         deriving (Show, Eq)
-
-
-idString :: Id -> String
-idString (Id s) = s

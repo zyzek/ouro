@@ -52,4 +52,3 @@ takeId tt
  = case tt of
         KId s   -> Just s
         _       -> Nothing
-

@@ -1,3 +1,7 @@
+"
+The factorial function is defined on n >= 0.
+This one just returns 0 for negative arguments.
+"
 fun factorial(n)
 vars total
 {       
@@ -9,7 +13,7 @@ vars total
         n (-)= 1;
     }
     
-    total
+    total*(n >= 0)
 }
 
 "
@@ -55,6 +59,9 @@ fun  binom(n, r)
 {   
     perm(n,r) / factorial(r)
 }
+
+"Simply an alias."
+fun choose(n, r) { binom(n, r) }
 
 
 "
@@ -123,6 +130,9 @@ vars pcount, cand
     cand
 }
 
+"
+ True iff m and n share no common factors.
+"
 fun coprime(m, n)
 vars f
 {
@@ -205,7 +215,7 @@ fun gcd(a,b)
 	)
 }
 
-
+"Also equivalent to (n [choose] 2)."
 fun triangular(n)
 {
 	(n+1) * n / 2

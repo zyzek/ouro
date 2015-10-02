@@ -1,3 +1,4 @@
+
 module Imp.Source.Preprocessor where
 import Imp.Parsec
 import Data.List
@@ -38,6 +39,7 @@ preprocmemo source main fnames
       do c <- allContents
          preprocmemo (c ++ rest) main newfnames
 
+
 include :: Parser Char String
 include =
     do  some space
@@ -48,6 +50,7 @@ include =
         (char '"')
         some space
         return     s
+
 
 includes :: Parser Char [String]
 includes =

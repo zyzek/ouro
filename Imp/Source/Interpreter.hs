@@ -1,3 +1,4 @@
+
 module Imp.Source.Interpreter where
 import Data.List.Utils
 import Imp.Core.Exp
@@ -37,6 +38,7 @@ bId (Block blkId _) = blkId
 bInstrs :: Block -> [Instr]
 bInstrs (Block _ blkInstrs) = blkInstrs
 
+
  -- Tools!!
 setReg :: Env -> Reg -> Int -> Env
 setReg (Env reg var) targetReg val
@@ -66,7 +68,6 @@ storeReg :: Env -> Id -> Reg -> Env
 storeReg env varId src
  = setVar env varId (getReg env src)
 
-
 makeNRegs :: Int -> [Reg]
 makeNRegs n
  = unfoldr (\b -> if b == 0 then Nothing else Just (Reg b, b - 1)) n
@@ -93,7 +94,6 @@ evalFunc funcs func@(Function _ argIds (block:_)) argVals gReg =
     in getReg (step (StepArgs (Env [] args) funcs func block gReg)) gReg
 evalFunc _ _ _ _ = 0
     
-
 
 step :: StepArgs -> Env
 step sArgs@(StepArgs _ _ func (Block blockId []) _) = 
@@ -126,6 +126,7 @@ lookupBlock :: Int -> [Block] -> Block
 lookupBlock wantId bs
  = head $ filter (\(Block haveId _) -> wantId == haveId) bs
 
+
 arithCalc :: OpArith -> Int -> Int -> Int
 arithCalc op op1 op2 = case op of
             OpAdd   -> op1 + op2
@@ -151,9 +152,9 @@ arithCalc op op1 op2 = case op of
             OpNot   -> if (op1 /= 0) then 0 else 1
             OpNeg   -> -op1
 
+
 arithOp :: Env -> OpArith -> Reg -> Reg -> Reg -> Env
 arithOp env op dst op1Reg op2Reg = 
     let op1 = getReg env op1Reg
         op2 = getReg env op2Reg
     in setReg env dst $ arithCalc op op1 op2
-

@@ -11,11 +11,11 @@ checkProgram program
         = checkMain program
           ++ checkFuncRedef program
           ++ checkVarRedef  program
-          ++ checkIdDefs    program
+          ++ checkIds    program
 
 -- | Don't check for a main function.
 checkLibrary :: Program -> [Error]
 checkLibrary program
         = checkFuncRedef program
           ++ checkVarRedef  program
-          ++ checkIdDefs    program
+          ++ checkIds    program

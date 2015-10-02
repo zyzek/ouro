@@ -21,12 +21,12 @@ What tasks did you complete?
   + Richer operators:
     - Operator precedence;
     - Extended arithmetic and logical operations;
-    - Unary/Binary operator distinction
-  + Source file preprocessor for library importation
-    - Handles circular dependencies
-    - Included math and number-theory toy libraries
+    - Unary/Binary operator distinction.
+  + Source file preprocessor for library importation:
+    - Handles circular dependencies;
+    - Included math and number-theory toy libraries.
   + Extended language semantics:
-    - Expressions go where only ids could before
+    - Expressions go where only ids could before;
     - Multiple-assignment:
         a, b, c = 1, (1 + c), -b;
     - Generalised operator assignment: 
@@ -35,12 +35,12 @@ What tasks did you complete?
     - Functions as operators:
               func(x, y);  <->  x [func] y;
         func(a, b, c, d);  <->  a [func c,d] b;
-    - Single-assignments can can be evaluated as
-      expressions for chained assignment.
-    - Conditional Ternary Operator
-    - "Ouroboros" recursion operator: calls its enclosing function
-    - Comments
-    - Print statement
+    - Single-assignments can be evaluated as expressions,
+      for chained assignment;
+    - Conditional Ternary Operator;
+    - "Ouroboros" recursion operator: calls its enclosing function;
+    - Comments;
+    - Print statement.
   + Relatively extensive example code base.
 
 

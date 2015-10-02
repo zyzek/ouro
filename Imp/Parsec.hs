@@ -275,5 +275,3 @@ instance Monad (Parser input) where
 --
 match :: Eq a => [a] -> Parser a [a]
 match xs = sequence $ map (\x -> satisfies (== x)) xs
-
-

@@ -3,7 +3,7 @@
 fun main()
 vars i
 {
-	print fibonacci(-4), catalan(5), sqrt(256);
+	print fibonacci(-4), catalan(5), sqrt(256), 5 [choose] 4;
 	print isPrime(47), isPrime(20), coprime(10, 5), coprime(13, 7);
 	print prime(10), numPrimeDivisors(1024);
 	print;

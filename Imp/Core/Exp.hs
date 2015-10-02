@@ -34,21 +34,28 @@ data Instr
 
 -- | Arithmetic operators.
 data OpArith
+        -- Arithmetical Operators
         = OpAdd
         | OpSub
         | OpMul
         | OpDiv
         | OpMod
         | OpPow
+
+        -- Equalities and Inequalities
         | OpLt
         | OpGt
         | OpEq
         | OpNeq
         | OpGeq
         | OpLeq
+
+        -- Logical Operators
         | OpOr
         | OpAnd
         | OpXor
+
+        -- Unaries
         | OpNot
         | OpNeg
         deriving Show

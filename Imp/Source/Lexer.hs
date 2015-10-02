@@ -12,8 +12,8 @@ lexer str
         _                -> Nothing
 
 
--- | Parse a sequence of tokens,
---   separated by arbitrary white space.
+-- | Parse a sequence of tokens, separated by whitespace.
+-- | Discard code comments.
 tokens :: Parser Char [Token]
 tokens
  = do   some space
@@ -31,8 +31,8 @@ token :: Parser Char Token
 token 
  = altss
         [ do    match str           
-                return tok          -- For each (str, tok) pair, attempt
-        | (str, tok)    <- atoms]   -- a match
+                return tok            -- For each (str, tok) pair, attempt
+        | (str, tok)    <- atoms]     -- a match
 
  $ alts [ do     n   <- nat           -- Default parser: no prim match
                  return $ KNum n      -- thus, token is either a num
@@ -64,8 +64,7 @@ atoms
         , (">=",        KOp ">=")
         , ("!=",        KOp "!=")
 
-        -- These must appear later, 
-        -- as they are prefixes of other operators
+        -- These must appear later than operators they prefix.
         , ("<",         KOp "<")
         , (">",         KOp ">")
         , ("!",         KOp "!")
