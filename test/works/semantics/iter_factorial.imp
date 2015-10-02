@@ -1,3 +1,7 @@
+"
+ While loops work.
+"
+
 fun main(n)
 vars total
 {       

@@ -19,22 +19,30 @@ data StepArgs = StepArgs {
     sReg :: Reg
 } deriving Show
 
+
 setEnv :: StepArgs -> Env -> StepArgs
 setEnv sArgs env = sArgs { sEnv = env }
+
 setFunc :: StepArgs -> Function -> StepArgs
 setFunc sArgs func = sArgs { sFunc = func }
+
 setBlock :: StepArgs -> Block -> StepArgs
 setBlock sArgs block = sArgs { sBlock = block }
 
+
 fId :: Function -> Id
 fId (Function funcId _ _) = funcId
+
 fIds :: Function -> [Id]
 fIds (Function _ fArgIds _) = fArgIds
+
 fBlocks :: Function -> [Block]
 fBlocks (Function _ _ funcBlocks) = funcBlocks
 
+
 bId :: Block -> Int
 bId (Block blkId _) = blkId
+
 bInstrs :: Block -> [Instr]
 bInstrs (Block _ blkInstrs) = blkInstrs
 
@@ -74,47 +82,49 @@ makeNRegs n
 
  
 startProgram :: Program -> [Int] -> Int
-startProgram (Program funcList) args = 
-    let func = lookupFunc (Id "main") funcList
-        regs = makeNRegs (length args)
-        argRegs = zip regs args
-        env = call (Env argRegs []) (Reg 0) funcList func regs
-    in getReg env (Reg 0)
+startProgram (Program funcList) args
+ = let func    = lookupFunc (Id "main") funcList
+       regs    = makeNRegs (length args)
+       argRegs = zip regs args
+       env     = call (Env argRegs []) (Reg 0) funcList func regs
+   in  getReg env (Reg 0)
 
 
 call :: Env -> Reg -> [Function] -> Function -> [Reg] -> Env
-call env gReg funcs func argRegs =
-    let argVals = map (\x -> getReg env x) argRegs
-    in setReg env gReg (evalFunc funcs func (argVals) gReg)
+call env gReg funcs func argRegs
+ = let argVals = map (\x -> getReg env x) argRegs
+   in  setReg env gReg (evalFunc funcs func (argVals) gReg)
 
 
 evalFunc :: [Function] -> Function -> [Int] -> Reg -> Int
-evalFunc funcs func@(Function _ argIds (block:_)) argVals gReg = 
-    let args = zip argIds argVals
-    in getReg (step (StepArgs (Env [] args) funcs func block gReg)) gReg
+evalFunc funcs func@(Function _ argIds (block:_)) argVals gReg
+ = let args = zip argIds argVals
+   in  getReg (step (StepArgs (Env [] args) funcs func block gReg)) gReg 
+
 evalFunc _ _ _ _ = 0
     
 
 step :: StepArgs -> Env
-step sArgs@(StepArgs _ _ func (Block blockId []) _) = 
-    step $ setBlock sArgs $ lookupBlock (blockId + 1) (fBlocks func)
-step sArgs@(StepArgs env funcs func (Block blockId (i:is)) gReg) = 
-    let newArgs = setBlock sArgs $ Block blockId is
-    in case i of
-        IReturn rReg                    -> copyReg env gReg rReg
-        ICall dst funcId argsList       -> step $ setEnv newArgs $ 
-                                            call env dst funcs (lookupFunc funcId funcs) argsList
-        IConst dst val                  -> step $ setEnv newArgs $ setReg env dst val
-        ILoad dst varId                 -> step $ setEnv newArgs $ loadVar env dst varId
-        IStore varId src                -> step $ setEnv newArgs $ storeReg env varId src
-        IArith op dst op1 op2           -> step $ setEnv newArgs $ arithOp env op dst op1 op2
-        IBranch regCond blk1Id blk2Id   -> 
+step sArgs@(StepArgs _ _ func (Block blockId []) _)
+ = step $ setBlock sArgs $ lookupBlock (blockId + 1) (fBlocks func)
+
+step sArgs@(StepArgs env funcs func (Block blockId (i:is)) gReg)
+ = let newArgs = setBlock sArgs $ Block blockId is
+   in  case i of
+        IReturn rReg                   -> copyReg env gReg rReg
+        ICall dst funcId argsList      -> step $ setEnv newArgs $ 
+                                           call env dst funcs (lookupFunc funcId funcs) argsList
+        IConst dst val                 -> step $ setEnv newArgs $ setReg env dst val
+        ILoad dst varId                -> step $ setEnv newArgs $ loadVar env dst varId
+        IStore varId src               -> step $ setEnv newArgs $ storeReg env varId src
+        IArith op dst op1 op2          -> step $ setEnv newArgs $ arithOp env op dst op1 op2
+        IBranch regCond blk1Id blk2Id  -> 
             if (getReg env regCond /= 0)
              then step $ setBlock sArgs $ lookupBlock blk1Id $ fBlocks func
              else step $ setBlock sArgs $ lookupBlock blk2Id $ fBlocks func
-        IPrint pRegs                    -> trace 
-                                            (intercalate " " (map (\r -> show (getReg env r)) pRegs))
-                                            (step newArgs)
+        IPrint pRegs                   -> trace 
+                                           (intercalate " " (map (\r -> show (getReg env r)) pRegs))
+                                           (step newArgs)
 
  
 lookupFunc :: Id -> [Function] -> Function
@@ -127,34 +137,38 @@ lookupBlock wantId bs
  = head $ filter (\(Block haveId _) -> wantId == haveId) bs
 
 
+-- | Apply an operator to some input.
 arithCalc :: OpArith -> Int -> Int -> Int
-arithCalc op op1 op2 = case op of
-            OpAdd   -> op1 + op2
-            OpSub   -> op1 - op2
-            OpMul   -> op1 * op2
-            OpDiv   -> quot op1 op2
-            OpMod   -> mod op1 op2
-            OpPow   -> op1 ^ op2
-            OpLt    -> if (op1 < op2) then 1 else 0
-            OpGt    -> if (op1 > op2) then 1 else 0
-            OpLeq   -> if (op1 <= op2) then 1 else 0
-            OpGeq   -> if (op1 >= op2) then 1 else 0
-            OpEq    -> if (op1 == op2) then 1 else 0
-            OpNeq   -> if (op1 /= op2) then 1 else 0
-            OpOr    -> if (op1 /= 0) then op1 else op2
-            OpAnd   -> if (op1 /= 0) then op2 else 0
-            OpXor   -> if ((op1 /= 0) && (op2 == 0))
-                        then op1
-                        else 
-                         if ((op1 == 0) && (op2 /= 0))
+arithCalc op op1 op2
+ = case op of
+        OpAdd   -> op1 + op2
+        OpSub   -> op1 - op2
+        OpMul   -> op1 * op2
+        OpDiv   -> quot op1 op2
+        OpMod   -> mod op1 op2
+        OpPow   -> op1 ^ op2
+        
+        OpLt    -> if (op1 < op2) then 1 else 0
+        OpGt    -> if (op1 > op2) then 1 else 0
+        OpLeq   -> if (op1 <= op2) then 1 else 0
+        OpGeq   -> if (op1 >= op2) then 1 else 0
+        OpEq    -> if (op1 == op2) then 1 else 0
+        OpNeq   -> if (op1 /= op2) then 1 else 0
+        
+        OpOr    -> if (op1 /= 0) then op1 else op2
+        OpAnd   -> if (op1 /= 0) then op2 else 0
+        OpXor   -> if ((op1 /= 0) && (op2 == 0))
+                    then op1
+                    else if ((op1 == 0) && (op2 /= 0))
                           then op2
                           else 0
-            OpNot   -> if (op1 /= 0) then 0 else 1
-            OpNeg   -> -op1
+        
+        OpNot   -> if (op1 /= 0) then 0 else 1
+        OpNeg   -> (-op1)
 
-
+-- | Apply an operator to the contents of two registers, store the result back in the environment.
 arithOp :: Env -> OpArith -> Reg -> Reg -> Reg -> Env
-arithOp env op dst op1Reg op2Reg = 
-    let op1 = getReg env op1Reg
-        op2 = getReg env op2Reg
-    in setReg env dst $ arithCalc op op1 op2
+arithOp env op dst op1Reg op2Reg
+ = let op1 = getReg env op1Reg
+       op2 = getReg env op2Reg
+   in  setReg env dst $ arithCalc op op1 op2

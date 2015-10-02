@@ -1,0 +1,19 @@
+"
+ In the case of the linear-recursive factorial program, the while loop was not of much help.
+ But here, we can save ourselves an exponential amount of work in computing the Fibonacci numbers,
+  versus the recursive version. 
+"
+
+fun  main(n)
+vars next, curr
+{       
+    next = 1;
+
+    while (n != 0)
+    {
+        curr, next = next, curr + next;     
+        n -= 1;
+    }
+
+    curr
+}

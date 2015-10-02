@@ -1,0 +1,14 @@
+"
+ Here is a very compact factorial program.
+ 
+ The ouroboros operator, '@' is simply an alias to its enclosing function.
+ It looks a little bit like a snake eating its tail, so represents recursion.
+
+ The last expression in a block is returned, if it lacks a semicolon.
+
+ Here we take advantage of short circuiting in |. The right operand is only evaluated if
+  the left one is false. Since "true" is represented by 1, the equality operator here returns
+  the correct value in the base case, when n is 0.
+"
+
+fun main(n) { n==0 | @(n-1)*n }

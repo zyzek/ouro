@@ -78,6 +78,7 @@ only token
 char :: Char -> Parser Char Char
 char c  = satisfies (== c)
 
+
 -- | Parse any character not in the given list.
 notChars :: [Char] -> Parser Char Char
 notChars cs = satisfies (\c -> not (elem c cs))
@@ -103,6 +104,7 @@ space    :: Parser Char Char
 space    = plus (char ' ') 
          $ plus (char '\t')
                 (char '\n')
+
 
 -- | Parse text between quotation marks.
 quote   :: Parser Char String

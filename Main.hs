@@ -141,4 +141,3 @@ showResult strResult fileExpected
                         if diff == "\n"
                          then putStrLn $ "\nOK"
                          else putStrLn $ "\nDIFF\n" ++ diff
-

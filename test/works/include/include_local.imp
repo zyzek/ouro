@@ -1,4 +1,4 @@
-#include "../../lib/math"
+#include "../../../lib/math"
 
 "
  Include paths beginning with . or / are relative to the script

@@ -1,7 +1,6 @@
 #include "./one"
 #include "./multincluded"
 
-
 "
  Demonstrates multiple inclusion, and circular include resolution:
  one.imp includes two.imp includes three.imp includes one.imp. But the
