@@ -28,13 +28,13 @@ What tasks did you complete?
   + Extended language semantics:
     - Expressions go where only ids could before;
     - Multiple-assignment:
-        a, b, c = 1, (1 + c), -b;
-    - Generalised operator assignment: 
-        x = x + 1;        <->   x (+)= 1;
-        x = func(y, x);   <->   x (func)= y;
+        a, b, c  =  1, (1 + c), -b;
     - Functions as operators:
               func(x, y);  <->  x [func] y;
         func(a, b, c, d);  <->  a [func c,d] b;
+    - Operator assignment: 
+        x = x + 1;        <->   x += 1;
+        x = func(y, x);   <->   x [func]= y;
     - Single-assignments can be evaluated as expressions,
       for chained assignment;
     - Conditional Ternary Operator;

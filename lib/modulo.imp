@@ -6,12 +6,12 @@ fun mod(x, m)
 {
 	if x < 0
 	{
-		while x <= m { x [+]= m; } 
-		x [-]= m;
+		while x <= m { x += m; } 
+		x -= m;
 	}
 	else
 	{
-		while x >= m { x [-]= m; }
+		while x >= m { x -= m; }
 	}
 
 	return x;
@@ -33,7 +33,7 @@ vars c, e
 	c, x = 1, mod(x, m);
 
 	while (e < y) {
-		e [+]= 1;
+		e += 1;
 		c = mod((x*c), m);
 	}
 
@@ -55,7 +55,7 @@ vars t, tn, r, rn, q
 		r, rn = rn, r - q*rn;
 	}
 
-	t [+]= (t < 0)*m;
+	t += (t < 0)*m;
 
 	return t*(r <= 1);
 }

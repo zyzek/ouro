@@ -341,29 +341,23 @@ assignExpr curFuncId
 -- | FAssign expression.
 fAssignExpr :: Id -> Parser Token Exp
 fAssignExpr curFuncId
- = do   -- only KRoundBra
-        i          <- ident
+ = do   i          <- ident
         only KSquareBra
         f          <- ident
         arg_list   <- alt (exprs curFuncId) (result [])
         only KSquareKet
         only KEquals
         e          <- expr curFuncId
-        -- only KRoundKet
         return     $  XAssign i $ XApp f $ (XId i):e:arg_list
 
 
 -- | BAssign expression.
 bAssignExpr :: Id -> Parser Token Exp
 bAssignExpr curFuncId
- = do   -- only KRoundBra
-        i          <- ident
-        only KSquareBra
+ = do   i          <- ident
         o          <- binoper
-        only KSquareKet
         only KEquals
         e          <- expr curFuncId
-        -- only KRoundKet
         return     $  XAssign i $ XOpBin o (XId i) e
 
 
@@ -412,9 +406,7 @@ fassignStmt curFuncId
 bassignStmt :: Id -> Parser Token Stmt
 bassignStmt curFuncId
  = do  is         <- idents
-       only KSquareBra
        o          <- binoper
-       only KSquareKet
        only KEquals
        es         <- exprs curFuncId
        only KSemi

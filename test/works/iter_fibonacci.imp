@@ -6,7 +6,7 @@ vars next, curr
     while (n != 0)
     {
         curr, next = next, curr + next;     
-        n [-]= 1;
+        n -= 1;
     }
 
     curr

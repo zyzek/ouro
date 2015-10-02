@@ -26,9 +26,9 @@ vars next, ctr, ret
 
     while next
     {
-        ret [+]= y^ctr * (next % 10);
-        ctr [+]= 1;
-        next [/]= 10;
+        ret += y^ctr * (next % 10);
+        ctr += 1;
+        next /= 10;
     }
     
     ret
@@ -47,9 +47,9 @@ vars next, ctr, ret
 
     while next
     {
-        ret [+]= 10^ctr * (next % y);
-        ctr [+]= 1;
-        next [/]= 10;
+        ret += 10^ctr * (next % y);
+        ctr += 1;
+        next /= 10;
     }
 
     ret
@@ -87,8 +87,8 @@ vars ctr, cond
     cond = x;
     while cond
     {
-        cond [/]= 10;
-        ctr [+]= 1;
+        cond /= 10;
+        ctr += 1;
     }
 
     (x / 10^(ctr-y)) * 10^(ctr-y)
