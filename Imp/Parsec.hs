@@ -16,8 +16,7 @@ data Parser token a
 
 -- | Apply a parser to a list of input tokens.
 parse  :: Parser token a -> [token] -> [(a, [token])]
-parse (MkParser parseA) tokens
- = parseA tokens
+parse (MkParser parseA) = parseA
 
 
 -- | A parser that produces a result without consuming any input.
@@ -29,7 +28,7 @@ result x
 -- | A parser that always fails, producing no possible parses.
 zero  :: Parser token a
 zero    
- = MkParser $ \_ -> []
+ = MkParser $ const []
 
 
 -- | A parser that consumes the first token of the input, failing if there
@@ -80,8 +79,8 @@ char c  = satisfies (== c)
 
 
 -- | Parse any character not in the given list.
-notChars :: [Char] -> Parser Char Char
-notChars cs = satisfies (\c -> not (elem c cs))
+notChars :: String -> Parser Char Char
+notChars cs = satisfies (`notElem` cs)
 
 
 -- | Parse a digit.

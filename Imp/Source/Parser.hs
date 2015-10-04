@@ -27,12 +27,12 @@ function
 block :: Id -> Parser Token Block
 block curFuncId
  = alt  ( do   only KBraceBra
-               stmt_list      <- (some (stmt curFuncId))
+               stmt_list      <- some $ stmt curFuncId
                only KBraceKet
                return         $  Block stmt_list )
 
         ( do   only KBraceBra
-               stmt_list      <- (some (stmt curFuncId))
+               stmt_list      <- some $ stmt curFuncId
                e              <- expr curFuncId
                only KBraceKet
                return         $  Block (stmt_list ++ [SReturn e]) )
@@ -66,7 +66,7 @@ expr = opL 1
 idArgs :: Parser Token [Id]
 idArgs
  = do   only KRoundBra
-        arg_list       <- (alt idents (result []))
+        arg_list       <- alt idents $ result []
         only KRoundKet
         return arg_list
 
@@ -87,8 +87,7 @@ idents
 vars :: Parser Token [Id]
 vars
  = alt  ( do   only Kvars
-               v_list    <- idents
-               return v_list )
+               idents )
 
         ( result [] )
 
@@ -201,21 +200,27 @@ chainPartOps :: [Exp] -> Exp -> Exp
 chainPartOps xps l
  = case xps of
         [XOpBin op _ e2]        ->   XOpBin op l e2
-        (XOpBin op _ e2):rest   ->   XOpBin op (chainPartOps rest l) e2
+        XOpBin op _ e2 : rest   ->   XOpBin op (chainPartOps rest l) e2
         [XApp f (_:r)]          ->   XApp f (l:r)
-        (XApp f (_:r)):rest     ->   XApp f ((chainPartOps rest l):r)
-        _                       ->   (XNum (-999))
+        XApp f (_:r) : rest     ->   XApp f (chainPartOps rest l : r)
+        _                       ->   XNum (-999)
 
+
+-- | Parse a func op; a function id followed by a list of args, between square brackets.
+funcopsig :: Id -> Parser Token (Id, [Exp])
+funcopsig curFuncId
+ = do   only KSquareBra
+        f                       <- ident
+        arg_list                <- alt (exprs curFuncId) (result [])
+        only KSquareKet
+        return (f, arg_list)
 
 -- | Parse a function operator; a function id followed by a list of arguments, 
 -- |  between square brackets.
 funcop :: Id -> Parser Token Exp
 funcop curFuncId
- = do   only KSquareBra
-        f                       <- ident
-        arg_list                <- alt (exprs curFuncId) (result [])
-        only KSquareKet
-        return                  $  XApp f $ (XNum (-1000)):(XNum (-1001)):arg_list
+ = do   (f, arg_list)           <- funcopsig curFuncId
+        return                  $  XApp f $ XNum (-1000) : XNum (-1001) : arg_list
 
 
 -- Parse operators of the given precedence level.
@@ -257,7 +262,7 @@ binopprecs = [ (1, [ ("|",  OpOr)
 
 -- | Binary operator names.
 binops :: [(String, OpBin)]
-binops = concat (map snd binopprecs)
+binops = concatMap snd binopprecs
 
 
 -- | Unary operator names.
@@ -342,13 +347,10 @@ assignExpr curFuncId
 fAssignExpr :: Id -> Parser Token Exp
 fAssignExpr curFuncId
  = do   i          <- ident
-        only KSquareBra
-        f          <- ident
-        arg_list   <- alt (exprs curFuncId) (result [])
-        only KSquareKet
+        (f, arg_l) <- funcopsig curFuncId
         only KEquals
         e          <- expr curFuncId
-        return     $  XAssign i $ XApp f $ (XId i):e:arg_list
+        return     $  XAssign i $ XApp f $ XId i : e : arg_l
 
 
 -- | BAssign expression.
@@ -382,9 +384,7 @@ ternaryExpr curFuncId
 assignStmt :: Id -> Parser Token Stmt
 assignStmt curFuncId
  = do  is         <- idents
-       only KEquals
-       es         <- exprs curFuncId
-       only KSemi
+       es         <- assignRHS curFuncId
        return     $  SAssign is es
 
 
@@ -392,14 +392,9 @@ assignStmt curFuncId
 fassignStmt :: Id -> Parser Token Stmt
 fassignStmt curFuncId
  = do  is         <- idents
-       only KSquareBra
-       f          <- ident
-       arg_list   <- alt (exprs curFuncId) (result [])
-       only KSquareKet
-       only KEquals
-       es         <- exprs curFuncId
-       only KSemi
-       return     $  SAssign is $ map (\(i, e) -> XApp f ((XId i):e:arg_list)) (zip is es)
+       (f, arg_l) <- funcopsig curFuncId
+       es         <- assignRHS curFuncId
+       return     $  SAssign is $ map (\(i, e) -> XApp f (XId i : e : arg_l)) (zip is es)
 
 
 -- | Operator assignment
@@ -407,22 +402,17 @@ bassignStmt :: Id -> Parser Token Stmt
 bassignStmt curFuncId
  = do  is         <- idents
        o          <- binoper
-       only KEquals
-       es         <- exprs curFuncId
-       only KSemi
+       es         <- assignRHS curFuncId
        return     $  SAssign is $ map (\(i, e) -> XOpBin o (XId i) e) (zip is es)
 
 
--- | if-then-else
-ifelseStmt :: Id -> Parser Token Stmt
-ifelseStmt curFuncId
- = do  only Kif
-       guard      <- expr curFuncId
-       alt (only Kthen) (result Kthen)
-       lbr        <- block curFuncId
-       alt (only Kelse) (result Kelse)
-       rbr        <- block curFuncId
-       return     $  SIfElse guard lbr rbr
+-- | The right side of a multiple assignment: equals sign, expressions, semicolon. 
+assignRHS :: Id -> Parser Token [Exp]
+assignRHS curFuncId
+ = do  only KEquals
+       es          <- exprs curFuncId
+       only KSemi
+       return es
 
 
 -- | if-then
@@ -433,6 +423,15 @@ ifthenStmt curFuncId
        alt (only Kthen) (result Kthen)
        br         <- block curFuncId
        return     $  SIf guard br
+
+
+-- | if-then-else
+ifelseStmt :: Id -> Parser Token Stmt
+ifelseStmt curFuncId
+ = do  SIf guard lbr   <- ifthenStmt curFuncId
+       alt (only Kelse) (result Kelse)
+       rbr             <- block curFuncId
+       return          $  SIfElse guard lbr rbr
 
 
 -- | while

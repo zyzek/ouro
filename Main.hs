@@ -26,7 +26,7 @@ main
 
          -- Lex a file.
          ["-lex",   file]
-          | isSuffixOf ".imp" file 
+          | ".imp" `isSuffixOf` file 
           -> do contents   <- readFile file
                 str        <- S.preprocess contents file
                 let out = Text.ppShow $ S.lexer str
@@ -37,7 +37,7 @@ main
 
          -- Parse a file.
          ["-parse", file]
-          | isSuffixOf ".imp" file
+          | ".imp" `isSuffixOf` file
           -> do contents   <- readFile file
                 str     <- S.preprocess contents file
                 let out = Text.ppShow $ S.programOfString str
@@ -48,7 +48,7 @@ main
 
          -- Check a file.
          ["-check", file]
-          | isSuffixOf ".imp" file
+          | ".imp" `isSuffixOf` file
           -> do contents     <- readFile file
                 str          <- S.preprocess contents file
                 case S.programOfString str of
@@ -64,7 +64,7 @@ main
 
          -- Check a library (no main function)
          ["-checklib", file]
-          | isSuffixOf ".imp" file
+          | ".imp" `isSuffixOf` file
           -> do contents     <- readFile file
                 str          <- S.preprocess contents file
                 case S.programOfString str of
@@ -80,7 +80,7 @@ main
 
           -- Convert a file.
          ["-convert", file]
-          | isSuffixOf ".imp" file
+          | ".imp" `isSuffixOf` file
           -> do contents     <- readFile file
                 str          <- S.preprocess contents file
                 case S.programOfString str of
@@ -95,7 +95,7 @@ main
           
           -- Interpret a file.
          ("-interpret":file:progArgs)
-          | isSuffixOf ".imp" file
+          | ".imp" `isSuffixOf` file
           -> do contents   <- readFile file
                 str        <- S.preprocess contents file
                 case S.programOfString str of
@@ -127,17 +127,17 @@ help
 showResult :: String -> FilePath -> IO ()
 showResult strResult fileExpected
  = do   
-        putStrLn $ strResult
+        putStrLn strResult
         exists  <- System.doesFileExist fileExpected
 
         when exists
          $ do   strExpected <- readFile fileExpected
                 
-                when (not $ null strExpected)
+                unless (null strExpected)
                  $ do   let diff    = Diff.ppDiff 
                                     $ Diff.getGroupedDiff
                                         (lines strResult)
                                         (lines strExpected)
                         if diff == "\n"
-                         then putStrLn $ "\nOK"
+                         then putStrLn "\nOK"
                          else putStrLn $ "\nDIFF\n" ++ diff

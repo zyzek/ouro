@@ -21,11 +21,9 @@ lexParse p str
 -- Functions for testing at the ghci command-line.
 -- | Parse a string as a program.
 programOfString :: String -> Maybe Program
-programOfString str
- = lexParse PF.program str
+programOfString = lexParse PF.program
 
 
 -- | Parse an expr as a program.
 exprOfString  :: Id -> String -> Maybe Exp
-exprOfString curFuncId str
- = lexParse (PF.expr curFuncId) str
+exprOfString curFuncId = lexParse (PF.expr curFuncId)

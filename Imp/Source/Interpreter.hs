@@ -77,8 +77,8 @@ storeReg env varId src
  = setVar env varId (getReg env src)
 
 makeNRegs :: Int -> [Reg]
-makeNRegs n
- = unfoldr (\b -> if b == 0 then Nothing else Just (Reg b, b - 1)) n
+makeNRegs
+ = unfoldr (\b -> if b == 0 then Nothing else Just (Reg b, b - 1))
 
  
 startProgram :: Program -> [Int] -> Int
@@ -92,8 +92,8 @@ startProgram (Program funcList) args
 
 call :: Env -> Reg -> [Function] -> Function -> [Reg] -> Env
 call env gReg funcs func argRegs
- = let argVals = map (\x -> getReg env x) argRegs
-   in  setReg env gReg (evalFunc funcs func (argVals) gReg)
+ = let argVals = map (getReg env) argRegs
+   in  setReg env gReg (evalFunc funcs func argVals gReg)
 
 
 evalFunc :: [Function] -> Function -> [Int] -> Reg -> Int
@@ -119,11 +119,11 @@ step sArgs@(StepArgs env funcs func (Block blockId (i:is)) gReg)
         IStore varId src               -> step $ setEnv newArgs $ storeReg env varId src
         IArith op dst op1 op2          -> step $ setEnv newArgs $ arithOp env op dst op1 op2
         IBranch regCond blk1Id blk2Id  -> 
-            if (getReg env regCond /= 0)
+            if getReg env regCond /= 0
              then step $ setBlock sArgs $ lookupBlock blk1Id $ fBlocks func
              else step $ setBlock sArgs $ lookupBlock blk2Id $ fBlocks func
         IPrint pRegs                   -> trace 
-                                           (intercalate " " (map (\r -> show (getReg env r)) pRegs))
+                                           (unwords (map (show . getReg env) pRegs))
                                            (step newArgs)
 
  
@@ -144,27 +144,27 @@ arithCalc op op1 op2
         OpAdd   -> op1 + op2
         OpSub   -> op1 - op2
         OpMul   -> op1 * op2
-        OpDiv   -> quot op1 op2
-        OpMod   -> mod op1 op2
+        OpDiv   -> op1 `quot` op2
+        OpMod   -> op1 `mod` op2
         OpPow   -> op1 ^ op2
         
-        OpLt    -> if (op1 < op2) then 1 else 0
-        OpGt    -> if (op1 > op2) then 1 else 0
-        OpLeq   -> if (op1 <= op2) then 1 else 0
-        OpGeq   -> if (op1 >= op2) then 1 else 0
-        OpEq    -> if (op1 == op2) then 1 else 0
-        OpNeq   -> if (op1 /= op2) then 1 else 0
+        OpLt    -> if op1 < op2 then 1 else 0
+        OpGt    -> if op1 > op2 then 1 else 0
+        OpLeq   -> if op1 <= op2 then 1 else 0
+        OpGeq   -> if op1 >= op2 then 1 else 0
+        OpEq    -> if op1 == op2 then 1 else 0
+        OpNeq   -> if op1 /= op2 then 1 else 0
         
-        OpOr    -> if (op1 /= 0) then op1 else op2
-        OpAnd   -> if (op1 /= 0) then op2 else 0
-        OpXor   -> if ((op1 /= 0) && (op2 == 0))
+        OpOr    -> if op1 /= 0 then op1 else op2
+        OpAnd   -> if op1 /= 0 then op2 else 0
+        OpXor   -> if (op1 /= 0) && (op2 == 0)
                     then op1
-                    else if ((op1 == 0) && (op2 /= 0))
+                    else if (op1 == 0) && (op2 /= 0)
                           then op2
                           else 0
         
-        OpNot   -> if (op1 /= 0) then 0 else 1
-        OpNeg   -> (-op1)
+        OpNot   -> if op1 /= 0 then 0 else 1
+        OpNeg   -> -op1
 
 -- | Apply an operator to the contents of two registers, store the result back in the environment.
 arithOp :: Env -> OpArith -> Reg -> Reg -> Reg -> Env

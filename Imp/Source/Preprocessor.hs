@@ -30,20 +30,18 @@ preprocmemo source main fnames
                l  -> head l
        
        readFileAddLine path
-        = if elem path fnames
-           then return ""
-           else
-            if ((head path) == '.' || (head path) == '/') 
-             then ( do contents <- readFile 
-                                    ( (intercalate "/" (init (split "/" main)))
-                                      ++ "/" ++ path ++ ".imp" )
-                       return $ contents ++ "\n" )
-             else ( do contents <- readFile ("lib/" ++ path ++ ".imp")
-                       return $ contents ++ "\n")
+        | path `elem` fnames
+          = return ""
+        | head path == '.' || head path == '/'
+          = do  contents  <-  readFile (intercalate "/" (init (split "/" main))
+                                         ++ "/" ++ path ++ ".imp")
+                return $ contents ++ "\n"
+        | otherwise
+          = do  contents  <-  readFile ("lib/" ++ path ++ ".imp")
+                return $ contents ++ "\n"
        
        allContents 
-        = do contents <- fmap concat $ mapM readFileAddLine paths
-             return contents
+        = concat <$> mapM readFileAddLine paths
        
        newfnames
         = nub (fnames ++ paths)
@@ -52,7 +50,7 @@ preprocmemo source main fnames
     if null (newfnames \\ fnames)
      then
       do c <- allContents
-         return $ (c ++ rest)
+         return $ c ++ rest
      else
       do c <- allContents
          preprocmemo (c ++ rest) main newfnames
@@ -64,9 +62,9 @@ include =
     do  some space
         match "#include"
         some space
-        (char '"')
-        s          <- some $ notChars ['"']
-        (char '"')
+        char '"'
+        s          <- some $ notChars "\""
+        char '"'
         some space
         return     s
 

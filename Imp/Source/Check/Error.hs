@@ -26,12 +26,12 @@ prettyError err
         ErrorFuncRedef i
          -> "Function '" ++ i ++ "' redefined."
         ErrorFuncSig i n
-         -> "Function '" ++ i ++ "' expects " ++ (show n) ++ " argument(s)." 
+         -> "Function '" ++ i ++ "' expects " ++ show n ++ " argument(s)." 
         ErrorVarUndef i
          -> "Variable '" ++ i ++ "' undefined."
         ErrorVarRedef i
          -> "Variable '" ++ i ++ "' redefined."
         ErrorPolyAssign v e
-         -> (show e) ++ " expressions assigned to " ++ (show v) ++ " variables in poly-assignment."
+         -> show e ++ " expressions assigned to " ++ show v ++ " variables in poly-assignment."
         ErrorSyntax
          -> "Syntax Error."
