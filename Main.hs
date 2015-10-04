@@ -23,12 +23,12 @@ main
   = do  flags     <- System.getArgs
 
         let lang
-             | length flags >= 1 = head flags
-             | otherwise         = ""
+             | not (null flags) = head flags
+             | otherwise        = ""
 
-        let (args, progOfString)
-             | lang == "-e" = (tail flags, S.programOfString)
-             | otherwise    = (flags, S.minProgramOfString)
+        let (args, progOfString, lexer)
+             | lang == "-e" = (tail flags, S.programOfString, S.lexer)
+             | otherwise    = (flags, S.minProgramOfString, S.minlexer)
 
         case args of
 
@@ -37,7 +37,7 @@ main
           | ".imp" `isSuffixOf` file 
           -> do contents   <- readFile file
                 str        <- S.preprocess contents file
-                let out = Text.ppShow $ S.lexer str
+                let out = Text.ppShow $ lexer str
                 showResult out (file ++ ".lex")
 
           | otherwise
@@ -62,9 +62,11 @@ main
                 case progOfString str of
                  Nothing -> error "parse error"
                  Just prog
-                  -> do let out = unlines 
-                                $ map (\err -> "Error: " ++ S.prettyError err)
-                                $ S.checkProgram prog
+                  -> do let out = case unlines 
+                                       $ map (\err -> "Error: " ++ S.prettyError err)
+                                       $ S.checkProgram prog of
+                                       ""  -> "No Errors."
+                                       es  -> es
                         showResult out (file ++ ".check")
 
           | otherwise

@@ -12,13 +12,25 @@ lexer str
         _                -> Nothing
 
 
+minlexer :: String -> Maybe [Token]
+minlexer str
+ = case parse mintokens str of 
+        [(tokens', "")]  -> Just tokens'
+        _                -> Nothing
+
+
 -- | Parse a sequence of tokens, separated by whitespace.
 -- | Discard code comments.
 tokens :: Parser Char [Token]
 tokens
  = do   some space
         some quote
-        some space
+        mintokens
+
+-- | As tokens, but disallow comments.
+mintokens :: Parser Char [Token]
+mintokens
+ = do   some space
         t  <- token
         some space
         ts <- alt tokens (return [])
