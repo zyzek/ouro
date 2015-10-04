@@ -214,6 +214,13 @@ many parserA
 nat :: Parser Char Int
 nat = fmap read (many digit)
 
+int :: Parser Char Int
+int = fmap read
+           ( alt (do  char '-'
+                      many digit)
+                 (many digit)
+           )
+
 
 
 -------------------------------------------------------------------------------

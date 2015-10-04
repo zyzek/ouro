@@ -34,7 +34,7 @@ token
                 return tok            -- For each (str, tok) pair, attempt
         | (str, tok)    <- atoms]     -- a match
 
- $ alts [ do     n   <- nat           -- Default parser: no prim match
+ $ alts [ do     n   <- int           -- Default parser: no prim match
                  return $ KNum n      -- thus, token is either a num
 
         , do     str <- many alphanum -- or a variable/function ID

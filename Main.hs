@@ -19,8 +19,16 @@ import Data.List
 
 
 main :: IO ()
-main
- = do   args     <- System.getArgs
+main  
+  = do  flags     <- System.getArgs
+
+        let lang
+             | length flags >= 1 = head flags
+             | otherwise         = ""
+
+        let (args, progOfString)
+             | lang == "-e" = (tail flags, S.programOfString)
+             | otherwise    = (flags, S.minProgramOfString)
 
         case args of
 
@@ -40,7 +48,7 @@ main
           | ".imp" `isSuffixOf` file
           -> do contents   <- readFile file
                 str     <- S.preprocess contents file
-                let out = Text.ppShow $ S.programOfString str
+                let out = Text.ppShow $ progOfString str
                 showResult out (file ++ ".parse")
 
           | otherwise
@@ -51,7 +59,7 @@ main
           | ".imp" `isSuffixOf` file
           -> do contents     <- readFile file
                 str          <- S.preprocess contents file
-                case S.programOfString str of
+                case progOfString str of
                  Nothing -> error "parse error"
                  Just prog
                   -> do let out = unlines 
@@ -67,7 +75,7 @@ main
           | ".imp" `isSuffixOf` file
           -> do contents     <- readFile file
                 str          <- S.preprocess contents file
-                case S.programOfString str of
+                case progOfString str of
                  Nothing -> error "parse error"
                  Just prog
                   -> do let out = unlines 
@@ -83,7 +91,7 @@ main
           | ".imp" `isSuffixOf` file
           -> do contents     <- readFile file
                 str          <- S.preprocess contents file
-                case S.programOfString str of
+                case progOfString str of
                  Nothing -> error "parse error"
                  Just progSource
                   -> do let core = S.convertProgram progSource
@@ -98,7 +106,7 @@ main
           | ".imp" `isSuffixOf` file
           -> do contents   <- readFile file
                 str        <- S.preprocess contents file
-                case S.programOfString str of
+                case progOfString str of
                  Nothing -> error "parse error"
                  Just progSource
                   -> do let core = S.convertProgram progSource
@@ -118,7 +126,12 @@ help
         , "  imp -parse     <file>      Parse a file."
         , "  imp -check     <file>      Check a file for problems."
         , "  imp -convert   <file>      Convert a file from source to core." 
-        , "  imp -interpret <file>      Interpret a file." ]
+        , "  imp -interpret <file>      Interpret a file." 
+        , ""
+        , "Use -e as the first flag to use an extended language instead, e.g.:"
+        , ""
+        , "  imp -e -interpret <file>   Interpret a file in the extended language."
+        ]
 
 
 -- | Given an result string and the path to a file containing the expected
