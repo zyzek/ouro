@@ -4,7 +4,6 @@ import Data.List.Utils
 import Imp.Core.Exp
 import Data.Maybe
 import Data.List
-import Debug.Trace
 
 
 -- | The execution environment, containing the current values of registers and variables.
@@ -98,13 +97,13 @@ makeNRegs
 
 
 -- | Call the main function of the given program with the given arguments. Return overall result.
-startProgram :: Program -> [Int] -> Int
+startProgram :: Program -> [Int] -> IO Int
 startProgram (Program funcList) args
- = let func    = lookupFunc (Id "main") funcList
-       regs    = makeNRegs (length args)
-       argRegs = zip regs args
-       env     = call (Env argRegs []) (Reg 0) funcList func regs
-   in  getReg env (Reg 0)
+ = do let func    = lookupFunc (Id "main") funcList
+          regs    = makeNRegs (length args)
+          argRegs = zip regs args
+      env <- call (Env argRegs []) (Reg 0) funcList func regs
+      return $ getReg env (Reg 0)
 
 
 -- | Call a function. The args are as follows:
@@ -114,19 +113,21 @@ startProgram (Program funcList) args
 -- |  The function to call;
 -- |  The list of registers holding the function arguments.
 -- | Return the environment with the result placed in the correct register.
-call :: Env -> Reg -> [Function] -> Function -> [Reg] -> Env
+call :: Env -> Reg -> [Function] -> Function -> [Reg] -> IO Env
 call env gReg funcs func argRegs
- = let argVals = map (getReg env) argRegs
-   in  setReg env gReg (evalFunc funcs func argVals gReg)
+ = do let argVals = map (getReg env) argRegs
+      res <- evalFunc funcs func argVals gReg
+      return $ setReg env gReg res
 
 
 -- | Call a function with integer arguments and return the integer result.
-evalFunc :: [Function] -> Function -> [Int] -> Reg -> Int
+evalFunc :: [Function] -> Function -> [Int] -> Reg -> IO Int
 evalFunc funcs func@(Function _ argIds (block:_)) argVals gReg
- = let args = zip argIds argVals
-   in  getReg (step (StepArgs (Env [] args) funcs func block gReg)) gReg 
+ = do  let args =  zip argIds argVals
+       res      <- step $ StepArgs (Env [] args) funcs func block gReg
+       return   $  getReg res gReg
 
-evalFunc _ _ _ _ = 0
+evalFunc _ _ _ _ = return 0
     
 
 -- | Advance the program a single execution step, return the resulting environment.
@@ -136,27 +137,28 @@ evalFunc _ _ _ _ = 0
 -- |  return the result of calling step on the updated environment, minus the run instruction.
 -- |
 -- | If the current block is empty, advance to the next block.
-step :: StepArgs -> Env
+step :: StepArgs -> IO Env
 step sArgs@(StepArgs _ _ func (Block blockId []) _)
  = step $ setBlock sArgs $ lookupBlock (blockId + 1) (fBlocks func)
 
 step sArgs@(StepArgs env funcs func (Block blockId (i:is)) gReg)
- = let newArgs = setBlock sArgs $ Block blockId is
-   in  case i of
-        IReturn rReg                   -> copyReg env gReg rReg
-        ICall dst funcId argsList      -> step $ setEnv newArgs $ 
-                                           call env dst funcs (lookupFunc funcId funcs) argsList
-        IConst dst val                 -> step $ setEnv newArgs $ setReg env dst val
-        ILoad dst varId                -> step $ setEnv newArgs $ loadVar env dst varId
-        IStore varId src               -> step $ setEnv newArgs $ storeReg env varId src
-        IArith op dst op1 op2          -> step $ setEnv newArgs $ arithOp env op dst op1 op2
-        IBranch regCond blk1Id blk2Id  -> 
-            if getReg env regCond /= 0
-             then step $ setBlock sArgs $ lookupBlock blk1Id $ fBlocks func
-             else step $ setBlock sArgs $ lookupBlock blk2Id $ fBlocks func
-        IPrint pRegs                   -> trace 
-                                           (unwords (map (show . getReg env) pRegs))
-                                           (step newArgs)
+ = do let newArgs = setBlock sArgs $ Block blockId is
+      case i of
+         IReturn rReg                   -> return $ copyReg env gReg rReg
+         ICall dst funcId argsList      -> do newenv <- call env dst funcs 
+                                                             (lookupFunc funcId funcs) argsList
+                                              step $ setEnv newArgs $ newenv
+                                            
+         IConst dst val                 -> step $ setEnv newArgs $ setReg env dst val
+         ILoad dst varId                -> step $ setEnv newArgs $ loadVar env dst varId
+         IStore varId src               -> step $ setEnv newArgs $ storeReg env varId src
+         IArith op dst op1 op2          -> step $ setEnv newArgs $ arithOp env op dst op1 op2
+         IBranch regCond blk1Id blk2Id  -> 
+             if getReg env regCond /= 0
+              then step $ setBlock sArgs $ lookupBlock blk1Id $ fBlocks func
+              else step $ setBlock sArgs $ lookupBlock blk2Id $ fBlocks func
+         IPrint pRegs                   -> do putStrLn $ unwords $ map (show . getReg env) pRegs
+                                              step newArgs
 
 
 -- | Given a list of functions, return the one with the given Id.

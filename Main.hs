@@ -112,7 +112,8 @@ main
                  Nothing -> error "parse error"
                  Just progSource
                   -> do let core = S.convertProgram progSource
-                            result = S.startProgram core (map read progArgs)
+                        result <- S.startProgram core (map read progArgs)
+                            
                         showResult (show result) (file ++ ".interpret")
          _ -> help
 

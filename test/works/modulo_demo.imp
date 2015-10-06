@@ -11,10 +11,9 @@ vars c
 	return 0;
 }
 
-
 fun main()
 {
-	print reducedSystem(42);
+	reducedSystem(42);
 	print;
 
 	print 3 [cong 10] 13;
