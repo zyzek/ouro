@@ -1,0 +1,50 @@
+fun main()
+vars n
+{   
+    if true
+    {
+        if true 
+        { return n; }
+        { return n; }
+    }
+    {
+        if true 
+        { return n; }
+        { return n; }
+    }
+
+
+    n += 1;
+    return n;
+}
+
+fun noreturn()
+{
+}
+
+fun noreturn2()
+vars n
+{
+    if true
+    {
+        n += 1
+    }
+}
+
+fun one()
+{
+    1
+}
+
+fun yesreturn()
+{
+    return 0;
+}
+
+fun anothernoreturn(b)
+{
+    return b;
+    b = b;
+
+}
+

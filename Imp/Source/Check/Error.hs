@@ -11,9 +11,14 @@ data Error
         | ErrorVarUndef     String
         | ErrorVarRedef     String
         | ErrorPolyAssign   Int Int
+        | ErrorNoReturn     String
         | ErrorSyntax
         deriving Eq
 
+data Warning 
+        = WarningUnreachableAfter String
+        | WarningUnreachableFunction String
+        | FinalReturn
 
 -- | Pretty print an error.
 prettyError :: Error -> String
@@ -33,5 +38,17 @@ prettyError err
          -> "Variable '" ++ i ++ "' redefined."
         ErrorPolyAssign v e
          -> show e ++ " expressions assigned to " ++ show v ++ " variables in poly-assignment."
+        ErrorNoReturn s
+         -> "Function " ++ s ++ " does not return."
         ErrorSyntax
          -> "Syntax Error."
+
+prettyWarn :: Warning -> String
+prettyWarn wrn
+ = case wrn of
+        WarningUnreachableAfter s
+         -> "Unreachable code after " ++ s
+        WarningUnreachableFunction s
+         -> "Unreachable function: " ++ s
+        FinalReturn
+         -> ""

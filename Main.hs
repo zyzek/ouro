@@ -62,12 +62,17 @@ main
                 case progOfString str of
                  Nothing -> error "parse error"
                  Just prog
-                  -> do let out = case unlines 
-                                       $ map (\err -> "Error: " ++ S.prettyError err)
-                                       $ S.checkProgram prog of
-                                       ""  -> "No Errors."
-                                       es  -> es
-                        showResult out (file ++ ".check")
+                  -> do let (errs, wrns) = S.checkProgram prog
+                            errmsg = (\err -> "Error: " ++ S.prettyError err)
+                            wrnmsg = (\w -> case w of 
+                                                 S.FinalReturn -> ""
+                                                 _             -> "Warning: " ++ S.prettyWarn w)
+                            errout = case unlines 
+                                           $ map errmsg errs of
+                                          ""  -> "No Errors."
+                                          es  -> es
+                            wrnout = unlines $ filter (not . null) $ map wrnmsg wrns
+                        showResult (errout ++ "\n" ++ wrnout) (file ++ ".check")
 
           | otherwise
           -> error $ "Cannot check " ++ file
@@ -80,10 +85,17 @@ main
                 case progOfString str of
                  Nothing -> error "parse error"
                  Just prog
-                  -> do let out = unlines 
-                                $ map (\err -> "Error: " ++ S.prettyError err)
-                                $ S.checkLibrary prog
-                        showResult out (file ++ ".check")
+                  -> do let (errs, wrns) = S.checkLibrary prog
+                            errmsg = (\err -> "Error: " ++ S.prettyError err)
+                            wrnmsg = (\w -> case w of 
+                                                 S.FinalReturn -> ""
+                                                 _             -> "Warning: " ++ S.prettyWarn w)
+                            errout = case unlines 
+                                           $ map errmsg errs of
+                                          "" -> "No Errors."
+                                          es -> es
+                            wrnout = unlines $ filter (not . null) $ map wrnmsg wrns
+                        showResult (errout ++ wrnout) (file ++ ".check")
 
           | otherwise
           -> error $ "Cannot check " ++ file

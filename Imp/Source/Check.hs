@@ -6,16 +6,27 @@ import Imp.Source.Exp
 
 
 -- | Run all the available semantic checks on a program.
-checkProgram :: Program -> [Error]
+checkProgram :: Program -> ([Error], [Warning])
 checkProgram program
- = checkMain          program
-    ++ checkFuncRedef program
-    ++ checkVarRedef  program
-    ++ checkIds       program
+ = let (reacherr, reachwrn) = checkProgReachability program
+   in  (checkMain      program
+        ++ checkFuncRedef program
+        ++ checkVarRedef  program
+        ++ checkIds       program
+        ++ reacherr
+       ,
+        reachwrn
+       )
 
 -- | Don't check for a main function.
-checkLibrary :: Program -> [Error]
+checkLibrary :: Program -> ([Error], [Warning])
 checkLibrary program
- = checkFuncRedef     program
-    ++ checkVarRedef  program
-    ++ checkIds       program
+ = let (reacherr, reachwrn) = checkProgReachability program
+   in  (checkFuncRedef     program
+        ++ checkVarRedef  program
+        ++ checkIds       program
+        ++ reacherr
+       ,
+        reachwrn
+       )
+

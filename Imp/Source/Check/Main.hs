@@ -53,6 +53,7 @@ checkIds (Program funs)
    in nub (concat funerrors)
    where numFunctionArgs (Function name args _ _) = (name, length args)
 
+
 -- | Check that all ids in a block are correctly invoked.
 -- | Each function gets its own variable namespace, which is constructed here.
 checkFunIds :: [Id] -> [(Id, Int)] -> Function -> [Error]
@@ -142,6 +143,45 @@ checkAssign vars funsigs targs exprs
        else ErrorPolyAssign vlen elen : checks
    where checks = concatMap (checkVarId vars) targs
                    ++ concatMap (checkExpIds vars funsigs) exprs
+
+-- | Check Each function in a program to see what's reachable inside it
+-- | Then do a traversal from main to see which functions are reachable.
+checkProgReachability :: Program -> ([Error], [Warning])
+checkProgReachability (Program funs)
+ = let (errs, wrns) = (unzip . (map checkFuncReachability)) funs
+   in (concat errs, concat wrns)
+
+checkFuncReachability :: Function -> ([Error], [Warning])
+checkFuncReachability (Function i _ _ b) 
+ = let fname = idString i 
+       reach = checkBlockReachability fname b
+   in (if null reach then [ErrorNoReturn fname] else [], reach)
+
+checkBlockReachability :: String -> Block -> [Warning]
+checkBlockReachability wrnpath (Block stmts)
+ = let checkstmtreach = checkStmtReachability wrnpath
+       spanpair = span (not . null . checkstmtreach) stmts
+       wrn = concatMap checkstmtreach $ fst spanpair 
+   in if (null . snd) spanpair 
+       then [FinalReturn]
+       else wrn  
+
+checkStmtReachability :: String -> Stmt -> [Warning]
+checkStmtReachability wrnpath s
+ = case s of
+        SReturn _           ->  [WarningUnreachableAfter ("return in " ++ wrnpath)]
+        SIfElse _ blk1 blk2 ->  let b1wrn = [checkBlockReachability 
+                                              ("if-else true branch " ++ wrnpath)
+                                              blk1]
+                                    b2wrn = [checkBlockReachability
+                                              ("if-else false branch " ++ wrnpath)
+                                              blk2]
+                                in if null b1wrn || null b2wrn
+                                    then []
+                                    else [WarningUnreachableAfter ("if-else in " ++ wrnpath)]
+        -- SIf g block         ->  [checkBlockReachability block]
+        -- SWhile e Block          
+        _                       -> []
 
 
 -- | Utilities
