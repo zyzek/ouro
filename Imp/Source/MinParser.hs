@@ -4,6 +4,7 @@ import Imp.Source.Exp
 import Imp.Source.Tokens
 import Imp.Parsec
 
+-- || This is a version of Parser.hs, but with everything that isn't on the spec sheet ripped out.
 
 -- | Whole program; everything at the top level is a function definition.
 program  :: Parser Token Program

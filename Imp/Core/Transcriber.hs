@@ -9,8 +9,7 @@ import Data.List
 -- | Produce IR program code.
 progString :: Program -> String
 progString (Program funcs)
- = "(\n" ++ intercalate "\n" (map (funcString "  ") funcs) 
-     ++ "\n)" 
+ = "(\n" ++ intercalate "\n" (map (funcString "  ") funcs) ++ "\n)" 
 
 
 -- | The string representation of an IR function.
@@ -41,8 +40,8 @@ instrString indent instr
             IConst r n          -> "lc " ++ regString r ++ " " ++ show n
             ILoad  r i          -> "ld " ++ regString r ++ " " ++ strOfId i
             IStore i r          -> "st " ++ strOfId i ++ " " ++ regString r
-            IArith o d s1 s2    -> operString o ++ " " ++ regString d ++ " " ++ regString s1 ++ " "
-                                                                             ++ regString s2
+            IArith o d s1 s2    -> operString o ++ " " ++ regString d ++ " " ++ regString s1 
+                                                                      ++ " " ++ regString s2
             IBranch r m n       -> "br " ++ regString r ++ " " ++ show m ++ " " ++ show n
             IReturn r           -> "ret " ++ regString r
             ICall r i args      -> "call " ++ regString r ++ " " ++ strOfId i ++ " "

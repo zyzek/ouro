@@ -1,4 +1,4 @@
--- | Input language grammar.
+-- || Input language grammar.
 module Imp.Source.Exp where
 
 -- | Source Programs.

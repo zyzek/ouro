@@ -2,14 +2,14 @@
 -------------------------------------------------------------------------------
 COMP3109 Assignment 2. Compiler Front End
 
-Name
+Authors:
 
-  Anton Jurisevic
-  Jeremy Short
+  Anton Jurisevic   311180051
+  Jeremy Short      440353151
   Trung Tran
 
 
-What tasks did you complete?
+Completed Tasks:
 
   Task 1 - Syntax and Semantics Analysis
   Task 2 - Intermediate Code Generation
@@ -48,45 +48,50 @@ What tasks did you complete?
     - Checks that multiple assignments are correct.
     - Check that functions actually return.
     - Some warnings if you have unreachable or redundant code.
-    - Some runtime error messages in the interpreter for looking up non-existent registers,
-        calling functions incorrectly, etc.
+    - Some runtime error messages in the interpreter for looking up
+      non-existent registers, calling functions incorrectly, etc.
 
   + Relatively extensive example code base.
-    - For the most part, example code in the test/ directory demonstrates language features.
-      To this end, many of the source files are annotated, and can only be parsed, converted
-        with the -e flag given to imp.
-      However, most of the files in test/fails are not extended, and simply demonstrate features
-       of the checker.
-      Similarly, anything in test/works/unextended can be run with the unextended language, and
-       should run on other peoples' interpreters/compilers.
+    - For the most part, example code in the test/ directory demonstrates
+      language features. To this end, many of the source files are annotated,
+      and can only be parsed or converted with the -e flag given to imp.
+      However, most of the files in test/fails are not extended, and simply 
+      demonstrate features of the checker.
+      Similarly, anything in test/works/unextended can be run with the
+      unextended language, and should run on other peoples'
+      interpreters/compilers.
 
 
   Invocation:
-    Run imp from the root directory, which holds Main.hs, in order that it can find the lib/
-     folder.
+    Run imp from the root directory, which holds Main.hs, in order that it can
+    find the lib/ folder.
     
     Input source is contained in .imp files. IR code is stored in .ir files. 
-    For both of these, -lex tokenises a given file, and -interpret attempts to run it with the
-      arguments you have given.
-    -convert transforms input source into the intermediate representation, and -check operates 
-      exclusively on the AST, so these are unavailable for .ir files.
-    Finally, -parse works on both languages, but it produces the AST resulting from an .imp file,
-      whereas it prints out the Haskell data structure representing a parsed .ir file.
+    For both of these, -lex tokenises a given file, and -interpret attempts to
+    run it with the arguments you have given.
+    -convert transforms input source into the intermediate representation, and
+    -check operates exclusively on the AST, so these are unavailable for .ir
+    files.
+    Finally, -parse works on both languages, but it produces the AST resulting
+    from an .imp file, whereas it prints out the Haskell data structure
+    representing a parsed .ir file.
 
     If you want to switch to the extended grammar, provide the -e flag first:
 
         imp [-e] -lex|-parse|-check|-convert|-interpret file [args ... ]
     
-    The non-extended grammar includes while loops and infix operators with precedence, but
-      none of the futher features.
+    The non-extended grammar includes while loops and infix operators with
+    precedence, but none of the futher features.
 
-Did you get stuck, or couldn't work something out?
+
+Stumbling Blocks:
 
   Not enough time for everything.
   Some things that were unfinished:
     - A type system, half-done.
     - Actually-informative syntax errors with line numbers.
-    - Static expression reduction, substitution of constants for variables if possible in the AST.
+    - Static expression reduction, substitution of constants for variables if
+      possible in the AST.
 
 
 -------------------------------------------------------------------------------

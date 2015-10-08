@@ -1,0 +1,6 @@
+Error: Function 'oneplace' expects 1 argument(s).
+Error: Function 'twoplace' expects 2 argument(s).
+Error: Function 'main' does not return.
+Error: Function 'oneplace' does not return.
+Error: Function 'twoplace' does not return.
+

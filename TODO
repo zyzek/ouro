@@ -1,5 +1,5 @@
 Set: 14th Sep                        Due: 9th Oct 5pm
-[=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|>| | | | | | | ]
+[=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|>]
              ^ 20th        ^ 27th        ^ 4th
 
 - Remove libcheck
@@ -11,9 +11,10 @@ Set: 14th Sep                        Due: 9th Oct 5pm
 - revise invocation flags
 final expression return thing
 test script
-now that interpreter is mainly IO, add better error messages for problems.
+- now that interpreter is mainly IO, add better error messages for problems.
 Add more informative error checking
 run all the current files, make sure they still work.
+find a resolution to the id-keyword conflicts, e.g. functions starting with the word "return"
 
 Extension Tasks
 

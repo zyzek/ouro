@@ -1,4 +1,4 @@
-fun  main(n)
+fun  main()
 vars tmp
 {       
 		a = 10;

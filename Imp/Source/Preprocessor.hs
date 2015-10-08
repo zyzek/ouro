@@ -9,7 +9,7 @@ import Data.List.Utils
 -- | Take the source code as a string, and the path to the main file.
 -- | Return a string with the code of any included libraries prepended.
 -- |
--- | #includes directives are required to be at the start of the file, before anything else.
+-- | #include directives are required to be at the start of the file, before anything else.
 preprocess :: String -> String -> IO String
 preprocess source main
  = preprocmemo source main [main]

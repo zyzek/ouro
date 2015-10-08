@@ -1,0 +1,12 @@
+Error: Function 'noreturn' does not return.
+Error: Function 'noreturn2' does not return.
+Error: Function 'retwithinblock' does not return.
+
+Warning: Branch never executes: conditional else in main
+Warning: Redundant conditional in noreturn2
+Warning: Unreachable code after return in retnotlast
+Warning: Redundant conditional in conditions
+Warning: Branch never executes: if-then in conditions
+Warning: Branch never executes: conditional else in conditions
+Warning: Branch never executes: conditional then in conditions
+

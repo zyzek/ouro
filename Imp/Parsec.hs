@@ -214,6 +214,8 @@ many parserA
 nat :: Parser Char Int
 nat = fmap read (many digit)
 
+
+-- | Parse a signed integer.
 int :: Parser Char Int
 int = fmap read
            ( alt (do  char '-'

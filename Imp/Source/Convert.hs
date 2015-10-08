@@ -284,7 +284,7 @@ convertStmt (reg0, blk0, S.SWhile expr blk)
        
        newBlkList 
         = take (length cBlkList - 1) cBlkList ++ [C.Block blkId truncLstBlk]
-        -- /End inconsistancy
+        -- /End inconsistency
    in  (
         reg1 + 1,
         blk1,

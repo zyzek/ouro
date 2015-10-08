@@ -27,6 +27,7 @@ function
         only KRoundKet
         return     $  Function i args blks
 
+
 -- | Code block: a sequence of instructions with a particular id: a constituent of a function.
 block :: Parser Token Block
 block

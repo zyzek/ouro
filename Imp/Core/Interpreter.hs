@@ -150,7 +150,7 @@ evalFunc _ _ _ _ = return 0
     
 
 -- | Advance the program a single execution step, return the resulting environment.
---
+-- |
 -- | Retrieve the next instruction from the current block,
 -- |  update the current environment by applying that instruction,
 -- |  return the result of calling step on the updated environment, minus the run instruction.
@@ -201,6 +201,7 @@ lookupFunc wantId funcs
        then do putStrLn ("No function with the id \"" ++ strOfId wantId ++ "\" exists.")
                exitFailure
        else return $ head res
+
 
 -- | Given a list of blocks, return the one with the given Int as its id.
 lookupBlock :: Int -> [Block] -> IO Block

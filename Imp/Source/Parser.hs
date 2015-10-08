@@ -11,6 +11,7 @@ program
  = do   funcs      <- some function
         return     $  Program funcs
 
+
 -- | Single function definition: 
 -- | keyword, function name, list of arguments, list of variables, then the function body itself.
 function  :: Parser Token Function
@@ -37,6 +38,7 @@ block curFuncId
                only KBraceKet
                return         $  Block (stmt_list ++ [SReturn e]) )
 
+
 -- | Statement: assignments, conditionals, loops, returns, prints.
 -- | Statements themselves contain expressions.
 stmt :: Id -> Parser Token Stmt
@@ -52,9 +54,10 @@ stmt curFuncId
          , exprStmt    curFuncId
          ]
 
--- | Expression: as a series of operations applied to sub-expressions.
+
+-- | Expression: a series of operations applied to sub-expressions.
 -- | We start parsing at the lowest precedence level in order that looser operators
--- |  appear higher in the AST. 
+-- |  appear higher in the resulting AST. 
 expr :: Id -> Parser Token Exp
 expr = opL 1
 
@@ -106,26 +109,26 @@ ident
 
 
 -- || Operators ==========================================================
-
--- | Expressions consist of left and right components, opL and opR, themselves expressions. 
--- | Each has a precedence level associated, so let an opL at precedence p be denoted opL(p),
--- |  and similarly for opR.
--- | 
--- | An opL(p) consists of an opL(p+1), followed by  a possibly-empty string of opR(p).
--- | At the highest precedence level, an opL(7) resolves to an atom, which serves as a
--- |  base case. The atoms themselves may themselves contain expressions, however.
--- |
--- | An opR(p) consists of a precedence-p operator followed by an opL(p+1).
--- | Each opR only supplies one operand to its operator, so in the calling opL, the string
--- |  of opRs are stitched together, left-to-right, with each expression substituting into the 
--- |  RHS of the previous one.
--- |
--- | Atoms are indivisible units that operators act upon as a whole.
--- | Valid atoms: numeric literals, variable identifiers, function calls/ouroboroi, unary operations
--- |  parenthesised expressions, assignment expressions, ternary expressions. 
--- |
--- | The number 7 here  is a bit of a hack: I would prefer a more elegant way than manually
--- |  specifying that the precedence of atoms is maximal.
+-- ||
+-- ||  Expressions consist of left and right components, opL and opR, themselves expressions. 
+-- ||  Each has a precedence level associated, so let an opL at precedence p be denoted opL(p),
+-- ||  and similarly for opR.
+-- || 
+-- ||  An opL(p) consists of an opL(p+1), followed by  a possibly-empty string of opR(p).
+-- ||  At the highest precedence level, an opL(7) resolves to an atom, which serves as a
+-- ||  base case. The atoms may themselves contain expressions, however.
+-- ||
+-- ||  An opR(p) consists of a precedence-p operator followed by an opL(p+1).
+-- ||  Each opR only supplies one operand to its operator, so in the calling opL, the string
+-- ||  of opRs are stitched together, left-to-right, with each expression substituting into the 
+-- ||  RHS of the previous one.
+-- ||
+-- ||  Atoms are indivisible units that operators act upon as a whole.
+-- ||  Valid atoms: numeric literals, variable identifiers, function calls/ouroboroi,
+-- ||  unary operations, parenthesised expressions, assignment expressions, ternary expressions. 
+-- ||
+-- ||  The number 7 here is a bit of a hack: I would prefer a more elegant way than manually
+-- ||  specifying that the precedence of atoms is maximal.
 
 -- | Parse an atom.
 atom :: Id -> Parser Token Exp
@@ -193,6 +196,7 @@ funcopsig curFuncId
         arg_list                <- alt (commaList (expr curFuncId)) (result [])
         only KSquareKet
         return (f, arg_list)
+
 
 -- | Parse a function operator; a function id followed by a list of arguments, 
 -- |  between square brackets.
@@ -272,6 +276,7 @@ identExpr :: Parser Token Exp
 identExpr 
  = do  i        <-  ident
        return   $   XId i
+
 
 -- | Ouroboros operation.
 ouroExpr :: Id -> Parser Token Exp

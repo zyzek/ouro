@@ -45,7 +45,7 @@ prettyError err
         ErrorPolyAssign v e
          -> show e ++ " expressions assigned to " ++ show v ++ " variables in poly-assignment."
         ErrorNoReturn s
-         -> "Function " ++ s ++ " does not return."
+         -> "Function '" ++ s ++ "' does not return."
         ErrorSyntax
          -> "Syntax Error."
 

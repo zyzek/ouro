@@ -25,7 +25,8 @@ import Data.List
 main :: IO ()
 main  
   = do  flags     <- System.getArgs
-
+        
+        -- Determine which grammar the user has chosen, and use it. -e for extended.
         let lang
              | not (null flags) = head flags
              | otherwise        = ""
@@ -86,7 +87,8 @@ main
                                           ""  -> "No Errors."
                                           es  -> es
                             wrnout = unlines $ filter (not . null) $ map wrnmsg wrns
-                        showResult (errout ++ "\n" ++ wrnout) (file ++ ".check")
+                            out    = errout ++ "\n" ++ wrnout
+                        showResult out (file ++ ".check")
 
           | otherwise
           -> error $ "Cannot check " ++ file
@@ -121,13 +123,13 @@ main
           | ".ir" `isSuffixOf` file
           -> do contents  <- readFile file
                 case C.programOfString contents of
-                     Nothing -> error "Parse error."
+                     Nothing -> error "Syntax error."
                      Just mprog
                       -> do result <- C.startProgram mprog (map read progArgs)
                             showResult (show result) (file ++ ".interpret")
 
           | otherwise
-          -> error $ "Cannot convert " ++ file
+          -> error $ "Cannot interpret " ++ file
 
          _ -> help
 

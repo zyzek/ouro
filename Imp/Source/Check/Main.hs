@@ -199,6 +199,7 @@ checkStmtReachability :: String -> Stmt -> [Warning]
 checkStmtReachability wrnpath s
  = case s of
         SReturn _           ->  [WarningUnreachableAfter ("return in " ++ wrnpath)]
+
         SIfElse g blk1 blk2 ->  let b1wrn = checkBlockReachability 
                                              ("if-else true branch in " ++ wrnpath)
                                              blk1
@@ -207,11 +208,9 @@ checkStmtReachability wrnpath s
                                              blk2
                                     cnstg = case g of
                                                  XNum 0 -> [WarningUnreachableBranch
-                                                             ("conditional then in "
-                                                               ++ wrnpath)]
+                                                             ("conditional then in " ++ wrnpath)]
                                                  XNum _ -> [WarningUnreachableBranch
-                                                             ("conditional else in "
-                                                               ++ wrnpath)]
+                                                             ("conditional else in " ++ wrnpath)]
                                                  _      -> []
                                 in if (not . cntnsUnreachWrn) b1wrn 
                                        || (not . cntnsUnreachWrn) b2wrn
