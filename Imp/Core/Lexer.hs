@@ -80,4 +80,3 @@ atoms
         , ("neg",    KInstr "neg")
         ]
 
-

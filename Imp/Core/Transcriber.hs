@@ -37,7 +37,7 @@ instrString indent instr
                                                                              ++ regString s2
             IBranch r m n       -> "br " ++ regString r ++ " " ++ show m ++ " " ++ show n
             IReturn r           -> "ret " ++ regString r
-            ICall r i args      -> "call " ++ regString r ++ " " ++ strOfId i
+            ICall r i args      -> "call " ++ regString r ++ " " ++ strOfId i ++ " "
                                            ++ intercalate ", " (map regString args)
             IPrint regs         -> "print " ++ intercalate ", " (map regString regs)
     ++ ")"
