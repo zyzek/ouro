@@ -313,7 +313,6 @@ convertStmt (reg, blk, S.SExp expr)
         blkList
        )
 
-
 -- | Convert a list of source statements to a list of core block properties and core blocks.
 convertStmts :: (Int, Int, [S.Stmt]) -> (Int, Int, [C.Block])
 convertStmts (reg0, blk0, []) = (reg0, blk0, [])
@@ -341,6 +340,7 @@ mergeBlocks blkInstrs
               (map (\ls@(C.Block bId _ : _)
                      -> (C.Block bId (concatMap (\(C.Block _ bInstrs) -> bInstrs) ls)))
                    filteredList)
+
 
 -- | Convert a source function to a core function.
 convertFunc :: S.Function -> C.Function
@@ -374,7 +374,6 @@ convertOpBin S.OpAnd = C.OpAnd
 convertOpBin S.OpOr = C.OpOr
 convertOpBin S.OpXor = C.OpXor
 convertOpBin S.OpMod = C.OpMod
-
 
 convertOpUn :: S.OpUn -> C.OpArith
 convertOpUn S.OpNot = C.OpNot

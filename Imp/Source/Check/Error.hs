@@ -15,6 +15,8 @@ data Error
         | ErrorSyntax
         deriving (Show, Eq)
 
+
+-- | Issues that won't cause crashes.
 data Warning 
         = WarningUnreachableAfter String
         | WarningUnreachableBranch String
@@ -22,6 +24,7 @@ data Warning
         | WarningInfiniteLoop String
         | FinalReturn
         deriving (Show, Eq)
+
 
 -- | Pretty print an error.
 prettyError :: Error -> String
@@ -46,6 +49,8 @@ prettyError err
         ErrorSyntax
          -> "Syntax Error."
 
+
+-- | Pretty print a warning.
 prettyWarn :: Warning -> String
 prettyWarn wrn
  = case wrn of

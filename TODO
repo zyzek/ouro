@@ -6,16 +6,14 @@ Set: 14th Sep                        Due: 9th Oct 5pm
 - Add check infinite loop etc.
 - move interpreter to core folder
 - core lang to internal representation biconverter
-Cleanup and beautification
-Documentation
+- Cleanup and beautification
+- Documentation
 - revise invocation flags
 final expression return thing
 test script
 now that interpreter is mainly IO, add better error messages for problems.
-
-Document invocation and new language features in README
-
 Add more informative error checking
+run all the current files, make sure they still work.
 
 Extension Tasks
 

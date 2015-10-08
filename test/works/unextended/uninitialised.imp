@@ -1,4 +1,3 @@
-"Uninitialised values should contain 0."
 
 fun foo()
 vars x
@@ -11,3 +10,4 @@ vars tmp
 {
 	return foo();
 }
+
