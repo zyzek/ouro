@@ -2,11 +2,15 @@ Set: 14th Sep                        Due: 9th Oct 5pm
 [=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|=|>| | | | | | | ]
              ^ 20th        ^ 27th        ^ 4th
 
-
-Make the Code Style Consistent and Beautiful
-	Line lengths <= 100 characters
-	Comment Everything
-
+- Remove libcheck
+- Add check infinite loop etc.
+- move interpreter to core folder
+core lang to internal representation biconverter
+Cleanup and beautification
+Documentation
+revise invocation flags
+final expression return thing
+test script
 
 Document invocation and new language features in README
 

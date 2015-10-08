@@ -96,14 +96,14 @@ atoms
         , ("?",         KQMark)
   
           -- keywords
-        , ("fun",       Kfun)
-        , ("vars",      Kvars)
-        , ("if",        Kif)
-        , ("then",      Kthen)
-        , ("else",      Kelse)
-        , ("return",    Kreturn) 
-        , ("while",     Kwhile)
+        , ("fun ",       Kfun)
+        , ("vars ",      Kvars)
+        , ("if ",        Kif)
+        , ("then ",      Kthen)
+        , ("else ",      Kelse)
+        , ("return ",    Kreturn) 
+        , ("while ",     Kwhile)
         , ("true",      Ktrue)
         , ("false",     Kfalse)
-        , ("print",     Kprint)
+        , ("print ",     Kprint)
         ] 

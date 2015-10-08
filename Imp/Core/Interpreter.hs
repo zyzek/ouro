@@ -1,5 +1,5 @@
 
-module Imp.Source.Interpreter where
+module Imp.Core.Interpreter where
 import Data.List.Utils
 import Imp.Core.Exp
 import Data.Maybe

@@ -13,12 +13,15 @@ data Error
         | ErrorPolyAssign   Int Int
         | ErrorNoReturn     String
         | ErrorSyntax
-        deriving Eq
+        deriving (Show, Eq)
 
 data Warning 
         = WarningUnreachableAfter String
-        | WarningUnreachableFunction String
+        | WarningUnreachableBranch String
+        | WarningRedundantConditional String
+        | WarningInfiniteLoop String
         | FinalReturn
+        deriving (Show, Eq)
 
 -- | Pretty print an error.
 prettyError :: Error -> String
@@ -48,7 +51,12 @@ prettyWarn wrn
  = case wrn of
         WarningUnreachableAfter s
          -> "Unreachable code after " ++ s
-        WarningUnreachableFunction s
-         -> "Unreachable function: " ++ s
+        WarningUnreachableBranch s
+         -> "Branch never executes: " ++ s
+        WarningInfiniteLoop s
+         -> "Infinite loop in " ++ s
+        WarningRedundantConditional s
+         -> "Redundant conditional in " ++ s
         FinalReturn
          -> ""
+

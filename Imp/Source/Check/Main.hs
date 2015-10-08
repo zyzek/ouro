@@ -4,7 +4,6 @@ import Imp.Source.Check.Error
 import Imp.Source.Exp
 import Data.List
 
-
 -- | Check that the program contains a main function.
 checkMain :: Program -> [Error]
 checkMain (Program funs)
@@ -144,44 +143,104 @@ checkAssign vars funsigs targs exprs
    where checks = concatMap (checkVarId vars) targs
                    ++ concatMap (checkExpIds vars funsigs) exprs
 
--- | Check Each function in a program to see what's reachable inside it
--- | Then do a traversal from main to see which functions are reachable.
+
+-- | Check each function in a program to see what's reachable inside it, traversing recursively
+-- |  through the AST to determine this.
+-- | Warn upon unreachable/redundant code; Error if a function never returns. 
 checkProgReachability :: Program -> ([Error], [Warning])
 checkProgReachability (Program funs)
  = let (errs, wrns) = (unzip . (map checkFuncReachability)) funs
    in (concat errs, concat wrns)
 
+
+-- | Return true iff a list of warnings contains at least one occurrence of WarningUnreachableAfter
+cntnsUnreachWrn :: [Warning] -> Bool
+cntnsUnreachWrn
+ = let branchWrn w t = t || case w of
+                                 WarningUnreachableAfter _ -> True
+                                 FinalReturn               -> True
+                                 _                         -> False
+   in foldr branchWrn False
+
+
+-- | Return any warnings: Error if there are no return statements (which would produce warnings)
 checkFuncReachability :: Function -> ([Error], [Warning])
 checkFuncReachability (Function i _ _ b) 
  = let fname = idString i 
        reach = checkBlockReachability fname b
-   in (if null reach then [ErrorNoReturn fname] else [], reach)
+   in (if not (cntnsUnreachWrn reach) 
+        then [ErrorNoReturn fname]
+        else []
+      , reach)
 
+
+-- | Check each statement in a block recursively for reachability.
+-- | Produce a warning at the first return statement which has further statements following it.
+-- | If a return is the last statement, produce a silent "warning" FinalReturn to signify that
+-- | This block returns, but no further statements are made redundant by it.
 checkBlockReachability :: String -> Block -> [Warning]
 checkBlockReachability wrnpath (Block stmts)
  = let checkstmtreach = checkStmtReachability wrnpath
-       spanpair = span (not . null . checkstmtreach) stmts
+       spanpair = span (not . cntnsUnreachWrn . checkstmtreach) stmts
        wrn = concatMap checkstmtreach $ fst spanpair 
-   in if (null . snd) spanpair 
-       then [FinalReturn]
-       else wrn  
+       restwrnlists = map checkstmtreach $ snd spanpair
+       restwrn = concat $ if null restwrnlists
+                           then []
+                           else (init restwrnlists) 
+                                   ++ [squelchLastWrn (last restwrnlists)]
+   in if null restwrn 
+       then if null wrn then [] else wrn
+       else if null wrn then [head restwrn] else wrn ++ [head restwrn]
+   where squelchLastWrn l = if null l
+                             then []
+                             else case last l of
+                                       WarningUnreachableAfter _ -> (init l) ++ [FinalReturn]
+                                       _                         -> l
 
+
+-- | Return statements generate reachability warnings, which are handled in the enclosing block.
 checkStmtReachability :: String -> Stmt -> [Warning]
 checkStmtReachability wrnpath s
  = case s of
         SReturn _           ->  [WarningUnreachableAfter ("return in " ++ wrnpath)]
-        SIfElse _ blk1 blk2 ->  let b1wrn = [checkBlockReachability 
-                                              ("if-else true branch " ++ wrnpath)
-                                              blk1]
-                                    b2wrn = [checkBlockReachability
-                                              ("if-else false branch " ++ wrnpath)
-                                              blk2]
-                                in if null b1wrn || null b2wrn
-                                    then []
-                                    else [WarningUnreachableAfter ("if-else in " ++ wrnpath)]
-        -- SIf g block         ->  [checkBlockReachability block]
-        -- SWhile e Block          
-        _                       -> []
+        SIfElse g blk1 blk2 ->  let b1wrn = checkBlockReachability 
+                                             ("if-else true branch in " ++ wrnpath)
+                                             blk1
+                                    b2wrn = checkBlockReachability
+                                             ("if-else false branch in " ++ wrnpath)
+                                             blk2
+                                    cnstg = case g of
+                                                 XNum 0 -> [WarningUnreachableBranch
+                                                             ("conditional then in "
+                                                               ++ wrnpath)]
+                                                 XNum _ -> [WarningUnreachableBranch
+                                                             ("conditional else in "
+                                                               ++ wrnpath)]
+                                                 _      -> []
+                                in if (not . cntnsUnreachWrn) b1wrn 
+                                       || (not . cntnsUnreachWrn) b2wrn
+                                    then cnstg
+                                    else cnstg
+                                          ++ [WarningUnreachableAfter ("if-else in " ++ wrnpath)]
+                                          
+        SIf g block         -> case g of 
+                                    XNum 0 -> [WarningUnreachableBranch 
+                                                ("if-then in " ++ wrnpath)]
+                                    XNum _ -> [WarningRedundantConditional wrnpath] 
+                                               ++ checkBlockReachability 
+                                                   ("if-then in " ++ wrnpath)
+                                                   block
+                                    _      -> []
+        SWhile g block      -> case g of
+                                    XNum 0  -> [WarningUnreachableBranch 
+                                                 ("loop never executes in " ++ wrnpath)]
+                                    XNum _  -> [WarningInfiniteLoop wrnpath]
+                                                ++ (checkBlockReachability 
+                                                     ("loop in " ++ wrnpath)
+                                                     block)
+                                    _       -> []
+        _                   -> []
+
 
 
 -- | Utilities

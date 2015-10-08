@@ -5,8 +5,9 @@ import qualified Imp.Source.Lexer               as S
 import qualified Imp.Source.Check               as S
 import qualified Imp.Source.Check.Error         as S
 import qualified Imp.Source.Convert             as S
-import qualified Imp.Source.Interpreter         as S
 import qualified Imp.Source.Preprocessor        as S
+
+import qualified Imp.Core.Interpreter           as C
 
 import qualified Data.Algorithm.Diff            as Diff
 import qualified Data.Algorithm.DiffOutput      as Diff
@@ -77,29 +78,6 @@ main
           | otherwise
           -> error $ "Cannot check " ++ file
 
-         -- Check a library (no main function)
-         ["-checklib", file]
-          | ".imp" `isSuffixOf` file
-          -> do contents     <- readFile file
-                str          <- S.preprocess contents file
-                case progOfString str of
-                 Nothing -> error "parse error"
-                 Just prog
-                  -> do let (errs, wrns) = S.checkLibrary prog
-                            errmsg = (\err -> "Error: " ++ S.prettyError err)
-                            wrnmsg = (\w -> case w of 
-                                                 S.FinalReturn -> ""
-                                                 _             -> "Warning: " ++ S.prettyWarn w)
-                            errout = case unlines 
-                                           $ map errmsg errs of
-                                          "" -> "No Errors."
-                                          es -> es
-                            wrnout = unlines $ filter (not . null) $ map wrnmsg wrns
-                        showResult (errout ++ wrnout) (file ++ ".check")
-
-          | otherwise
-          -> error $ "Cannot check " ++ file
-
           -- Convert a file.
          ["-convert", file]
           | ".imp" `isSuffixOf` file
@@ -124,7 +102,7 @@ main
                  Nothing -> error "parse error"
                  Just progSource
                   -> do let core = S.convertProgram progSource
-                        result <- S.startProgram core (map read progArgs)
+                        result <- C.startProgram core (map read progArgs)
                             
                         showResult (show result) (file ++ ".interpret")
          _ -> help

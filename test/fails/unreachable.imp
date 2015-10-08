@@ -3,12 +3,12 @@ vars n
 {   
     if true
     {
-        if true 
+        if true
         { return n; }
         { return n; }
     }
     {
-        if true 
+        if true
         { return n; }
         { return n; }
     }
@@ -31,20 +31,62 @@ vars n
     }
 }
 
-fun one()
+fun lastreturnone()
 {
     1
 }
 
-fun yesreturn()
+fun lastreturn()
 {
     return 0;
 }
 
-fun anothernoreturn(b)
+fun returnnotlast(b)
 {
     return b;
     b = b;
 
 }
+
+fun conditions(b)
+{
+    if true
+    {
+        b += 1;
+    }
+
+    if false
+    {
+        b += 1;
+    }
+
+    if true
+    {
+        b += 1;
+    }
+    {
+        b += 1;
+    }
+
+    if false
+    {
+        b += 1;
+    }
+    {
+        b += 1;
+    }
+
+    return b;
+}
+
+fun returnwithinblock(b)
+{
+    if b
+    {
+        return b;
+        b += 1;
+    }
+    
+}
+
 
