@@ -48,6 +48,8 @@ What tasks did you complete?
     - Checks that multiple assignments are correct.
     - Check that functions actually return.
     - Some warnings if you have unreachable or redundant code.
+    - Some runtime error messages in the interpreter for looking up non-existent registers,
+        calling functions incorrectly, etc.
 
   + Relatively extensive example code base.
     - For the most part, example code in the test/ directory demonstrates language features.

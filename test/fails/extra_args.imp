@@ -1,0 +1,11 @@
+fun one(x)
+{
+    return x;
+}
+
+fun main()
+vars tmp
+{
+    tmp = one(tmp, tmp);
+    return tmp;
+}
