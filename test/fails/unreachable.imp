@@ -41,7 +41,7 @@ fun lastreturn()
     return 0;
 }
 
-fun returnnotlast(b)
+fun retnotlast(b)
 {
     return b;
     b = b;
@@ -79,7 +79,7 @@ fun conditions(b)
     return b;
 }
 
-fun returnwithinblock(b)
+fun retwithinblock(b)
 {
     if b
     {

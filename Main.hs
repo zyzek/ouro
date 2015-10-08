@@ -7,8 +7,10 @@ import qualified Imp.Source.Check.Error         as S
 import qualified Imp.Source.Convert             as S
 import qualified Imp.Source.Preprocessor        as S
 
+import qualified Imp.Core                       as C
 import qualified Imp.Core.Interpreter           as C
 import qualified Imp.Core.Transcriber           as C
+import qualified Imp.Core.Lexer                 as C
 
 import qualified Data.Algorithm.Diff            as Diff
 import qualified Data.Algorithm.DiffOutput      as Diff
@@ -41,7 +43,12 @@ main
                 str        <- S.preprocess contents file
                 let out = Text.ppShow $ lexer str
                 showResult out (file ++ ".lex")
-
+          
+          | ".ir" `isSuffixOf` file
+          -> do contents   <- readFile file
+                let out = Text.ppShow $ C.lexer contents
+                showResult out (file ++ ".lex")
+          
           | otherwise
           -> error $ "Cannot lex " ++ file
 
@@ -52,7 +59,12 @@ main
                 str     <- S.preprocess contents file
                 let out = Text.ppShow $ progOfString str
                 showResult out (file ++ ".parse")
-
+          
+          | ".ir" `isSuffixOf` file
+          -> do contents <- readFile file
+                let out = Text.ppShow $ C.programOfString contents
+                showResult out (file ++ ".parse")
+  
           | otherwise
           -> error $ "Cannot parse " ++ file
 
@@ -100,12 +112,23 @@ main
           -> do contents   <- readFile file
                 str        <- S.preprocess contents file
                 case progOfString str of
-                 Nothing -> error "parse error"
-                 Just progSource
-                  -> do let core = S.convertProgram progSource
-                        result <- C.startProgram core (map read progArgs)
-                            
-                        showResult (show result) (file ++ ".interpret")
+                     Nothing -> error "parse error"
+                     Just progSource
+                      -> do let core = S.convertProgram progSource
+                            result <- C.startProgram core (map read progArgs)
+                            showResult (show result) (file ++ ".interpret")
+
+          | ".ir" `isSuffixOf` file
+          -> do contents  <- readFile file
+                case C.programOfString contents of
+                     Nothing -> error "parse error"
+                     Just core
+                      -> do result <- C.startProgram core (map read progArgs)
+                            showResult (show result) (file ++ ".interpret")
+
+          | otherwise
+          -> error $ "Cannot convert " ++ file
+
          _ -> help
 
 
