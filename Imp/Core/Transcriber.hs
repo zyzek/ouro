@@ -12,7 +12,7 @@ funcString :: String -> Function -> String
 funcString indent (Function i vars blocks)
  = indent ++ 
    "(" ++ strOfId i
-       ++ " (" ++ (intercalate ",") (map strOfId vars) ++ ")\n"
+       ++ " (" ++ intercalate "," (map strOfId vars) ++ ")\n"
        ++ intercalate "\n" (map (blockString (indent ++ "  ")) blocks)
        ++ "\n" ++ indent ++ ")"
 

@@ -7,8 +7,7 @@ import Data.List
 -- | Check that the program contains a main function.
 checkMain :: Program -> [Error]
 checkMain (Program funs)
- = let  hasMain = foldl (||) False 
-                $ map ((== Id "main") . nameOfFunction) funs
+ = let  hasMain = any ((== Id "main") . nameOfFunction) funs
    in   if hasMain 
          then []
          else [ErrorNoMain]
@@ -149,7 +148,7 @@ checkAssign vars funsigs targs exprs
 -- | Warn upon unreachable/redundant code; Error if a function never returns. 
 checkProgReachability :: Program -> ([Error], [Warning])
 checkProgReachability (Program funs)
- = let (errs, wrns) = (unzip . (map checkFuncReachability)) funs
+ = let (errs, wrns) = (unzip . map checkFuncReachability) funs
    in (concat errs, concat wrns)
 
 
@@ -168,9 +167,7 @@ checkFuncReachability :: Function -> ([Error], [Warning])
 checkFuncReachability (Function i _ _ b) 
  = let fname = idString i 
        reach = checkBlockReachability fname b
-   in (if not (cntnsUnreachWrn reach) 
-        then [ErrorNoReturn fname]
-        else []
+   in ( [ErrorNoReturn fname | not (cntnsUnreachWrn reach)]
       , reach)
 
 
@@ -181,20 +178,19 @@ checkFuncReachability (Function i _ _ b)
 checkBlockReachability :: String -> Block -> [Warning]
 checkBlockReachability wrnpath (Block stmts)
  = let checkstmtreach = checkStmtReachability wrnpath
-       spanpair = span (not . cntnsUnreachWrn . checkstmtreach) stmts
+       spanpair = break (cntnsUnreachWrn . checkstmtreach) stmts
        wrn = concatMap checkstmtreach $ fst spanpair 
        restwrnlists = map checkstmtreach $ snd spanpair
        restwrn = concat $ if null restwrnlists
                            then []
-                           else (init restwrnlists) 
-                                   ++ [squelchLastWrn (last restwrnlists)]
+                           else init restwrnlists ++ [squelchLastWrn (last restwrnlists)]
    in if null restwrn 
        then if null wrn then [] else wrn
        else if null wrn then [head restwrn] else wrn ++ [head restwrn]
    where squelchLastWrn l = if null l
                              then []
                              else case last l of
-                                       WarningUnreachableAfter _ -> (init l) ++ [FinalReturn]
+                                       WarningUnreachableAfter _ -> init l ++ [FinalReturn]
                                        _                         -> l
 
 
@@ -226,18 +222,18 @@ checkStmtReachability wrnpath s
         SIf g block         -> case g of 
                                     XNum 0 -> [WarningUnreachableBranch 
                                                 ("if-then in " ++ wrnpath)]
-                                    XNum _ -> [WarningRedundantConditional wrnpath] 
-                                               ++ checkBlockReachability 
-                                                   ("if-then in " ++ wrnpath)
-                                                   block
+                                    XNum _ -> WarningRedundantConditional wrnpath 
+                                               : checkBlockReachability 
+                                                  ("if-then in " ++ wrnpath)
+                                                  block
                                     _      -> []
         SWhile g block      -> case g of
                                     XNum 0  -> [WarningUnreachableBranch 
                                                  ("loop never executes in " ++ wrnpath)]
-                                    XNum _  -> [WarningInfiniteLoop wrnpath]
-                                                ++ (checkBlockReachability 
-                                                     ("loop in " ++ wrnpath)
-                                                     block)
+                                    XNum _  -> WarningInfiniteLoop wrnpath
+                                                : checkBlockReachability 
+                                                   ("loop in " ++ wrnpath)
+                                                   block
                                     _       -> []
         _                   -> []
 

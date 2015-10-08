@@ -77,10 +77,10 @@ main
                  Nothing -> error "parse error"
                  Just prog
                   -> do let (errs, wrns) = S.checkProgram prog
-                            errmsg = (\err -> "Error: " ++ S.prettyError err)
-                            wrnmsg = (\w -> case w of 
-                                                 S.FinalReturn -> ""
-                                                 _             -> "Warning: " ++ S.prettyWarn w)
+                            errmsg err = "Error: " ++ S.prettyError err
+                            wrnmsg w = case w of 
+                                            S.FinalReturn -> ""
+                                            _             -> "Warning: " ++ S.prettyWarn w
                             errout = case unlines 
                                            $ map errmsg errs of
                                           ""  -> "No Errors."
@@ -122,8 +122,8 @@ main
           -> do contents  <- readFile file
                 case C.programOfString contents of
                      Nothing -> error "parse error"
-                     Just core
-                      -> do result <- C.startProgram core (map read progArgs)
+                     Just mprog
+                      -> do result <- C.startProgram mprog (map read progArgs)
                             showResult (show result) (file ++ ".interpret")
 
           | otherwise

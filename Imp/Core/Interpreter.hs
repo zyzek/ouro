@@ -147,7 +147,7 @@ step sArgs@(StepArgs env funcs func (Block blockId (i:is)) gReg)
          IReturn rReg                   -> return $ copyReg env gReg rReg
          ICall dst funcId argsList      -> do newenv <- call env dst funcs 
                                                              (lookupFunc funcId funcs) argsList
-                                              step $ setEnv newArgs $ newenv
+                                              step $ setEnv newArgs newenv
                                             
          IConst dst val                 -> step $ setEnv newArgs $ setReg env dst val
          ILoad dst varId                -> step $ setEnv newArgs $ loadVar env dst varId
