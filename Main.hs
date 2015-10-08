@@ -74,7 +74,7 @@ main
           -> do contents     <- readFile file
                 str          <- S.preprocess contents file
                 case progOfString str of
-                 Nothing -> error "parse error"
+                 Nothing -> error "Syntax error."
                  Just prog
                   -> do let (errs, wrns) = S.checkProgram prog
                             errmsg err = "Error: " ++ S.prettyError err
@@ -97,7 +97,7 @@ main
           -> do contents     <- readFile file
                 str          <- S.preprocess contents file
                 case progOfString str of
-                 Nothing -> error "parse error"
+                 Nothing -> error "Syntax error."
                  Just progSource
                   -> do let core = S.convertProgram progSource
                         let out  = C.progString core
@@ -112,7 +112,7 @@ main
           -> do contents   <- readFile file
                 str        <- S.preprocess contents file
                 case progOfString str of
-                     Nothing -> error "parse error"
+                     Nothing -> error "Syntax error."
                      Just progSource
                       -> do let core = S.convertProgram progSource
                             result <- C.startProgram core (map read progArgs)
@@ -121,7 +121,7 @@ main
           | ".ir" `isSuffixOf` file
           -> do contents  <- readFile file
                 case C.programOfString contents of
-                     Nothing -> error "parse error"
+                     Nothing -> error "Parse error."
                      Just mprog
                       -> do result <- C.startProgram mprog (map read progArgs)
                             showResult (show result) (file ++ ".interpret")
@@ -148,6 +148,10 @@ help
         , "Use -e as the first flag to use an extended language instead, e.g.:"
         , ""
         , "  imp -e -interpret <file>   Interpret a file in the extended language."
+        , ""
+        , "This program will accept .imp (source) and .ir (intermediate language) files."
+        , "-lex, -parse, and -interpret should work on both .imp and .ir extensions, while"
+        , "  -check and -convert are restricted to .imp source code."
         ]
 
 

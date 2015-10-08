@@ -7,6 +7,7 @@ data Program
         = Program [Function]
         deriving Show
 
+
 -- | Core Functions.
 data Function
         = Function Id [Id] [Block] 
@@ -55,7 +56,7 @@ data OpArith
         | OpAnd
         | OpXor
 
-        -- Unaries
+        -- Unaries (both OpArith source Regs are taken to be the same register in the unary case)
         | OpNot
         | OpNeg
         deriving Show
@@ -66,6 +67,7 @@ data Id
         = Id String
         deriving (Show, Eq)
 
+
 -- | Extract the string from an Id.
 strOfId :: Id -> String
 strOfId (Id s) = s
@@ -75,6 +77,4 @@ strOfId (Id s) = s
 data Reg
         = Reg Int
         deriving (Show, Eq, Ord)
-
-
 

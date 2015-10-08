@@ -47,7 +47,7 @@ token
 atoms :: [(String, Token)]
 atoms
  =      [ -- instructions
-          ("print",  Kprint)
+          ("print",  KPrint)
         , ("lc",     KConst)
         , ("ld",     KLoad)
         , ("st",     KStore)

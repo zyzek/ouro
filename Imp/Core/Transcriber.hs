@@ -2,21 +2,28 @@ module Imp.Core.Transcriber where
 import Imp.Core.Exp
 import Data.List
 
+
+-- | The transcriber converts IR code represented as Haskell data into an output string.
+
+
+-- | Produce IR program code.
 progString :: Program -> String
 progString (Program funcs)
  = "(\n" ++ intercalate "\n" (map (funcString "  ") funcs) 
      ++ "\n)" 
 
 
+-- | The string representation of an IR function.
 funcString :: String -> Function -> String
 funcString indent (Function i vars blocks)
  = indent ++ 
    "(" ++ strOfId i
-       ++ " (" ++ intercalate "," (map strOfId vars) ++ ")\n"
+       ++ " (" ++ unwords (map strOfId vars) ++ ")\n"
        ++ intercalate "\n" (map (blockString (indent ++ "  ")) blocks)
        ++ "\n" ++ indent ++ ")"
 
 
+-- | The string representation of an IR Block.
 blockString :: String -> Block -> String
 blockString indent (Block i instrs)
  = indent ++ 
@@ -25,6 +32,7 @@ blockString indent (Block i instrs)
        ++ " )"
 
 
+-- | The string representation of an IR instruction.
 instrString :: String -> Instr -> String
 instrString indent instr
  = indent ++ 
@@ -38,11 +46,12 @@ instrString indent instr
             IBranch r m n       -> "br " ++ regString r ++ " " ++ show m ++ " " ++ show n
             IReturn r           -> "ret " ++ regString r
             ICall r i args      -> "call " ++ regString r ++ " " ++ strOfId i ++ " "
-                                           ++ intercalate ", " (map regString args)
-            IPrint regs         -> "print " ++ intercalate ", " (map regString regs)
+                                           ++ unwords (map regString args)
+            IPrint regs         -> "print " ++ unwords (map regString regs)
     ++ ")"
         
 
+-- | A map from the internal to external names of arithmetic operators.
 operString :: OpArith -> String
 operString o
  = case o of
@@ -65,6 +74,7 @@ operString o
         OpNeg -> "neg"
 
 
+-- | Register string representation.
 regString :: Reg -> String
 regString (Reg n) = "r" ++ show n 
 

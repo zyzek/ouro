@@ -13,18 +13,21 @@ program
         only KRoundKet
         return     $  Program funcs
 
--- | Single function definition: 
--- | keyword, function name, list of arguments, list of variables, then the function body itself.
+
+-- | Single function definition. 
+-- | name, arguments, block list.
 function :: Parser Token Function
 function
  = do   only KRoundBra 
         i          <- ident
-        args       <- idArgs        
+        only KRoundBra
+        args       <- some ident
+        only KRoundKet
         blks       <- some block
         only KRoundKet
         return     $  Function i args blks
 
--- | Source block: a sequence of statements between curly braces.
+-- | Code block: a sequence of instructions with a particular id: a constituent of a function.
 block :: Parser Token Block
 block
  = do   only KRoundBra
@@ -33,7 +36,8 @@ block
         only KRoundKet
         return         $  Block n instrs
 
--- | Statements themselves contain expressions.
+
+-- | A machine instruction.
 instr :: Parser Token Instr
 instr
  = do  only KRoundBra
@@ -49,8 +53,11 @@ instr
        only KRoundKet
        return i
 
+
+
 -- || Component Parsers ==================================================
 
+-- | Number -> Register load instruction.
 constInstr :: Parser Token Instr
 constInstr
  = do  only KConst
@@ -59,6 +66,7 @@ constInstr
        return $ IConst r i
 
 
+-- | Var -> Reg load instruction.
 loadInstr :: Parser Token Instr
 loadInstr
  = do  only KLoad
@@ -66,6 +74,8 @@ loadInstr
        i      <- ident
        return $ ILoad r i
 
+
+-- | Reg -> Var store instruction.
 storeInstr :: Parser Token Instr
 storeInstr
  = do  only KStore
@@ -73,6 +83,8 @@ storeInstr
        r    <- register
        return $ IStore i r
 
+
+-- | Branch instruction.
 branchInstr :: Parser Token Instr
 branchInstr
  = do  only KBranch
@@ -81,6 +93,8 @@ branchInstr
        i2   <- num
        return $ IBranch r i1 i2
 
+
+-- | Function call instruction.
 callInstr :: Parser Token Instr
 callInstr
  = do  only KCall
@@ -89,12 +103,16 @@ callInstr
        args <- some register
        return $ ICall r i args
 
+
+-- | Return instruction.
 returnInstr :: Parser Token Instr
 returnInstr
  = do  only KReturn
-       r <- register
+       r    <- register
        return $ IReturn r
 
+
+-- | Print instruction.
 printInstr :: Parser Token Instr
 printInstr
  = do  only KPrint
@@ -102,6 +120,7 @@ printInstr
        return $ IPrint regs
        
 
+-- | Arithmetic operation instruction.
 operInstr :: Parser Token Instr
 operInstr
  = do    o  <- alts [ do   only  (KInstr str)
@@ -112,6 +131,8 @@ operInstr
          r3 <- register
          return $ IArith o r1 r2 r3
 
+
+-- | Arithmetic instructions available.
 opers :: [(String, OpArith)]
 opers = [
           ("add",   OpAdd)
@@ -134,29 +155,6 @@ opers = [
         ]
 
 
-
-
--- | Comma-separated list of ids between parentheses.
-idArgs :: Parser Token [Id]
-idArgs
- = do   only KRoundBra
-        arg_list       <- alt idents $ result []
-        only KRoundKet
-        return arg_list
-
-
--- | Parse arguments as ids separated by commas.
-idents :: Parser Token [Id]
-idents
- = alt  ( do   i       <- ident
-               only KComma
-               is      <- idents
-               return  $  i : is )
-
-        ( do   i       <- ident
-               return  [i] )
-
-
 -- | Parse a number.
 num   :: Parser Token Int
 num = from takeNum
@@ -169,6 +167,7 @@ ident
         return  $  Id i
 
 
+-- | Parse a register.
 register :: Parser Token Reg
 register
  = do   n       <- from takeReg

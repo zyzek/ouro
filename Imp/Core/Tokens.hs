@@ -12,7 +12,6 @@ data Token
         | KRoundKet             -- ')'
         | KComma                -- ','
         
-        | Kprint                -- print
         | KConst                -- lc
         | KLoad                 -- ld
         | KStore                -- st

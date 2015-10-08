@@ -102,8 +102,13 @@ startProgram (Program funcList) args
  = do let func    = lookupFunc (Id "main") funcList
           regs    = makeNRegs (length args)
           argRegs = zip regs args
-      env <- call (Env argRegs []) (Reg 0) funcList func regs
-      return $ getReg env (Reg 0)
+      
+      if length args < numargs func
+       then do putStrLn ("Insufficient input; main takes " ++ show (numargs func) ++ " arguments.")
+               return (-1)
+       else do env <- call (Env argRegs []) (Reg 0) funcList func regs
+               return $ getReg env (Reg 0)
+   where numargs (Function _ funcargs  _) = length funcargs
 
 
 -- | Call a function. The args are as follows:
