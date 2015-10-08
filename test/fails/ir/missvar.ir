@@ -1,0 +1,21 @@
+(
+  (foo ()
+    (0
+       (lc r0 0)
+       (st x r0)
+       (br r0 1 1) )
+    (1
+       (ld r1 x)
+       (ret r1) )
+  )
+  (main ()
+    (0
+       (lc r0 0)
+       (st tmp r0)
+       (ld r2 poo)
+       (br r0 1 1) )
+    (1
+       (call r1 foo )
+       (ret r1) )
+  )
+)

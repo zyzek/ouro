@@ -72,14 +72,14 @@ setVar (Env reg var) targetVar val
 getReg :: Env -> Reg -> IO Int
 getReg (Env reg _) targetReg
  = do  let res = lookup targetReg reg
-       maybe (do  putStrLn $ "Tried to look up fictitious register " ++ show targetReg
+       maybe (do  putStrLn $ "Tried to look up fictitious register " ++ show targetReg ++ "."
                   exitFailure)
               return res
 
 getVar :: Env -> Id -> IO Int
 getVar (Env _ var) targetId
  = do  let res = lookup targetId var
-       maybe (do  putStrLn $ "Tried to look up fictitious variable " ++ show targetId
+       maybe (do  putStrLn $ "Tried to look up fictitious variable \"" ++ strOfId targetId ++ "\"."
                   exitFailure)
              return res
 
@@ -112,12 +112,12 @@ startProgram (Program funcList) args
       let regs    =  makeNRegs (length args)
           argRegs =  zip regs args
       
-      if length args < numargs func
-       then do putStrLn ("Insufficient input; main takes " ++ show (numargs func) ++ " argument(s).")
+      if length args < nargs func
+       then do putStrLn ("Insufficient input; main takes " ++ show (nargs func) ++ " argument(s).")
                exitFailure
        else do env <- call (Env argRegs []) (Reg 0) funcList func regs
                getReg env (Reg 0)
-   where numargs (Function _ funcargs  _) = length funcargs
+   where nargs (Function _ funcargs  _) = length funcargs
 
 
 -- | Call a function. The args are as follows:
@@ -136,11 +136,11 @@ call env gReg funcs func argRegs
 
 -- | Call a function with integer arguments and return the integer result.
 evalFunc :: [Function] -> Function -> [Int] -> Reg -> IO Int
-evalFunc funcs func@(Function _ argIds (block:_)) argVals gReg
+evalFunc funcs func@(Function i argIds (block:_)) argVals gReg
  = do  let args =  zip argIds argVals
        if length argIds /= length argVals
          then do  putStrLn ("Provided " ++ show (length argVals)
-                            ++ " argument(s) to a function that takes "
+                            ++ " argument(s) to function \"" ++ strOfId i ++ "\", which takes "
                             ++ show (length argIds) ++ "!")
                   exitFailure
          else do  res      <- step $ StepArgs (Env [] args) funcs func block gReg
@@ -198,7 +198,7 @@ lookupFunc :: Id -> [Function] -> IO Function
 lookupFunc wantId funcs 
  = let res = filter (\(Function haveId _ _) -> wantId == haveId) funcs
    in if null res
-       then do putStrLn ("No function with the id " ++ show wantId ++ " exists.")
+       then do putStrLn ("No function with the id \"" ++ strOfId wantId ++ "\" exists.")
                exitFailure
        else return $ head res
 
@@ -207,7 +207,7 @@ lookupBlock :: Int -> [Block] -> IO Block
 lookupBlock wantId bs
  = let res = filter (\(Block haveId _) -> wantId == haveId) bs
    in if null res
-       then do putStrLn ("No block with the id " ++ show wantId ++ " exists.")
+       then do putStrLn ("No block with the id " ++ show wantId ++ " exists in this function.")
                exitFailure
        else return $ head res
 
