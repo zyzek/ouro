@@ -66,8 +66,15 @@ data Id
         = Id String
         deriving (Show, Eq)
 
+-- | Extract the string from an Id.
+strOfId :: Id -> String
+strOfId (Id s) = s
+
 
 -- | Register numbers.
 data Reg
         = Reg Int
         deriving (Show, Eq, Ord)
+
+
+

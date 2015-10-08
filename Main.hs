@@ -8,6 +8,7 @@ import qualified Imp.Source.Convert             as S
 import qualified Imp.Source.Preprocessor        as S
 
 import qualified Imp.Core.Interpreter           as C
+import qualified Imp.Core.Transcriber           as C
 
 import qualified Data.Algorithm.Diff            as Diff
 import qualified Data.Algorithm.DiffOutput      as Diff
@@ -87,7 +88,7 @@ main
                  Nothing -> error "parse error"
                  Just progSource
                   -> do let core = S.convertProgram progSource
-                        let out  = Text.ppShow core
+                        let out  = C.progString core
                         showResult out (file ++ ".convert")
                 
           | otherwise
