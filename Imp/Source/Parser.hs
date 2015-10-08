@@ -17,8 +17,8 @@ function  :: Parser Token Function
 function
  = do   only Kfun
         i          <- ident
-        arg_list   <- idArgs
-        var_list   <- vars
+        arg_list   <- argList ident
+        var_list   <- funvars
         b          <- block i
         return     $  Function i arg_list var_list b
 
@@ -62,55 +62,34 @@ expr = opL 1
 
 -- || Component Parsers ==================================================
 
--- | Comma-separated list of ids between parentheses.
-idArgs :: Parser Token [Id]
-idArgs
+-- | Comma-separated list of objects.
+commaList :: Parser Token a -> Parser Token [a]
+commaList p
+ = alt  ( do    o       <- p
+                only KComma
+                os      <- commaList p
+                return  $ o : os )
+
+        ( do    o       <- p
+                return [o] )
+
+
+-- | Comma-separated list of items between parentheses.
+argList :: Parser Token a -> Parser Token [a]
+argList p
  = do   only KRoundBra
-        arg_list       <- alt idents $ result []
+        arg_list        <- alt (commaList p) $ result []
         only KRoundKet
         return arg_list
-
-
--- | Parse arguments as ids separated by commas.
-idents :: Parser Token [Id]
-idents
- = alt  ( do   i       <- ident
-               only KComma
-               is      <- idents
-               return  $  i : is )
-
-        ( do   i       <- ident
-               return  [i] )
 
 
 -- | Comma-separated list of ids, prefixed by "vars"
-vars :: Parser Token [Id]
-vars
+funvars :: Parser Token [Id]
+funvars
  = alt  ( do   only Kvars
-               idents )
+               commaList ident )
 
         ( result [] )
-
-
--- | Comma-separated list of expressions between parentheses.
-exprArgs :: Id -> Parser Token [Exp]
-exprArgs curFuncId
- = do   only KRoundBra
-        arg_list       <- alt (exprs curFuncId) (result [])
-        only KRoundKet
-        return arg_list
-
-
--- | Parse a non-empty list of expressions separated by commas.
-exprs :: Id -> Parser Token [Exp]
-exprs curFuncId
- = alt  ( do   i       <- expr curFuncId
-               only KComma
-               is      <- exprs curFuncId
-               return  $ i : is )
-
-        ( do   i       <- expr curFuncId
-               return  [i] )
 
 
 -- | Parse a number.
@@ -211,7 +190,7 @@ funcopsig :: Id -> Parser Token (Id, [Exp])
 funcopsig curFuncId
  = do   only KSquareBra
         f                       <- ident
-        arg_list                <- alt (exprs curFuncId) (result [])
+        arg_list                <- alt (commaList (expr curFuncId)) (result [])
         only KSquareKet
         return (f, arg_list)
 
@@ -298,7 +277,7 @@ identExpr
 ouroExpr :: Id -> Parser Token Exp
 ouroExpr curFuncId
  = do   only KAt
-        arg_list  <-  exprArgs curFuncId
+        arg_list  <-  argList (expr curFuncId)
         return    $   XApp curFuncId arg_list
 
 
@@ -306,7 +285,7 @@ ouroExpr curFuncId
 appExpr :: Id -> Parser Token Exp
 appExpr curFuncId
  = do   i         <-  ident
-        arg_list  <-  exprArgs curFuncId
+        arg_list  <-  argList (expr curFuncId)
         return    $   XApp i arg_list
 
 
@@ -383,7 +362,7 @@ ternaryExpr curFuncId
 -- | Assignment, a list of expressions assigned to a list of variable ids.
 assignStmt :: Id -> Parser Token Stmt
 assignStmt curFuncId
- = do  is         <- idents
+ = do  is         <- commaList ident
        es         <- assignRHS curFuncId
        return     $  SAssign is es
 
@@ -391,7 +370,7 @@ assignStmt curFuncId
 -- | Function assignment.
 fassignStmt :: Id -> Parser Token Stmt
 fassignStmt curFuncId
- = do  is         <- idents
+ = do  is         <- commaList ident
        (f, arg_l) <- funcopsig curFuncId
        es         <- assignRHS curFuncId
        return     $  SAssign is $ map (\(i, e) -> XApp f (XId i : e : arg_l)) (zip is es)
@@ -400,7 +379,7 @@ fassignStmt curFuncId
 -- | Operator assignment
 bassignStmt :: Id -> Parser Token Stmt
 bassignStmt curFuncId
- = do  is         <- idents
+ = do  is         <- commaList ident
        o          <- binoper
        es         <- assignRHS curFuncId
        return     $  SAssign is $ map (\(i, e) -> XOpBin o (XId i) e) (zip is es)
@@ -410,7 +389,7 @@ bassignStmt curFuncId
 assignRHS :: Id -> Parser Token [Exp]
 assignRHS curFuncId
  = do  only KEquals
-       es          <- exprs curFuncId
+       es          <- commaList (expr curFuncId)
        only KSemi
        return es
 
@@ -456,7 +435,7 @@ returnStmt curFuncId
 printStmt :: Id -> Parser Token Stmt
 printStmt curFuncId
  = do only Kprint
-      es          <- alt (exprs curFuncId) (result [])
+      es          <- alt (commaList (expr curFuncId)) (result [])
       only KSemi
       return      $  SPrint es
 
