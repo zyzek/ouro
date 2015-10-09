@@ -1,0 +1,37 @@
+Just
+  (Program
+     [ Function
+         (Id "pm")
+         [ Id "x" , Id "y" , Id "m" ]
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpAdd (XId (Id "x")) (XOpBin OpMul (XId (Id "m")) (XId (Id "y"))))
+            ])
+     , Function
+         (Id "dpm")
+         [ Id "x" , Id "y" , Id "m" , Id "n" ]
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpAdd
+                   (XOpBin OpMul (XId (Id "m")) (XId (Id "x")))
+                   (XOpBin OpMul (XId (Id "n")) (XId (Id "y"))))
+            ])
+     , Function
+         (Id "pow")
+         [ Id "x" , Id "y" ]
+         []
+         (Block [ SReturn (XOpBin OpPow (XId (Id "x")) (XId (Id "y"))) ])
+     , Function
+         (Id "main")
+         []
+         []
+         (Block
+            [ SPrint [ XApp (Id "pm") [ XNum 1 , XNum 5 , XNum 12 ] ]
+            , SPrint [ XApp (Id "dpm") [ XNum 1 , XNum 5 , XNum 7 , XNum 8 ] ]
+            , SReturn (XApp (Id "pow") [ XNum 4 , XNum 4 ])
+            ])
+     ])

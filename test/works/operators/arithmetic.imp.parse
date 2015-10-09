@@ -1,0 +1,31 @@
+Just
+  (Program
+     [ Function (Id "three") [] [] (Block [ SReturn (XNum 3) ])
+     , Function
+         (Id "main")
+         []
+         [ Id "a" , Id "b" , Id "c" ]
+         (Block
+            [ SAssign [ Id "a" , Id "b" , Id "c" ] [ XNum 1 , XNum 2 , XNum 4 ]
+            , SReturn
+                (XOpBin
+                   OpXor
+                   (XOpUn OpNot (XNum 1))
+                   (XOpBin
+                      OpEq
+                      (XOpBin
+                         OpSub
+                         (XOpBin
+                            OpAdd
+                            (XId (Id "a"))
+                            (XOpUn OpNeg (XOpBin OpSub (XId (Id "b")) (XId (Id "c")))))
+                         (XOpBin
+                            OpMul
+                            (XApp (Id "three") [])
+                            (XOpBin
+                               OpPow
+                               (XOpUn OpNeg (XNum 4))
+                               (XOpBin OpDiv (XOpBin OpMul (XNum 2) (XNum 2)) (XNum 4)))))
+                      (XOpUn OpNeg (XOpUn OpNeg (XNum 15)))))
+            ])
+     ])

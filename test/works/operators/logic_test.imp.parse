@@ -1,0 +1,25 @@
+Just
+  (Program
+     [ Function
+         (Id "xor")
+         [ Id "a" , Id "b" ]
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpOr
+                   (XOpBin OpAnd (XOpUn OpNot (XId (Id "a"))) (XId (Id "b")))
+                   (XOpBin OpAnd (XId (Id "a")) (XOpUn OpNot (XId (Id "b")))))
+            ])
+     , Function
+         (Id "main")
+         [ Id "a" , Id "b" ]
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpAnd
+                   (XOpBin OpXor (XId (Id "a")) (XId (Id "b")))
+                   (XApp (Id "xor") [ XId (Id "a") , XId (Id "b") ]))
+            ])
+     ])

@@ -9,4 +9,3 @@ Warning: Redundant conditional in conditions
 Warning: Branch never executes: if-then in conditions
 Warning: Branch never executes: conditional else in conditions
 Warning: Branch never executes: conditional then in conditions
-

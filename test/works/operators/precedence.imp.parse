@@ -1,0 +1,133 @@
+Just
+  (Program
+     [ Function
+         (Id "ltr")
+         []
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpSub
+                   (XOpBin
+                      OpAdd
+                      (XOpBin
+                         OpSub
+                         (XOpBin OpAdd (XOpBin OpSub (XNum 1) (XNum 2)) (XNum 3))
+                         (XNum 4))
+                      (XNum 5))
+                   (XNum 6))
+            ])
+     , Function
+         (Id "ltr2")
+         []
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpAdd
+                   (XOpBin
+                      OpSub
+                      (XOpBin
+                         OpAdd
+                         (XOpBin OpSub (XOpBin OpAdd (XNum 1) (XNum 2)) (XNum 3))
+                         (XNum 4))
+                      (XNum 5))
+                   (XNum 6))
+            ])
+     , Function
+         (Id "all")
+         []
+         []
+         (Block
+            [ SReturn
+                (XOpUn
+                   OpNeg
+                   (XOpBin
+                      OpXor
+                      (XOpBin
+                         OpAnd
+                         (XOpBin
+                            OpOr
+                            (XOpBin
+                               OpEq
+                               (XOpBin
+                                  OpNeq
+                                  (XOpBin
+                                     OpGeq
+                                     (XOpBin
+                                        OpLeq
+                                        (XOpBin
+                                           OpGt
+                                           (XOpBin
+                                              OpLt
+                                              (XOpBin
+                                                 OpSub
+                                                 (XOpBin OpAdd (XNum 1) (XNum 2))
+                                                 (XOpBin
+                                                    OpMod
+                                                    (XOpBin
+                                                       OpDiv
+                                                       (XOpBin OpMul (XNum 3) (XNum 4))
+                                                       (XNum 5))
+                                                    (XOpBin OpPow (XNum 6) (XNum 7))))
+                                              (XNum 8))
+                                           (XNum 9))
+                                        (XNum 10))
+                                     (XNum 11))
+                                  (XNum 12))
+                               (XNum 13))
+                            (XNum 14))
+                         (XNum 15))
+                      (XOpUn OpNot (XNum 16))))
+            ])
+     , Function
+         (Id "add")
+         [ Id "x" , Id "y" ]
+         []
+         (Block [ SReturn (XOpBin OpAdd (XId (Id "x")) (XId (Id "y"))) ])
+     , Function
+         (Id "levels")
+         []
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpOr
+                   (XNum 0)
+                   (XOpBin
+                      OpLeq
+                      (XNum 1)
+                      (XOpBin
+                         OpAdd
+                         (XNum 2)
+                         (XOpBin
+                            OpMul
+                            (XNum 3)
+                            (XOpBin OpPow (XNum 4) (XApp (Id "add") [ XNum 5 , XNum 6 ]))))))
+            ])
+     , Function
+         (Id "levels2")
+         []
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpOr
+                   (XOpBin
+                      OpLeq
+                      (XOpBin OpMul (XNum 0) (XNum 1))
+                      (XOpBin OpPow (XNum 2) (XApp (Id "add") [ XNum 3 , XNum 4 ])))
+                   (XOpBin OpAdd (XNum 5) (XNum 6)))
+            ])
+     , Function
+         (Id "main")
+         []
+         []
+         (Block
+            [ SPrint [ XApp (Id "ltr") [] ]
+            , SPrint [ XApp (Id "all") [] ]
+            , SPrint [ XApp (Id "levels") [] ]
+            , SPrint [ XApp (Id "levels2") [] ]
+            , SReturn (XApp (Id "ltr2") [])
+            ])
+     ])

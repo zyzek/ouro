@@ -8,6 +8,30 @@ Just
   , KRoundBra
   , KNum 0
   , KRoundBra
+  , KConst
+  , KReg 0
+  , KNum 0
+  , KRoundKet
+  , KRoundBra
+  , KStore
+  , KId "cond"
+  , KReg 0
+  , KRoundKet
+  , KRoundBra
+  , KStore
+  , KId "tmp"
+  , KReg 0
+  , KRoundKet
+  , KRoundBra
+  , KBranch
+  , KReg 0
+  , KNum 1
+  , KNum 1
+  , KRoundKet
+  , KRoundKet
+  , KRoundBra
+  , KNum 1
+  , KRoundBra
   , KLoad
   , KReg 1
   , KId "n"
@@ -18,7 +42,7 @@ Just
   , KNum 0
   , KRoundKet
   , KRoundBra
-  , KId "cmp"
+  , KInstr "eq"
   , KReg 3
   , KReg 1
   , KReg 2
@@ -36,90 +60,90 @@ Just
   , KRoundBra
   , KBranch
   , KReg 4
-  , KNum 1
   , KNum 2
+  , KNum 3
   , KRoundKet
   , KRoundKet
   , KRoundBra
-  , KNum 1
+  , KNum 2
   , KRoundBra
   , KConst
-  , KReg 5
+  , KReg 6
   , KNum 1
   , KRoundKet
   , KRoundBra
   , KStore
   , KId "tmp"
-  , KReg 5
+  , KReg 6
   , KRoundKet
   , KRoundBra
   , KLoad
-  , KReg 6
+  , KReg 7
   , KId "tmp"
   , KRoundKet
   , KRoundBra
   , KReturn
-  , KReg 6
+  , KReg 7
   , KRoundKet
   , KRoundKet
   , KRoundBra
-  , KNum 2
+  , KNum 3
   , KRoundBra
   , KLoad
-  , KReg 7
+  , KReg 9
   , KId "n"
   , KRoundKet
   , KRoundBra
   , KConst
-  , KReg 8
+  , KReg 10
   , KNum 1
   , KRoundKet
   , KRoundBra
   , KInstr "sub"
+  , KReg 11
   , KReg 9
-  , KReg 7
-  , KReg 8
+  , KReg 10
   , KRoundKet
   , KRoundBra
   , KStore
   , KId "tmp"
-  , KReg 9
+  , KReg 11
   , KRoundKet
   , KRoundBra
   , KLoad
-  , KReg 10
+  , KReg 12
   , KId "tmp"
   , KRoundKet
   , KRoundBra
   , KCall
-  , KReg 11
+  , KReg 13
   , KId "factorial"
-  , KReg 10
+  , KReg 12
   , KRoundKet
   , KRoundBra
   , KLoad
-  , KReg 12
+  , KReg 14
   , KId "n"
   , KRoundKet
   , KRoundBra
   , KInstr "mul"
+  , KReg 15
   , KReg 13
-  , KReg 11
-  , KReg 12
+  , KReg 14
   , KRoundKet
   , KRoundBra
   , KStore
   , KId "tmp"
-  , KReg 13
+  , KReg 15
   , KRoundKet
   , KRoundBra
   , KLoad
-  , KReg 14
+  , KReg 16
   , KId "tmp"
   , KRoundKet
   , KRoundBra
   , KReturn
-  , KReg 14
+  , KReg 16
   , KRoundKet
   , KRoundKet
   , KRoundKet
@@ -130,6 +154,25 @@ Just
   , KRoundKet
   , KRoundBra
   , KNum 0
+  , KRoundBra
+  , KConst
+  , KReg 0
+  , KNum 0
+  , KRoundKet
+  , KRoundBra
+  , KStore
+  , KId "tmp"
+  , KReg 0
+  , KRoundKet
+  , KRoundBra
+  , KBranch
+  , KReg 0
+  , KNum 1
+  , KNum 1
+  , KRoundKet
+  , KRoundKet
+  , KRoundBra
+  , KNum 1
   , KRoundBra
   , KLoad
   , KReg 1
