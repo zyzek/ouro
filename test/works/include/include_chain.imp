@@ -7,7 +7,7 @@
  preprocessor stops at this last step, having already included one.imp
 "
 fun main()
-vars x
+vars x, y
 {
 	print mult();
 	
