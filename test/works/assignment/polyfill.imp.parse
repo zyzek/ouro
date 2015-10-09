@@ -1,0 +1,17 @@
+Just
+  (Program
+     [ Function (Id "one") [] [] (Block [ SReturn (XNum 1) ])
+     , Function
+         (Id "main")
+         []
+         [ Id "a" , Id "b" , Id "c" ]
+         (Block
+            [ SAssign
+                [ Id "a" , Id "b" , Id "c" ]
+                [ XApp (Id "one") [] , XOpBin OpAdd (XNum 1) (XNum 1) , XNum 3 ]
+            , SAssign [ Id "b" , Id "c" ] [ XId (Id "c") , XId (Id "b") ]
+            , SReturn
+                (XOpBin
+                   OpPow (XOpBin OpAdd (XId (Id "a")) (XId (Id "b"))) (XId (Id "c")))
+            ])
+     ])

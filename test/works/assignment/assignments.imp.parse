@@ -1,0 +1,74 @@
+Just
+  (Program
+     [ Function
+         (Id "plus")
+         [ Id "x" , Id "y" ]
+         []
+         (Block [ SReturn (XOpBin OpAdd (XId (Id "x")) (XId (Id "y"))) ])
+     , Function
+         (Id "plusnum")
+         [ Id "x" , Id "y" , Id "z" ]
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpAdd (XOpBin OpAdd (XId (Id "x")) (XId (Id "y"))) (XId (Id "z")))
+            ])
+     , Function
+         (Id "multnum")
+         [ Id "x" , Id "y" , Id "z" ]
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpMul (XOpBin OpAdd (XId (Id "x")) (XId (Id "y"))) (XId (Id "z")))
+            ])
+     , Function
+         (Id "main")
+         []
+         [ Id "w" , Id "x" , Id "y" , Id "z" ]
+         (Block
+            [ SAssign [ Id "z" ] [ XNum 1 ]
+            , SAssign [ Id "x" ] [ XNum 10 ]
+            , SAssign [ Id "x" , Id "y" ] [ XId (Id "y") , XId (Id "x") ]
+            , SAssign
+                [ Id "z" ] [ XApp (Id "plus") [ XId (Id "z") , XId (Id "y") ] ]
+            , SAssign
+                [ Id "z" ]
+                [ XApp
+                    (Id "multnum")
+                    [ XId (Id "z")
+                    , XAssign
+                        (Id "x")
+                        (XOpBin OpAdd (XId (Id "x")) (XAssign (Id "y") (XNum 100)))
+                    , XNum 3
+                    ]
+                ]
+            , SAssign
+                [ Id "w" ]
+                [ XOpBin
+                    OpAdd
+                    (XNum 10)
+                    (XAssign
+                       (Id "x")
+                       (XApp (Id "plusnum") [ XId (Id "x") , XId (Id "y") , XNum 1000 ]))
+                ]
+            , SAssign [ Id "w" ] [ XOpBin OpMul (XId (Id "w")) (XId (Id "y")) ]
+            , SAssign
+                [ Id "x" , Id "y" ]
+                [ XOpBin OpAdd (XId (Id "x")) (XNum 7)
+                , XOpBin OpAdd (XId (Id "y")) (XNum 5)
+                ]
+            , SAssign
+                [ Id "z" , Id "w" ]
+                [ XApp (Id "plusnum") [ XId (Id "z") , XNum 5 , XNum 10 ]
+                , XApp (Id "plusnum") [ XId (Id "w") , XId (Id "z") , XNum 10 ]
+                ]
+            , SReturn
+                (XOpBin
+                   OpAdd
+                   (XOpBin
+                      OpAdd (XOpBin OpAdd (XId (Id "z")) (XId (Id "x"))) (XId (Id "y")))
+                   (XId (Id "w")))
+            ])
+     ])
