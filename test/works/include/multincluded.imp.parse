@@ -1,0 +1,8 @@
+Just
+  (Program
+     [ Function
+         (Id "mult")
+         []
+         []
+         (Block [ SPrint [ XNum 10 ] , SReturn (XNum 10) ])
+     ])

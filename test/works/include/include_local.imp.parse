@@ -1,0 +1,191 @@
+Just
+  (Program
+     [ Function
+         (Id "min")
+         [ Id "x" , Id "y" ]
+         []
+         (Block
+            [ SIfElse
+                (XOpBin OpLt (XId (Id "x")) (XId (Id "y")))
+                (Block [ SReturn (XId (Id "x")) ])
+                (Block [ SReturn (XId (Id "y")) ])
+            ])
+     , Function
+         (Id "max")
+         [ Id "x" , Id "y" ]
+         []
+         (Block
+            [ SIfElse
+                (XOpBin OpGt (XId (Id "x")) (XId (Id "y")))
+                (Block [ SReturn (XId (Id "x")) ])
+                (Block [ SReturn (XId (Id "y")) ])
+            ])
+     , Function
+         (Id "not")
+         [ Id "x" ]
+         []
+         (Block [ SReturn (XOpBin OpEq (XId (Id "x")) (XNum 0)) ])
+     , Function
+         (Id "fromBase")
+         [ Id "x" , Id "y" ]
+         [ Id "next" , Id "ctr" , Id "ret" ]
+         (Block
+            [ SIf
+                (XOpBin
+                   OpOr
+                   (XOpBin OpGt (XId (Id "y")) (XNum 10))
+                   (XOpBin OpLt (XId (Id "y")) (XNum 2)))
+                (Block [ SReturn (XNum 0) ])
+            , SAssign [ Id "ret" ] [ XNum 0 ]
+            , SAssign [ Id "next" ] [ XId (Id "x") ]
+            , SWhile
+                (XId (Id "next"))
+                (Block
+                   [ SAssign
+                       [ Id "ret" ]
+                       [ XOpBin
+                           OpAdd
+                           (XId (Id "ret"))
+                           (XOpBin
+                              OpMul
+                              (XOpBin OpPow (XId (Id "y")) (XId (Id "ctr")))
+                              (XOpBin OpMod (XId (Id "next")) (XNum 10)))
+                       ]
+                   , SAssign [ Id "ctr" ] [ XOpBin OpAdd (XId (Id "ctr")) (XNum 1) ]
+                   , SAssign
+                       [ Id "next" ] [ XOpBin OpDiv (XId (Id "next")) (XNum 10) ]
+                   ])
+            , SReturn (XId (Id "ret"))
+            ])
+     , Function
+         (Id "toBase")
+         [ Id "x" , Id "y" ]
+         [ Id "next" , Id "ctr" , Id "ret" ]
+         (Block
+            [ SIf
+                (XOpBin
+                   OpOr
+                   (XOpBin OpGt (XId (Id "y")) (XNum 10))
+                   (XOpBin OpLt (XId (Id "y")) (XNum 2)))
+                (Block [ SReturn (XNum 0) ])
+            , SAssign [ Id "ret" ] [ XNum 0 ]
+            , SAssign [ Id "next" ] [ XId (Id "x") ]
+            , SWhile
+                (XId (Id "next"))
+                (Block
+                   [ SAssign
+                       [ Id "ret" ]
+                       [ XOpBin
+                           OpAdd
+                           (XId (Id "ret"))
+                           (XOpBin
+                              OpMul
+                              (XOpBin OpPow (XNum 10) (XId (Id "ctr")))
+                              (XOpBin OpMod (XId (Id "next")) (XId (Id "y"))))
+                       ]
+                   , SAssign [ Id "ctr" ] [ XOpBin OpAdd (XId (Id "ctr")) (XNum 1) ]
+                   , SAssign
+                       [ Id "next" ] [ XOpBin OpDiv (XId (Id "next")) (XNum 10) ]
+                   ])
+            , SReturn (XId (Id "ret"))
+            ])
+     , Function
+         (Id "floor")
+         [ Id "x" , Id "y" ]
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpSub (XId (Id "x")) (XOpBin OpMod (XId (Id "x")) (XId (Id "y"))))
+            ])
+     , Function
+         (Id "ceil")
+         [ Id "x" , Id "y" ]
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpAdd
+                   (XOpBin
+                      OpSub (XId (Id "x")) (XOpBin OpMod (XId (Id "x")) (XId (Id "y"))))
+                   (XId (Id "y")))
+            ])
+     , Function
+         (Id "round")
+         [ Id "x" , Id "y" ]
+         []
+         (Block
+            [ SReturn
+                (XApp
+                   (Id "floor")
+                   [ XOpBin
+                       OpAdd (XId (Id "x")) (XOpBin OpDiv (XId (Id "y")) (XNum 2))
+                   , XId (Id "y")
+                   ])
+            ])
+     , Function
+         (Id "trunc")
+         [ Id "x" , Id "y" ]
+         []
+         (Block
+            [ SReturn
+                (XOpBin
+                   OpMul
+                   (XOpBin
+                      OpDiv (XId (Id "x")) (XOpBin OpPow (XNum 10) (XId (Id "y"))))
+                   (XOpBin OpPow (XNum 10) (XId (Id "y"))))
+            ])
+     , Function
+         (Id "sigfigs")
+         [ Id "x" , Id "y" ]
+         [ Id "ctr" , Id "cond" ]
+         (Block
+            [ SAssign [ Id "ctr" ] [ XNum 0 ]
+            , SAssign [ Id "cond" ] [ XId (Id "x") ]
+            , SWhile
+                (XId (Id "cond"))
+                (Block
+                   [ SAssign
+                       [ Id "cond" ] [ XOpBin OpDiv (XId (Id "cond")) (XNum 10) ]
+                   , SAssign [ Id "ctr" ] [ XOpBin OpAdd (XId (Id "ctr")) (XNum 1) ]
+                   ])
+            , SReturn
+                (XOpBin
+                   OpMul
+                   (XOpBin
+                      OpDiv
+                      (XId (Id "x"))
+                      (XOpBin
+                         OpPow (XNum 10) (XOpBin OpSub (XId (Id "ctr")) (XId (Id "y")))))
+                   (XOpBin
+                      OpPow (XNum 10) (XOpBin OpSub (XId (Id "ctr")) (XId (Id "y")))))
+            ])
+     , Function
+         (Id "abs")
+         [ Id "x" ]
+         []
+         (Block
+            [ SIfElse
+                (XOpBin OpGeq (XId (Id "x")) (XNum 0))
+                (Block [ SReturn (XId (Id "x")) ])
+                (Block [ SReturn (XOpUn OpNeg (XId (Id "x"))) ])
+            ])
+     , Function
+         (Id "clamp")
+         [ Id "x" , Id "low" , Id "high" ]
+         []
+         (Block
+            [ SReturn
+                (XApp
+                   (Id "min")
+                   [ XApp (Id "max") [ XId (Id "x") , XId (Id "low") ]
+                   , XId (Id "high")
+                   ])
+            ])
+     , Function
+         (Id "main")
+         [ Id "x" , Id "y" ]
+         []
+         (Block
+            [ SReturn (XApp (Id "max") [ XId (Id "x") , XId (Id "y") ]) ])
+     ])

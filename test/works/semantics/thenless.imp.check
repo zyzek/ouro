@@ -1,0 +1,8 @@
+No Errors.
+Warning: Redundant conditional in main
+Warning: Branch never executes: if-then in main
+Warning: Branch never executes: conditional else in main
+Warning: Branch never executes: conditional then in main
+Warning: Branch never executes: conditional else in main
+Warning: Branch never executes: conditional then in main
+

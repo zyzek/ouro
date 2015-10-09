@@ -1,0 +1,26 @@
+Just
+  (Program
+     [ Function
+         (Id "three") [] [] (Block [ SPrint [ XNum 3 ] , SReturn (XNum 3) ])
+     , Function
+         (Id "two") [] [] (Block [ SPrint [ XNum 2 ] , SReturn (XNum 2) ])
+     , Function
+         (Id "one") [] [] (Block [ SPrint [ XNum 1 ] , SReturn (XNum 1) ])
+     , Function
+         (Id "mult")
+         []
+         []
+         (Block [ SPrint [ XNum 10 ] , SReturn (XNum 10) ])
+     , Function
+         (Id "main")
+         []
+         [ Id "x" , Id "y" ]
+         (Block
+            [ SPrint [ XApp (Id "mult") [] ]
+            , SAssign [ Id "x" ] [ XApp (Id "one") [] ]
+            , SAssign [ Id "y" ] [ XApp (Id "two") [] ]
+            , SAssign [ Id "x" ] [ XApp (Id "three") [] ]
+            , SPrint [ XOpBin OpAdd (XId (Id "x")) (XId (Id "y")) ]
+            , SReturn (XNum 0)
+            ])
+     ])
