@@ -1,11 +1,11 @@
 fun  min(x, y)
 {       
-    ?((x < y), x, y)
+    if x < y {x} {y}
 }
 
 fun  max(x, y)
 {       
-    ?((x > y), x, y)
+    if x > y {x} {y}
 }
 
 fun  not(x)
@@ -96,7 +96,7 @@ vars ctr, cond
 
 fun abs(x)
 {
-    ?(x >= 0, x, -x)
+    if x >= 0 {x} {-x}
 }
 
 fun clamp(x, low, high)
