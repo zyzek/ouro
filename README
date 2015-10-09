@@ -35,7 +35,6 @@ Completed Tasks:
         x = func(x, y, z);   <->   x [func z]= y;
     - Single-assignments can be evaluated as expressions,
       for chained assignment;
-    - Conditional/Ternary Operator;
     - "Ouroboros" recursion operator: calls its enclosing function;
     - Comments;
     - Print statement.

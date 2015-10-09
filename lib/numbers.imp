@@ -209,10 +209,7 @@ vars i, p, k, pPhi, result
 "GCD by the euclidian algorithm."
 fun gcd(a,b)
 {
-	?( !(a%b),
-	   b,
-	   @(b, a%b)
-	)
+	if !(a%b) {b} {@(b, a%b)}
 }
 
 "Also equivalent to (n [choose] 2)."
@@ -228,13 +225,12 @@ fun triangular(n)
 "
 fun ackermann(m, n)
 {
-	?( !m,
-	   n+1,
-	   ?( !n,
-	      @(m-1, 1),
-	      @(m-1, @(m, n-1))
-	    )
-	 )
+	if !m
+	   {n+1}
+	   { if !n
+	        {@(m-1, 1)}
+	        {@(m-1, @(m, n-1))}
+       }
 }
 
 
@@ -245,12 +241,13 @@ fun ackermann(m, n)
 "
 fun uparrow(a,b,p)
 {
-	?( p==1,
-	   a^b,
-	   ?( b==1,
-	      a,
-	      @(a, @(a,b-1,p), p-1)
-	    )
-	 )
+	if p==1
+	   {a^b}
+	   { if b==1
+	        {a}
+	        {@(a, @(a,b-1,p), p-1)}
+       }
+	    
+	 
 }
 
