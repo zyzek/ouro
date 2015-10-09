@@ -1,0 +1,13 @@
+Just
+  (Program
+     [ Function
+         (Id "main")
+         []
+         [ Id "a" , Id "b" ]
+         (Block
+            [ SAssign [ Id "a" ] [ XNum 1 ]
+            , SReturn
+                (XOpUn
+                   OpNot (XOpBin OpAnd (XOpUn OpNot (XId (Id "a"))) (XId (Id "b"))))
+            ])
+     ])

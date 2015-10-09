@@ -95,19 +95,6 @@ convertExp (reg0, blk0, S.XOpUn op expr)
                [C.IArith (convertOpUn op) (C.Reg reg1) (C.Reg (reg1 - 1)) (C.Reg (reg1 - 1))] ]
        )
 
--- | Ternary operator.
-convertExp (reg0, blk0, S.XTernary cond expr1 expr2)
- = let (reg1, blk1, blkList) 
-        = convertStmt (
-                       reg0, 
-                       blk0, 
-                       S.SIfElse cond (S.Block [S.SExp expr1]) (S.Block [S.SExp expr2])
-                      )
-   in  (
-        reg1,
-        blk1,
-        blkList
-       )
 
 -- | Assignment expression.
 convertExp (reg0, blk0, S.XAssign varId expr)
@@ -240,8 +227,6 @@ convertStmt (reg0, blk0, S.SIfElse expr blkl blkr)
              ++ [C.Block blk1 [C.IBranch (C.Reg (reg1 - 1)) (blk1 + 1) (blk2 + 1)]]
              ++ cBlkListl
              ++ cBlkListr
-             ++ [C.Block blk2 [C.IArith C.OpAdd (C.Reg (reg3 - 1)) (C.Reg (reg2 - 2)) (C.Reg 0)]]
-             ++ [C.Block blk3 [C.IArith C.OpAdd (C.Reg (reg3 - 1)) (C.Reg (reg3 - 2)) (C.Reg 0)]]
              ++ case blk1Blk of
                      Nothing -> [ C.Block blk2 [C.IConst (C.Reg reg2) 0,
                                                 C.IBranch (C.Reg reg2) (blk3 + 1) (blk3 + 1)] ]
@@ -260,6 +245,7 @@ convertStmt (reg0, blk0, S.SIfElse expr blkl blkr)
                                _                 ->  [C.Block blk3 [C.IConst (C.Reg reg3) 0,
                                                       C.IBranch (C.Reg reg3) (blk3+1) (blk3+1)]]
        )
+
 
 -- | Return Statement.
 convertStmt (reg0, blk0, S.SReturn expr)

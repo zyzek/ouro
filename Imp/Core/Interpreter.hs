@@ -74,7 +74,7 @@ getReg (Env reg _) targetReg
  = do  let res = lookup targetReg reg
        maybe (do  putStrLn $ "Tried to look up fictitious register " ++ show targetReg ++ "."
                   exitFailure)
-              return res
+             return res
 
 getVar :: Env -> Id -> IO Int
 getVar (Env _ var) targetId

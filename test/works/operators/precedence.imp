@@ -1,0 +1,39 @@
+fun ltr()
+{
+    return 1 - 2 + 3 - 4 + 5 - 6;
+}
+
+fun ltr2()
+{
+    return 1 + 2 - 3 + 4 - 5 + 6;
+}
+
+fun all()
+{
+    return -(1 + 2 - 3 * 4 / 5 % 6 ^ 7 < 8 > 9 <= 10 >= 11 != 12 == 13 | 14 & 15 x| !16);
+}
+
+fun add(x, y)
+{
+    return x + y;
+}
+
+fun levels()
+{
+    return 0 | 1 <= 2 + 3 * 4 ^ 5 [add] 6; 
+}
+
+fun levels2()
+{
+   return 0 * 1 <= 2 ^ 3 [add] 4 | 5 + 6;
+}
+
+fun main() 
+{
+    print ltr();
+    print all();
+    print levels();
+    print levels2();
+
+    return ltr2();
+}

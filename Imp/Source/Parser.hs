@@ -125,7 +125,7 @@ ident
 -- ||
 -- ||  Atoms are indivisible units that operators act upon as a whole.
 -- ||  Valid atoms: numeric literals, variable identifiers, function calls/ouroboroi,
--- ||  unary operations, parenthesised expressions, assignment expressions, ternary expressions. 
+-- ||  unary operations, parenthesised expressions, assignment expressions. 
 -- ||
 -- ||  The number 7 here is a bit of a hack: I would prefer a more elegant way than manually
 -- ||  specifying that the precedence of atoms is maximal.
@@ -144,7 +144,6 @@ opL 7 curFuncId
         , fAssignExpr curFuncId
         , bAssignExpr curFuncId
         , ouroExpr    curFuncId
-        , ternaryExpr curFuncId
         , parenExpr   curFuncId
         , identExpr
         , numExpr
@@ -345,21 +344,6 @@ bAssignExpr curFuncId
         only KEquals
         e          <- expr curFuncId
         return     $  XAssign i $ XOpBin o (XId i) e
-
-
--- | Ternary operation.
-ternaryExpr :: Id -> Parser Token Exp
-ternaryExpr curFuncId
- = do   only KQMark
-        only KRoundBra
-        c          <- expr curFuncId
-        only KComma
-        e1         <- expr curFuncId
-        only KComma
-        e2         <- expr curFuncId
-        only KRoundKet
-        return     $  XTernary c e1 e2
-
 
 
 -- || Statements =========================================================

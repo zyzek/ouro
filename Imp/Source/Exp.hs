@@ -39,7 +39,6 @@ data Exp
         | XOpBin   OpBin Exp Exp
         | XOpUn    OpUn Exp
         | XAssign  Id Exp
-        | XTernary Exp Exp Exp
         deriving (Eq, Show)
 
 

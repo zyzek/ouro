@@ -1,9 +1,25 @@
-fict reg / fict var / bad main args / func wrong args / no func id / no block id
+Tests.
 
-min lang
+NOTE: Since any runtime errors, or anything produced by a print statement is done asynchronously,
+      these are not detectable by the built-in test harness. Gotta snag the output ourselves
+      and do the diff manually.
 
-ext lang
+Errors, warnings, runtime checks.
+    The files in test/fails cover this. Runtime failures are demonstrated by the stuff in
+    test/fails/ir.
+    
+    Errors:
+        NoMain, FuncUndefined, FuncRedefined, Wrong Func Signature, VarUndefined, VarRedefined,
+        PolyAssign, No Return
+    Warnings:
+        Unreachable After, Unreachable Branch, Redundant Conditional, Infinite Loop
+    Runtime:
+        Failed Register Lookup, Failed Var Lookup, Bad Args given to Main, Func Wrong Args,
+        No Such Function, No Such Block.
 
-ir
 
-semantic checks
+Basic Source Language Features:
+
+Extended Language Features:
+
+IR

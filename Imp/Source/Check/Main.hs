@@ -106,10 +106,6 @@ checkExpIds vars funsigs expr
         XAssign i e            ->    checkVarId vars i
                                       ++ checkExpIds vars funsigs e
 
-        XTernary e1 e2 e3      ->    checkExpIds vars funsigs e1
-                                      ++ checkExpIds vars funsigs e2
-                                      ++ checkExpIds vars funsigs e3
-
 
 -- | Check that a variable is defined. 
 checkVarId :: [Id] -> Id -> [Error]

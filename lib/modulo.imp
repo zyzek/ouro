@@ -45,6 +45,7 @@ vars c, e
 fun invmod(x, m)
 vars t, tn, r, rn, q
 {
+    if (x == m) then { return 0; }
 	t, tn = 0, 1;
 	r, rn = m, x;
 
