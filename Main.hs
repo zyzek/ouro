@@ -22,6 +22,7 @@ import qualified System.Directory               as System
 
 import Control.Monad
 import Data.List
+import Data.Maybe
 
 
 main :: IO ()
@@ -110,23 +111,36 @@ main
           | otherwise
           -> error $ "Cannot convert " ++ file
 
-          -- Optimise some IR code.
+          -- Generate the CFG of some IR code.
          ["-cfg", file]
           | ".ir" `isSuffixOf` file
           -> do contents    <- readFile file
                 let out = Text.ppShow $ O.cfgsOfString contents
-                showResult out (file ++ ".opt")
+                showResult out (file ++ ".cfg")
           | otherwise
           -> error $ "Cannot parse " ++ file
-        
-         ["-closure", file]
+         
+          -- Produce the ids of the blocks in each CFGs zero closure.
+         ["-cid", file]
           | ".ir" `isSuffixOf` file
           -> do contents     <- readFile file
-                let out = Text.ppShow $ O.reachables contents
-                showResult out (file ++ ".closure")
+                let cfgs = fromJust $ O.cfgsOfString contents
+                let out  = Text.ppShow $ O.closureIds cfgs
+                showResult out (file ++ ".cid")
           | otherwise
           -> error $ "Cannot parse " ++ file
           
+          -- | Eliminate unreachable IR blocks.
+         ["-cb", file]
+          | ".ir" `isSuffixOf` file         
+          -> do contents    <- readFile file
+                let cfgs     = fromJust $ O.cfgsOfString contents
+                let out = Text.ppShow $ map O.blockClosure cfgs
+                showResult out (file ++ ".cb")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+
+
           -- Interpret a file.
          ("-interpret":file:progArgs)
           | ".imp" `isSuffixOf` file

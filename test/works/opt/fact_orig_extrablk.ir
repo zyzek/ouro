@@ -1,0 +1,53 @@
+(
+  (factorial (n)
+    (0
+       (lc r0 0)
+       (st cond r0)
+       (st tmp r0)
+       (br r0 1 1) )
+    (1
+       (ld r1 n)
+       (lc r2 0)
+       (eq r3 r1 r2)
+       (st cond r3)
+       (ld r4 cond)
+       (br r4 2 3) )
+    (2
+       (lc r6 1)
+       (st tmp r6)
+       (ld r7 tmp)
+       (ret r7) )
+    (3
+       (ld r9 n)
+       (lc r10 1)
+       (sub r11 r9 r10)
+       (st tmp r11)
+       (ld r12 tmp)
+       (call r13 factorial r12)
+       (ld r14 n)
+       (mul r15 r13 r14)
+       (st tmp r15)
+       (ld r16 tmp)
+       (ret r16) )
+    (4
+       (lc r17 1)
+       (lc r18 1)
+       (eq r19 r17 r18)
+       (br r19 5 6) )
+    (5
+       (lc r20 10)
+       (ret r20) )
+  )
+  (main (n)
+    (0
+       (lc r0 0)
+       (st tmp r0)
+       (br r0 1 1) )
+    (1
+       (ld r1 n)
+       (call r2 factorial r1)
+       (st tmp r2)
+       (ld r3 tmp)
+       (ret r3) )
+  )
+)

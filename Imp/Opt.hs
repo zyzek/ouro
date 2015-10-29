@@ -18,8 +18,11 @@ lexParse p str
 cfgsOfString :: String -> Maybe [CFG]
 cfgsOfString = lexParse progCFGs
 
-reachables :: String -> Maybe [[Int]]
-reachables s
- = do cfgs      <- cfgsOfString s
-      return    $  map zeroClosure cfgs
+closureIds :: [CFG] -> [(Id, [Int])]
+closureIds
+ = map zeroClosure
 
+blockClosure :: CFG -> CFG
+blockClosure cfg
+ = let (_, reachable) = zeroClosure cfg
+   in retainBlocks cfg reachable 
