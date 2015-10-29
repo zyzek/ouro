@@ -12,6 +12,8 @@ import qualified Imp.Core.Interpreter           as C
 import qualified Imp.Core.Transcriber           as C
 import qualified Imp.Core.Lexer                 as C
 
+import qualified Imp.Opt                        as O
+
 import qualified Data.Algorithm.Diff            as Diff
 import qualified Data.Algorithm.DiffOutput      as Diff
 import qualified Text.Show.Pretty               as Text
@@ -107,6 +109,23 @@ main
                 
           | otherwise
           -> error $ "Cannot convert " ++ file
+
+          -- Optimise some IR code.
+         ["-cfg", file]
+          | ".ir" `isSuffixOf` file
+          -> do contents    <- readFile file
+                let out = Text.ppShow $ O.cfgsOfString contents
+                showResult out (file ++ ".opt")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+        
+         ["-closure", file]
+          | ".ir" `isSuffixOf` file
+          -> do contents     <- readFile file
+                let out = Text.ppShow $ O.reachables contents
+                showResult out (file ++ ".closure")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
           
           -- Interpret a file.
          ("-interpret":file:progArgs)

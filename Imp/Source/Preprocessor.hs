@@ -3,6 +3,8 @@ module Imp.Source.Preprocessor where
 import Imp.Parsec
 import Data.List
 import Data.List.Utils
+import Control.Applicative
+ hiding (some, many)
 
 
 -- | Preprocess a source file.
