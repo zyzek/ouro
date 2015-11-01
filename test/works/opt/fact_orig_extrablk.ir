@@ -37,6 +37,12 @@
     (5
        (lc r20 10)
        (ret r20) )
+    (6
+       (lc r21 10)
+       (st blah r21) )
+    (7
+       (ld r22 blah)
+       (ret r22) )
   )
   (main (n)
     (0
