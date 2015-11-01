@@ -1,0 +1,5 @@
+Add edge for fallthrough to next block in CFG if no branch
+
+Remove instructions after branches, returns as unreachable.
+Merge linear chains of blocks.
+Constant Folding

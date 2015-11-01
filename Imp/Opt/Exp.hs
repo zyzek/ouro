@@ -11,12 +11,24 @@ data Edge
         = Edge Int Int
         deriving (Show, Eq)
 
+data Val
+        = Top
+        | Bot
+        | Val Int
+        deriving (Show, Eq)
 
--- | Core Blocks; block id, instruction list
+-- | Core Blocks; block id, instruction list, 
 data Block
-        = Block Int [Instr]
+        = Block Int [InstrNode]
         deriving Show
         
+
+-- |Instruction, Instruction id (block, instr), [predecessors] [descendents]
+-- These are the nodes of a graph, encoding which instructions determine the value of which
+-- other instructions.
+data InstrNode
+        = InstrNode Instr (Int, Int) [(Int, Int)] [(Int, Int)]
+        deriving Show
 
 -- | Instructions.
 data Instr

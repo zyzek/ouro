@@ -22,7 +22,7 @@ funcCFG
         only KRoundKet
         blks       <- some block
         only KRoundKet
-        return     $  CFG i blks $ concatMap blockBranches blks
+        return     $  setInstrAddrs $ CFG i blks $ concatMap blockBranches blks
 
 -- | Code block: a sequence of instructions with a particular id: a constituent of a function.
 block :: Parser Token Block
@@ -31,7 +31,8 @@ block
         n          <- num
         instrs     <- some instr
         only KRoundKet
-        return         $  Block n instrs
+        let instrnodes = map (\i -> InstrNode i (-1, -1) [] []) instrs
+        return         $  Block n instrnodes
 
 
 -- | A machine instruction.
@@ -172,13 +173,32 @@ register
 
 
 
+-- | CFG and instruction graph functions.
+
 blockBranches :: Block -> [Edge]
-blockBranches (Block o instrs)
- = map (\d -> Edge o d) $ rmDups $ concatMap bDests instrs
+blockBranches (Block o instrnodes)
+ = map (Edge o) $ rmDups $ concatMap bDests instrnodes
  where bDests i
         = case i of 
-               IBranch _ j k -> [j, k]
+               InstrNode (IBranch _ j k) _ _ _ -> [j, k]
                _             -> []
        rmDups
         = map head . group . sort
+
+
+setInstrAddrs :: CFG -> CFG
+setInstrAddrs (CFG i blks edges)
+ = CFG i (map setBlockInstrAddrs blks) edges
+
+
+setBlockInstrAddrs :: Block -> Block
+setBlockInstrAddrs (Block i instrnodes)
+ = let aPairs
+        = zip (take (length instrnodes) [0,1..]) instrnodes
+       setAddr addr (InstrNode inst _ ins outs)
+        = InstrNode inst addr ins outs
+   in Block i (map (\(n, instrN) -> setAddr (i, n) instrN) aPairs)
+
+
+
 
