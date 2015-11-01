@@ -3,13 +3,16 @@ module Imp.Opt.Exp where
 
 
 data CFG
-        = CFG Id [Block] [Edge]
+        = CFG Id [Block] [CFGEdge]
         deriving Show
 
-
-data Edge
-        = Edge Int Int
+data CFGEdge
+        = CFGEdge Int Int
         deriving (Show, Eq)
+
+data InstrAddr
+        = InstrAddr Int Int
+        deriving (Show, Eq, Ord)
 
 data Val
         = Top
@@ -27,7 +30,7 @@ data Block
 -- These are the nodes of a graph, encoding which instructions determine the value of which
 -- other instructions.
 data InstrNode
-        = InstrNode Instr (Int, Int) [(Int, Int)] [(Int, Int)]
+        = InstrNode Instr InstrAddr [InstrAddr] [InstrAddr]
         deriving Show
 
 -- | Instructions.
@@ -88,3 +91,11 @@ data Reg
         = Reg Int
         deriving (Show, Eq, Ord)
 
+
+edgesFrom :: [CFGEdge] -> Int -> [CFGEdge]
+edgesFrom edges orig
+ = filter (\(CFGEdge o _) -> o == orig) edges
+
+edgesTo :: [CFGEdge] -> Int -> [CFGEdge]
+edgesTo edges dest
+ = filter (\(CFGEdge _ d) -> d == dest) edges

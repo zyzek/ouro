@@ -32,7 +32,7 @@ block
         n          <- num
         instrs     <- some instr
         only KRoundKet
-        let instrnodes = map (\i -> InstrNode i (-1, -1) [] []) instrs
+        let instrnodes = map (\i -> InstrNode i (InstrAddr (-1) (-1)) [] []) instrs
         return         $  Block n instrnodes
 
 
@@ -178,7 +178,7 @@ register
 
 -- | Given a block, determine which blocks it might branch to.
 -- | Only check up to the first return or branch instruction.
-blockBranches :: Block -> (Int, [Edge])
+blockBranches :: Block -> (Int, [CFGEdge])
 blockBranches (Block o instrnodes)
  = let (rpre, rpost)
         = break isRet instrnodes
@@ -189,7 +189,7 @@ blockBranches (Block o instrnodes)
        brsNoRet
         | null rpost && null brs = [-1]
         | otherwise              = brs
-   in (o, map (Edge o) brsNoRet)
+   in (o, map (CFGEdge o) brsNoRet)
  where isRet (InstrNode i _ _ _)
         = case i of
                IReturn _     -> True
@@ -199,14 +199,14 @@ blockBranches (Block o instrnodes)
                IBranch{} -> True
                _             -> False 
 
-cfgEdges :: [(Int, [Edge])] -> [Edge]
+cfgEdges :: [(Int, [CFGEdge])] -> [CFGEdge]
 cfgEdges elists
  = case elists of
         []                      -> []
         (_, []):rest            -> cfgEdges rest
-        (_, [Edge o (-1)]):rest -> case rest of
+        (_, [CFGEdge o (-1)]):rest -> case rest of
                                         []        -> []
-                                        (d, es):r -> Edge o d : cfgEdges ((d,es):r)
+                                        (d, es):r -> CFGEdge o d : cfgEdges ((d,es):r)
         (_, es):rest            -> es ++ cfgEdges rest
                                             
 
@@ -219,15 +219,15 @@ setInstrAddrs (CFG i blks edges)
 setBlockInstrAddrs :: Block -> Block
 setBlockInstrAddrs (Block i instrnodes)
  = let aPairs
-        = zip (take (length instrnodes) [0,1..]) instrnodes
+        = zip [0..] instrnodes
        setAddr addr (InstrNode inst _ ins outs)
         = InstrNode inst addr ins outs
-   in Block i (map (\(n, instrN) -> setAddr (i, n) instrN) aPairs)
+   in Block i (map (\(n, instrN) -> setAddr (InstrAddr i n) instrN) aPairs)
 
 
 
-addOutEdge :: CFG -> (Int, Int) -> (Int, Int) -> CFG
-addOutEdge (CFG i blks edges) adr@(adrb, _) new
+addOutEdge :: CFG -> InstrAddr -> InstrAddr -> CFG
+addOutEdge (CFG i blks edges) adr@(InstrAddr adrb _) new
  = let (bpre, Block bId instrnodes, bpost)
         = spanElem (\(Block b _) -> b == adrb) blks
        (ipre, InstrNode inst _ ins outs, ipost)

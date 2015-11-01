@@ -6,17 +6,17 @@ import Imp.Core.Tokens
 import Imp.Core.Lexer
 import Imp.Parsec
 
-lexParse :: Parser Token a -> String -> Maybe a
-lexParse p str
+lexParseCFG :: Parser Token [CFG] -> String -> Maybe [CFG]
+lexParseCFG p str
  = case lexer str of
         Nothing     -> Nothing
         Just tokens'
          -> case parse p tokens' of
-                [(x, [])]       -> Just x
+                [(cfgs, [])]       -> Just $ map genGraphEdges cfgs
                 _               -> Nothing
 
 cfgsOfString :: String -> Maybe [CFG]
-cfgsOfString = lexParse progCFGs
+cfgsOfString = lexParseCFG progCFGs
 
 closureIds :: [CFG] -> [(Id, [Int])]
 closureIds
