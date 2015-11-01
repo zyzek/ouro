@@ -16,18 +16,22 @@ graphInEdges edges blks blkRegDets queue
  = case queue of
         []    -> (blks, blkRegDets, queue)
         b:bs  -> let (pre, thisBlock, post) = spanElem (\(Block bid _) -> bid == b) blks
-                     (regDets, new) = case lookup b blkRegDets of
-                                           Just rd -> (rd, False)
-                                           _       -> ([], True)
+                     (regDets, _) = getRegDets b
                      (newBlock, newRegDets) = blockInstrEdges thisBlock regDets
-                     addEdges = not (regDetsEqual regDets newRegDets) || new
-                     queueItems = if addEdges 
-                                   then map (\(CFGEdge _ d) -> d) $ edgesFrom edges b
-                                   else []
+                     queueItems = filter (isNewOrDiff newRegDets) $ map (\(CFGEdge _ d) -> d) $ edgesFrom edges b
                      newqueue = bs ++ queueItems
                      newBlks = pre ++ [newBlock] ++ post
                      newBlkRegDets = (b, newRegDets) : filter (\(i, _) -> i /= b) blkRegDets
                  in graphInEdges edges newBlks newBlkRegDets newqueue
+ where getRegDets blkId
+        = case lookup blkId blkRegDets of
+               Just rd -> (rd, False)
+               _       -> ([], True)
+       isNewOrDiff rd blkId
+        = let (res, new) = getRegDets blkId
+          in new || not (regDetsEqual rd res)
+
+
 
 regDetsEqual :: [(Reg, [InstrAddr])] -> [(Reg, [InstrAddr])] -> Bool
 regDetsEqual p q
@@ -39,9 +43,11 @@ regDetsEqual p q
                       _  -> False
            (ar, aadrs):as -> case sb of
                                   (br, badrs):bs -> ar == br 
-                                                     && sort aadrs == sort badrs                                                            && regDetsEqual as bs
+                                                     && sort aadrs == sort badrs 
+                                                     && regDetsEqual as bs
                                   []             -> False
-        
+       
+ 
 
 spanElem :: (a -> Bool) -> [a] -> ([a], a, [a])
 spanElem preds sequ
