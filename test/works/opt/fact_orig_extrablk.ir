@@ -16,7 +16,7 @@
        (lc r6 1)
        (st tmp r6)
        (ld r7 tmp)
-       (ret r7) )
+       (br r7 8 9) )
     (3
        (ld r9 n)
        (lc r10 1)
@@ -43,6 +43,22 @@
     (7
        (ld r22 blah)
        (ret r22) )
+    (8
+       (lc r23 1)
+       (lc r24 1)
+       (br r23 10 10)
+    )
+    (9
+       (lc r25 1)
+       (lc r24 2)
+       (br r25 10 10)
+    )
+    (10
+       (mul r26 r6 r1)
+       (add r27 r25 r26)
+       (add r27 r24 r27)
+       (ret r27)
+    )
   )
   (main (n)
     (0

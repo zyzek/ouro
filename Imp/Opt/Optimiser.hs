@@ -2,6 +2,8 @@
 module Imp.Opt.Optimiser where
 import Imp.Opt.Exp
 import Data.List
+-- import Debug.Trace
+-- import qualified Text.Show.Pretty  as Text
 
 
 -- | Graph building.
@@ -15,14 +17,16 @@ graphInEdges :: [CFGEdge] -> [Block] -> [( Int, [(Reg, [InstrAddr])] )] -> [Int]
 graphInEdges edges blks blkRegDets queue
  = case queue of
         []    -> (blks, blkRegDets, queue)
-        b:bs  -> let (pre, thisBlock, post) = spanElem (\(Block bid _) -> bid == b) blks
+        b:bs  -> let (pre, thisBlock, post) = spanElem (\(Block bid _) -> bid /= b) blks
                      (regDets, _) = getRegDets b
                      (newBlock, newRegDets) = blockInstrEdges thisBlock regDets
                      queueItems = filter (isNewOrDiff newRegDets) $ map (\(CFGEdge _ d) -> d) $ edgesFrom edges b
                      newqueue = bs ++ queueItems
                      newBlks = pre ++ [newBlock] ++ post
-                     newBlkRegDets = (b, newRegDets) : filter (\(i, _) -> i /= b) blkRegDets
-                 in graphInEdges edges newBlks newBlkRegDets newqueue
+                     queueRegDets = zip queueItems $ map (mergeRegDets newRegDets) $ map (fst . getRegDets) queueItems
+                     newBlkRegDets =  queueRegDets ++ (filter (\(i, _) -> i `notElem` queueItems) blkRegDets)
+                     gInE = graphInEdges edges newBlks newBlkRegDets newqueue
+                 in gInE
  where getRegDets blkId
         = case lookup blkId blkRegDets of
                Just rd -> (rd, False)
@@ -65,7 +69,7 @@ blockInstrEdges (Block bid instrs) regDets
 instrEdges :: [InstrNode] -> [(Reg, [InstrAddr])] -> ([InstrNode], [(Reg, [InstrAddr])])
 instrEdges instrs regDets
  = case instrs of
-        []      -> (instrs, regDets)
+        []      -> ([], regDets)
         i:is    -> let (newI, newRegDets)
                         = instrEdge i regDets
                        (fIs, fRegDets)
@@ -120,6 +124,12 @@ addRegDets regDet@(reg, adrs) regDets
                               = rmDups prevAdrs ++ adrs
                          in (reg, newAdrs) : filter (\(r, _) -> r /= reg) regDets
         _             -> regDet:regDets
+
+mergeRegDets :: [(Reg, [InstrAddr])] -> [(Reg, [InstrAddr])] -> [(Reg, [InstrAddr])]
+mergeRegDets a b
+ = case a of
+        []  -> b
+        rd:rds -> mergeRegDets rds (addRegDets rd b)
 
 
 -- | Unreachable block removal.
