@@ -28,7 +28,8 @@
        (mul r15 r13 r14)
        (st tmp r15)
        (ld r16 tmp)
-       (ret r16) )
+       (ret r16)
+       (lc r16 10) )
     (4
        (lc r17 1)
        (lc r18 1)

@@ -26,3 +26,7 @@ blockClosure :: CFG -> CFG
 blockClosure cfg
  = let (_, reachable) = zeroClosure cfg
    in retainBlocks cfg reachable 
+
+minusUnreachInstrs :: CFG -> CFG
+minusUnreachInstrs = removeUnreachedInstrs
+

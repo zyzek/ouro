@@ -82,21 +82,25 @@ instrEdges instrs instrDets
         i:is    -> let (newI, newInstrDets)
                         = instrEdge i instrDets
                        (fIs, fInstrDets)
-                        = instrEdges is newInstrDets
+                        = if isBranchOrRet i 
+                             then (is, newInstrDets)
+                             else instrEdges is newInstrDets
                    in (newI:fIs, fInstrDets)
+ where isBranchOrRet (InstrNode i _ _ _)
+        = case i of
+               IReturn _ -> True
+               IBranch{} -> True
+               _         -> False
 
 instrEdge :: InstrNode -> InstrDets -> (InstrNode, InstrDets)
 instrEdge instrN@(InstrNode inst addr _ _) instrDets
  = case inst of
         IConst reg _  -> ( instrN
                          , setRegDets (reg, [addr]) instrDets )
-        
-        -- TODO: Get edges in between variable-setting/reading instructions
         ILoad  reg vId  -> ( setInstrIns instrN (getVarD vId)
                            , setRegDets (reg, [addr]) instrDets )
         IStore vId reg  -> ( setInstrIns instrN (getRegD reg) 
                            , setVarDets (vId, [addr]) instrDets )
-
         IArith _ rout rin1 rin2 -> ( setInstrIns instrN (rmDups (concatMap getRegD [rin1, rin2]))
                                    , setRegDets (rout, [addr]) instrDets )
         IBranch reg _ _ -> ( setInstrIns instrN (getRegD reg)
@@ -104,7 +108,6 @@ instrEdge instrN@(InstrNode inst addr _ _) instrDets
 
         IReturn reg     -> ( setInstrIns instrN (getRegD reg)
                            , instrDets )
-
         ICall reg _ rlist -> let detList 
                                   = rmDups $ concatMap getRegD rlist
                              in ( setInstrIns instrN detList
@@ -151,6 +154,14 @@ retainBlocks (CFG name args blocks edges) toRetain
  = let keptBlocks = filter (\(Block i _) -> i `elem` toRetain) blocks
        keptEdges  = filter (\(CFGEdge i j)  -> i `elem` toRetain || j `elem` toRetain) edges
    in CFG name args keptBlocks keptEdges
+
+removeUnreachedInstrs :: CFG -> CFG
+removeUnreachedInstrs (CFG cId args blks edges)
+ = let instrReached (InstrNode _ _ ins outs)
+        = not (null ins && null outs)
+       removeInBlk (Block bId instrs)
+        = Block bId (filter instrReached instrs)
+  in CFG cId args (map removeInBlk blks) edges
 
 
 -- | Dead Code Elimination

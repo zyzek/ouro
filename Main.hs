@@ -130,7 +130,7 @@ main
           | otherwise
           -> error $ "Cannot parse " ++ file
           
-          -- | Eliminate unreachable IR blocks.
+          -- Eliminate unreachable IR blocks.
          ["-cb", file]
           | ".ir" `isSuffixOf` file         
           -> do contents    <- readFile file
@@ -139,7 +139,16 @@ main
                 showResult out (file ++ ".cb")
           | otherwise
           -> error $ "Cannot parse " ++ file
-
+        
+          -- Eliminate unreachable IR instructions.
+         ["-cbi", file]
+          | ".ir" `isSuffixOf` file
+          -> do contents   <- readFile file
+                let cfgs    = fromJust $ O.cfgsOfString contents
+                let out     = Text.ppShow $ map O.minusUnreachInstrs cfgs
+                showResult out (file ++ ".cbi")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
 
           -- Interpret a file.
          ("-interpret":file:progArgs)
