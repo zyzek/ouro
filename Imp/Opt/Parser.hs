@@ -18,11 +18,11 @@ funcCFG
  = do   only KRoundBra 
         i          <- ident
         only KRoundBra
-        some ident
+        args       <-  some ident
         only KRoundKet
         blks       <- some block
         only KRoundKet
-        return     $  setInstrAddrs $ CFG i blks $ cfgEdges $ map blockBranches blks
+        return     $  setInstrAddrs $ CFG i args blks $ cfgEdges $ map blockBranches blks
 
 
 -- | Code block: a sequence of instructions with a particular id: a constituent of a function.
@@ -212,8 +212,8 @@ cfgEdges elists
 
 
 setInstrAddrs :: CFG -> CFG
-setInstrAddrs (CFG i blks edges)
- = CFG i (map setBlockInstrAddrs blks) edges
+setInstrAddrs (CFG i args blks edges)
+ = CFG i args (map setBlockInstrAddrs blks) edges
 
 
 setBlockInstrAddrs :: Block -> Block
@@ -227,21 +227,21 @@ setBlockInstrAddrs (Block i instrnodes)
 
 
 addOutEdge :: CFG -> InstrAddr -> InstrAddr -> CFG
-addOutEdge (CFG i blks edges) adr@(InstrAddr adrb _) new
+addOutEdge (CFG i args blks edges) adr@(InstrAddr adrb _) new
  = let (bpre, Block bId instrnodes, bpost)
         = spanElem (\(Block b _) -> b == adrb) blks
        (ipre, InstrNode inst _ ins outs, ipost)
         = spanElem (\(InstrNode _ n _ _) -> n == adr) instrnodes
        newouts
         = if new `elem` outs then outs else new:outs
-   in CFG i (bpre
-             ++ [Block bId (ipre
-                            ++ [InstrNode inst adr ins newouts]
-                            ++ ipost
-                           )
-                ]
-             ++ bpost
-            ) edges
+   in CFG i args (bpre
+                  ++ [Block bId (ipre
+                                 ++ [InstrNode inst adr ins newouts]
+                                 ++ ipost
+                                )
+                     ]
+                  ++ bpost
+                 ) edges
 
 spanElem :: (a -> Bool) -> [a] -> ([a], a, [a])
 spanElem preds sequ

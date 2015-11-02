@@ -2,6 +2,7 @@
 module Imp.Opt.Optimiser where
 import Imp.Opt.Exp
 import Data.List
+import Data.Maybe
 -- import Debug.Trace
 -- import qualified Text.Show.Pretty  as Text
 
@@ -9,9 +10,35 @@ import Data.List
 -- | Graph building.
 
 genGraphEdges :: CFG -> CFG
-genGraphEdges (CFG name blks edges)
+genGraphEdges (CFG name args blks edges)
  = let (newBlks, _, _) = graphInEdges edges blks [] [0]
-   in (CFG name newBlks edges)
+   in CFG name args (graphOutEdges newBlks) edges
+
+
+graphOutEdges :: [Block] -> [Block]
+graphOutEdges blks
+ = let gOuts 
+        = graphOuts blks
+       setInstrOuts iNode@(InstrNode i adr ins _)
+        = case lookup adr gOuts of
+               Just newOuts -> InstrNode i adr ins newOuts
+               _            -> iNode
+       setBlockOuts (Block bId instrs)
+        = Block bId $ map setInstrOuts instrs
+   in map setBlockOuts blks
+
+graphOuts :: [Block] -> [(InstrAddr, [InstrAddr])]
+graphOuts blks
+ = let instEdges (InstrNode _ adr ins _)
+        = map (\o -> (o, adr)) ins
+       blkIncoming (Block _ instrs)
+        = concatMap instEdges instrs
+       pairs 
+        = concatMap blkIncoming blks
+       commonOrigin (a, _) (a', _) 
+        = a == a'
+   in map ((\(a, b) -> (head a, rmDups b)) . unzip) $ groupBy commonOrigin $ sort pairs
+
 
 graphInEdges :: [CFGEdge] -> [Block] -> [( Int, [(Reg, [InstrAddr])] )] -> [Int] -> ([Block], [( Int, [(Reg, [InstrAddr])] )], [Int])
 graphInEdges edges blks blkRegDets queue
@@ -23,8 +50,8 @@ graphInEdges edges blks blkRegDets queue
                      queueItems = filter (isNewOrDiff newRegDets) $ map (\(CFGEdge _ d) -> d) $ edgesFrom edges b
                      newqueue = bs ++ queueItems
                      newBlks = pre ++ [newBlock] ++ post
-                     queueRegDets = zip queueItems $ map (mergeRegDets newRegDets) $ map (fst . getRegDets) queueItems
-                     newBlkRegDets =  queueRegDets ++ (filter (\(i, _) -> i `notElem` queueItems) blkRegDets)
+                     queueRegDets = zip queueItems $ map (mergeRegDets newRegDets . fst . getRegDets) queueItems
+                     newBlkRegDets =  queueRegDets ++ filter (\(i, _) -> i `notElem` queueItems) blkRegDets
                      gInE = graphInEdges edges newBlks newBlkRegDets newqueue
                  in gInE
  where getRegDets blkId
@@ -64,7 +91,7 @@ blockInstrEdges :: Block -> [(Reg, [InstrAddr])] -> (Block, [(Reg, [InstrAddr])]
 blockInstrEdges (Block bid instrs) regDets
  = let (newInstrs, newRegDets)
         = instrEdges instrs regDets
-   in ((Block bid newInstrs), newRegDets)
+   in (Block bid newInstrs, newRegDets)
 
 instrEdges :: [InstrNode] -> [(Reg, [InstrAddr])] -> ([InstrNode], [(Reg, [InstrAddr])])
 instrEdges instrs regDets
@@ -105,9 +132,7 @@ instrEdge instrN@(InstrNode inst addr _ _) regDets
                              in ( setInstrIns instrN detList
                                 , regDets )
  where getRegDet reg
-        = case lookup reg regDets of
-               Nothing -> []
-               Just r  -> r
+        = fromMaybe [] (lookup reg regDets)
 
 setInstrIns :: InstrNode -> [InstrAddr] -> InstrNode
 setInstrIns (InstrNode inst addr _ outs) newIns
@@ -135,7 +160,7 @@ mergeRegDets a b
 -- | Unreachable block removal.
 
 zeroClosure :: CFG -> (Id, [Int])
-zeroClosure cfg@(CFG i _ _) = (i, closure cfg [0])
+zeroClosure cfg@(CFG i _ _ _) = (i, closure cfg [0])
 
 closure :: CFG -> [Int] -> [Int]
 closure cfg nodes
@@ -144,7 +169,7 @@ closure cfg nodes
  where stepped = reachStep cfg nodes
 
 reachStep :: CFG -> [Int] -> [Int]
-reachStep (CFG _ _ edges) reached
+reachStep (CFG _ _ _ edges) reached
  = let isOrig n (CFGEdge o _)
         = o == n
        getDest (CFGEdge _ d)
@@ -156,10 +181,10 @@ reachStep (CFG _ _ edges) reached
 -- | Take a CFG, a list of block numbers to keep, 
 -- | remove blocks not in the list, edges with endpoints not in the list.
 retainBlocks :: CFG -> [Int] -> CFG
-retainBlocks (CFG name blocks edges) toRetain
+retainBlocks (CFG name args blocks edges) toRetain
  = let keptBlocks = filter (\(Block i _) -> i `elem` toRetain) blocks
        keptEdges  = filter (\(CFGEdge i j)  -> i `elem` toRetain || j `elem` toRetain) edges
-   in CFG name keptBlocks keptEdges
+   in CFG name args keptBlocks keptEdges
 
 
 rmDups :: Ord a => [a] -> [a]

@@ -3,7 +3,7 @@ module Imp.Opt.Exp where
 
 
 data CFG
-        = CFG Id [Block] [CFGEdge]
+        = CFG Id [Id] [Block] [CFGEdge]
         deriving Show
 
 data CFGEdge
