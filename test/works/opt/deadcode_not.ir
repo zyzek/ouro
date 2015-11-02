@@ -1,0 +1,19 @@
+(
+  (main ()
+    (0
+       (lc r0 0)
+       (st a r0)
+       (st b r0)
+       (br r0 1 1) )
+    (1
+       (lc r1 1)
+       (lc r7 1)
+       (st a r1)
+       (ld r2 a)
+       (not r3 r2 r2)
+       (ld r4 b)
+       (and r5 r3 r4)
+       (not r6 r5 r5)
+       (ret r6) )
+  )
+)
