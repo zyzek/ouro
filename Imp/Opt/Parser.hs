@@ -243,10 +243,6 @@ addOutEdge (CFG i args blks edges) adr@(InstrAddr adrb _) new
                   ++ bpost
                  ) edges
 
-spanElem :: (a -> Bool) -> [a] -> ([a], a, [a])
-spanElem preds sequ
- = let (pre, post) = span preds sequ
-   in (pre, head post, tail post)
         
 
 

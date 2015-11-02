@@ -2,9 +2,6 @@
 module Imp.Opt.Optimiser where
 import Imp.Opt.Exp
 import Data.List
--- import Debug.Trace
--- import qualified Text.Show.Pretty  as Text
-
 
 -- | Graph building.
 
@@ -62,11 +59,7 @@ graphInEdges edges blks blkInstrDets queue
 
 
 
-spanElem :: (a -> Bool) -> [a] -> ([a], a, [a])
-spanElem preds sequ
- = let (pre, post) = span preds sequ
-   in (pre, head post, tail post)
- 
+
 
 
 blockInstrEdges :: Block -> InstrDets -> (Block, InstrDets)
@@ -126,7 +119,7 @@ setInstrIns (InstrNode inst addr _ outs) newIns
  = InstrNode inst addr newIns outs
 
 
--- | Unreachable block removal.
+-- | Unreachable block/instruction removal.
 
 zeroClosure :: CFG -> (Id, [Int])
 zeroClosure cfg@(CFG i _ _ _) = (i, closure cfg [0])
@@ -165,6 +158,41 @@ removeUnreachedInstrs (CFG cId args blks edges)
 
 
 -- | Dead Code Elimination
+{-removeDeadCode :: CFG -> CFG
+removeDeadCode (CFG cID args blks edges)
+ = let used      = findAllUsed blks
+       transused = backClosure blks used
+
+instrComplement :: [Block] -> [InstrAddr] -> [InstrAddr]
+instrComplement blks a
+ = 
+-}
+backClosure :: [Block] -> [InstrAddr] -> [InstrAddr] -> [InstrAddr]
+backClosure blks queue visited
+ = case queue of 
+        []      -> []
+        q:qs    -> let ancestors
+                        = filter (\e -> e `notElem` qs && e `notElem` visited) (reachedFrom q)
+                       reachedFrom n
+                        = let InstrNode _ _ ins _ = lookupInstr blks n
+                          in ins
+                   in q : backClosure blks (ancestors ++ qs) (q : visited)
+
+       
+findAllUsed :: [Block] -> [InstrAddr]
+findAllUsed blks
+ = map extractAddress $ concatMap (\(Block _ instrs) -> filter isUseInstr instrs) blks
+ where isUseInstr (InstrNode i _ _ _)
+        = case i of
+               IBranch{}    -> True
+               IReturn _    -> True
+               IPrint _     -> True
+               _            -> False
+       extractAddress (InstrNode _ addr _ _)
+        = addr
+        
+
+
 
 
 -- | Redundant Load Elimination

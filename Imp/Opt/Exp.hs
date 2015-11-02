@@ -16,9 +16,6 @@ data InstrAddr
         deriving (Show, Eq, Ord)
 
 
-
-
-
 -- | Core Blocks; block id, instruction list, 
 data Block
         = Block Int [InstrNode]
@@ -187,7 +184,44 @@ instrDetsEqual (InstrDets rd vd) (InstrDets rd' vd')
  = xDetsEqual rd rd' && xDetsEqual vd vd'
 
 
+lookupInstr :: [Block] -> InstrAddr -> InstrNode
+lookupInstr blks tAddr@(InstrAddr bId _)
+ = let (Block _ instrs) = fromJust (find (\(Block b _) -> b == bId) blks)
+   in fromJust (find (\(InstrNode _ addr _ _) -> tAddr == addr) instrs)
+
+removeAddrFromInstr :: [Block] -> InstrAddr -> InstrAddr -> [Block]
+removeAddrFromInstr blks tAddr@(InstrAddr bId _) remove
+ = let (pre, Block _ instrs, post) 
+        = spanElem (\(Block b _) -> bId == b) blks
+       (ipre, InstrNode inst _ ins outs , ipost) 
+        = spanElem (\(InstrNode _ addr _ _) -> addr == tAddr) instrs
+       newInstrs 
+        = ipre 
+           ++ [InstrNode inst tAddr (filter (/= remove) ins) (filter (/= remove) outs)]
+           ++ ipost
+   in pre ++ [Block bId newInstrs] ++ post
+   
+
+removeInstr :: [Block] -> InstrAddr -> [Block]
+removeInstr blks tAddr@(InstrAddr bId _)
+ = let (InstrNode _ _ ins outs) = lookupInstr blks tAddr
+       danglers = ins ++ outs
+       (pre, Block _ instrs, post) = spanElem (\(Block b _) -> bId == b) blks
+       newBlks = pre ++ [Block bId (filter (\(InstrNode _ addr _ _) -> addr /= tAddr) instrs)] ++ post
+       rmEdges bs targets remove
+        = case targets of
+               []   -> bs
+               t:ts -> rmEdges (removeAddrFromInstr bs t remove) ts remove
+   in rmEdges newBlks danglers tAddr
+ 
+            
+            
+
 rmDups :: Ord a => [a] -> [a]
 rmDups l = map head $ group $ sort l
 
-
+spanElem :: (a -> Bool) -> [a] -> ([a], a, [a])
+spanElem preds sequ
+ = let (pre, post) = span preds sequ
+   in (pre, head post, tail post)
+ 
