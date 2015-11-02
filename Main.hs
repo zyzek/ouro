@@ -13,6 +13,7 @@ import qualified Imp.Core.Transcriber           as C
 import qualified Imp.Core.Lexer                 as C
 
 import qualified Imp.Opt                        as O
+import qualified Imp.Opt.Optimiser              as O
 
 import qualified Data.Algorithm.Diff            as Diff
 import qualified Data.Algorithm.DiffOutput      as Diff
@@ -145,8 +146,18 @@ main
           | ".ir" `isSuffixOf` file
           -> do contents   <- readFile file
                 let cfgs    = fromJust $ O.cfgsOfString contents
-                let out     = Text.ppShow $ map O.minusUnreachInstrs cfgs
+                let out     = Text.ppShow $ map O.removeUnreachedInstrs cfgs
                 showResult out (file ++ ".cbi")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+
+          -- Remove dead code.
+         ["-dead", file] 
+          | ".ir" `isSuffixOf` file
+          -> do contents  <- readFile file
+                let cfgs   = fromJust $ O.cfgsOfString contents
+                let out    = Text.ppShow $ map O.removeDeadCode cfgs
+                showResult out (file ++ ".dead")
           | otherwise
           -> error $ "Cannot parse " ++ file
 

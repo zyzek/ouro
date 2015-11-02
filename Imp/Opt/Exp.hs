@@ -2,6 +2,7 @@
 module Imp.Opt.Exp where
 import Data.List
 import Data.Maybe
+-- import Debug.Trace
 
 data CFG
         = CFG Id [Id] [Block] [CFGEdge]
@@ -184,35 +185,40 @@ instrDetsEqual (InstrDets rd vd) (InstrDets rd' vd')
  = xDetsEqual rd rd' && xDetsEqual vd vd'
 
 
-lookupInstr :: [Block] -> InstrAddr -> InstrNode
+lookupInstr :: [Block] -> InstrAddr -> Maybe InstrNode
 lookupInstr blks tAddr@(InstrAddr bId _)
- = let (Block _ instrs) = fromJust (find (\(Block b _) -> b == bId) blks)
-   in fromJust (find (\(InstrNode _ addr _ _) -> tAddr == addr) instrs)
+ = let (Block _ instrs) = fromMaybe (Block (-1) []) (find (\(Block b _) -> b == bId) blks)
+   in find (\(InstrNode _ addr _ _) -> tAddr == addr) instrs
 
 removeAddrFromInstr :: [Block] -> InstrAddr -> InstrAddr -> [Block]
 removeAddrFromInstr blks tAddr@(InstrAddr bId _) remove
- = let (pre, Block _ instrs, post) 
+ = let (pre, Block rBId instrs, post) 
         = spanElem (\(Block b _) -> bId == b) blks
-       (ipre, InstrNode inst _ ins outs , ipost) 
+       (ipre, InstrNode inst riAddr ins outs , ipost) 
         = spanElem (\(InstrNode _ addr _ _) -> addr == tAddr) instrs
        newInstrs 
         = ipre 
-           ++ [InstrNode inst tAddr (filter (/= remove) ins) (filter (/= remove) outs)]
+           ++ [InstrNode inst riAddr (filter (/= remove) ins) (filter (/= remove) outs)]
            ++ ipost
-   in pre ++ [Block bId newInstrs] ++ post
+   in pre ++ [Block rBId newInstrs] ++ post
    
 
 removeInstr :: [Block] -> InstrAddr -> [Block]
 removeInstr blks tAddr@(InstrAddr bId _)
- = let (InstrNode _ _ ins outs) = lookupInstr blks tAddr
-       danglers = ins ++ outs
-       (pre, Block _ instrs, post) = spanElem (\(Block b _) -> bId == b) blks
-       newBlks = pre ++ [Block bId (filter (\(InstrNode _ addr _ _) -> addr /= tAddr) instrs)] ++ post
-       rmEdges bs targets remove
-        = case targets of
-               []   -> bs
-               t:ts -> rmEdges (removeAddrFromInstr bs t remove) ts remove
-   in rmEdges newBlks danglers tAddr
+ = case lookupInstr blks tAddr of
+        Nothing -> blks
+        Just (InstrNode _ _ ins outs) 
+         -> let danglers
+                 = ins ++ outs
+                (pre, Block rBId instrs, post) 
+                 = spanElem (\(Block b _) -> bId == b) blks
+                newBlks
+                 = pre ++ [Block rBId (filter (\(InstrNode _ addr _ _) -> addr /= tAddr) instrs)] ++ post
+                rmEdges bs targets remove
+                 = case targets of
+                        []   -> bs
+                        t:ts -> rmEdges (removeAddrFromInstr bs t remove) ts remove
+            in rmEdges newBlks danglers tAddr
  
             
             

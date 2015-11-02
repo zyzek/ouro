@@ -12,8 +12,8 @@
         (3  (ld r5 x)
             (ret r5) )
         (4  (ld r6 x)
-            (add r6 r6 r5)
-            (ret r5) )
+            (add r6 r6 r3)
+            (ret r3) )
     )
 )
  

@@ -2,6 +2,7 @@
 module Imp.Opt.Optimiser where
 import Imp.Opt.Exp
 import Data.List
+-- import Debug.Trace
 
 -- | Graph building.
 
@@ -158,15 +159,24 @@ removeUnreachedInstrs (CFG cId args blks edges)
 
 
 -- | Dead Code Elimination
-{-removeDeadCode :: CFG -> CFG
+removeDeadCode :: CFG -> CFG
 removeDeadCode (CFG cID args blks edges)
  = let used      = findAllUsed blks
-       transused = backClosure blks used
+       transused = backClosure blks used []
+       compl     = instrComplement blks transused
+       removeAll bs addrs
+        = case addrs of
+               []   -> bs
+               a:as -> removeAll (removeInstr bs a) as
+   in CFG cID args (removeAll blks compl) edges
+       
 
 instrComplement :: [Block] -> [InstrAddr] -> [InstrAddr]
-instrComplement blks a
- = 
--}
+instrComplement blks initSet
+ = let blockCompInstrs (Block _ instrs)
+        = filter (`notElem` initSet) $ map (\(InstrNode _ addr _ _) -> addr) instrs
+   in concatMap blockCompInstrs blks
+
 backClosure :: [Block] -> [InstrAddr] -> [InstrAddr] -> [InstrAddr]
 backClosure blks queue visited
  = case queue of 
@@ -174,8 +184,9 @@ backClosure blks queue visited
         q:qs    -> let ancestors
                         = filter (\e -> e `notElem` qs && e `notElem` visited) (reachedFrom q)
                        reachedFrom n
-                        = let InstrNode _ _ ins _ = lookupInstr blks n
-                          in ins
+                        = case lookupInstr blks n of
+                               Just (InstrNode _ _ ins _) -> ins
+                               _                          -> []
                    in q : backClosure blks (ancestors ++ qs) (q : visited)
 
        
