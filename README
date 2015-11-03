@@ -6,8 +6,20 @@ Authors:
 
   Anton Jurisevic   311180051
   Jeremy Short      440353151
-  Trung Tran        310247233
 
+Source files that correspond to optimisation are found in "./Imp/Opt"
+
+Optimisations:
+  -cfg
+    Generate the CFG of some IR code.
+  -cid
+    Produce the ids of the blocks in each CFGs zero closure.
+  -cb
+    Eliminate unreachable IR blocks.
+  -cbi
+    Eliminate unreachable IR instructions.
+  -dead
+    Remove dead code.
 
 Completed Tasks:
 
