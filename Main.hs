@@ -121,7 +121,7 @@ main
           | otherwise
           -> error $ "Cannot parse " ++ file
          
-          -- Produce the ids of the blocks in each CFGs zero closure.
+          -- Produce the ids of the blocks in each CFG's zero closure.
          ["-cid", file]
           | ".ir" `isSuffixOf` file
           -> do contents     <- readFile file
@@ -156,8 +156,17 @@ main
           | ".ir" `isSuffixOf` file
           -> do contents  <- readFile file
                 let cfgs   = fromJust $ O.cfgsOfString contents
-                let out    = Text.ppShow $ map O.removeDeadCode cfgs
+                let out    = C.progString $ O.cfgsToProgram $ map O.removeDeadCode cfgs
                 showResult out (file ++ ".dead")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+
+         ["-cd", file]
+          | ".ir" `isSuffixOf` file
+          -> do contents   <- readFile file
+                let cfgs    = fromJust $ O.cfgsOfString contents
+                let out     = Text.ppShow $ map O.removeDeadCode cfgs
+                showResult out (file ++ ".cd")
           | otherwise
           -> error $ "Cannot parse " ++ file
 

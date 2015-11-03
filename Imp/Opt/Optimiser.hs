@@ -1,6 +1,7 @@
 
 module Imp.Opt.Optimiser where
 import Imp.Opt.Exp
+import Imp.Core.Exp hiding (Block)
 import Data.List
 
 -- | Graph building.
@@ -56,10 +57,6 @@ graphInEdges edges blks blkInstrDets queue
        isNewOrDiff rd blkId
         = let (res, new) = getInstrDets blkId
           in new || not (instrDetsEqual rd res)
-
-
-
-
 
 
 blockInstrEdges :: Block -> InstrDets -> (Block, InstrDets)
@@ -198,9 +195,6 @@ findAllUsed blks
        extractAddress (InstrNode _ addr _ _)
         = addr
         
-
-
-
 
 -- | Redundant Load Elimination
 

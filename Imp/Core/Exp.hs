@@ -65,7 +65,7 @@ data OpArith
 -- | Identifiers.
 data Id
         = Id String
-        deriving (Show, Eq)
+        deriving (Show, Eq, Ord)
 
 
 -- | Extract the string from an Id.

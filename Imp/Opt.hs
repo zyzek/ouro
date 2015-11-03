@@ -5,6 +5,7 @@ import Imp.Opt.Optimiser
 import Imp.Core.Tokens
 import Imp.Core.Lexer
 import Imp.Parsec
+import qualified Imp.Core.Exp  as C
 
 lexParseCFG :: Parser Token [CFG] -> String -> Maybe [CFG]
 lexParseCFG p str
@@ -18,7 +19,7 @@ lexParseCFG p str
 cfgsOfString :: String -> Maybe [CFG]
 cfgsOfString = lexParseCFG progCFGs
 
-closureIds :: [CFG] -> [(Id, [Int])]
+closureIds :: [CFG] -> [(C.Id, [Int])]
 closureIds
  = map zeroClosure
 
@@ -26,4 +27,15 @@ blockClosure :: CFG -> CFG
 blockClosure cfg
  = let (_, reachable) = zeroClosure cfg
    in retainBlocks cfg reachable 
+
+cfgsToProgram :: [CFG] -> C.Program
+cfgsToProgram cfgs
+ = let nodeToInst (InstrNode i _ _ _)
+        = i
+       cToBlock (Block i instrs)
+        = C.Block i $ map nodeToInst instrs
+       cfgToFunc (CFG name args blks _)
+        = C.Function name args $ map cToBlock blks
+   in C.Program $ map cfgToFunc cfgs
+
 

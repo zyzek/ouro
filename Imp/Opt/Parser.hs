@@ -2,6 +2,7 @@
 module Imp.Opt.Parser where
 import Imp.Parsec
 import Imp.Opt.Exp
+import Imp.Core.Exp hiding (Block)
 import Imp.Core.Tokens
 import Data.List
 
@@ -242,7 +243,4 @@ addOutEdge (CFG i args blks edges) adr@(InstrAddr adrb _) new
                      ]
                   ++ bpost
                  ) edges
-
-        
-
 
