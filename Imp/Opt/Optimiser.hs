@@ -3,13 +3,15 @@ module Imp.Opt.Optimiser where
 import Imp.Opt.Exp
 import Imp.Core.Exp hiding (Block)
 import Data.List
+import qualified Imp.Core.Interpreter   as I
 
 -- | Graph building.
 
 genGraphEdges :: CFG -> CFG
 genGraphEdges (CFG name args blks edges)
- = let (newBlks, _, _) = graphInEdges edges blks [] [0]
-   in CFG name args (graphOutEdges newBlks) edges
+ = let (newBlks, blkDets, _) = graphInEdges edges blks [] [0]
+       fBlks = setBlkInstrDets newBlks blkDets
+   in CFG name args (graphOutEdges fBlks) edges
 
 
 graphOutEdges :: [Block] -> [Block]
@@ -20,15 +22,15 @@ graphOutEdges blks
         = case lookup adr gOuts of
                Just newOuts -> InstrNode i adr ins newOuts
                _            -> iNode
-       setBlockOuts (Block bId instrs)
-        = Block bId $ map setInstrOuts instrs
+       setBlockOuts (Block bId instrs dets)
+        = Block bId (map setInstrOuts instrs) dets
    in map setBlockOuts blks
 
 graphOuts :: [Block] -> [(InstrAddr, [InstrAddr])]
 graphOuts blks
  = let instEdges (InstrNode _ adr ins _)
         = map (\o -> (o, adr)) ins
-       blkIncoming (Block _ instrs)
+       blkIncoming (Block _ instrs _)
         = concatMap instEdges instrs
        pairs 
         = concatMap blkIncoming blks
@@ -37,18 +39,39 @@ graphOuts blks
    in map ((\(a, b) -> (head a, rmDups b)) . unzip) $ groupBy commonOrigin $ sort pairs
 
 
+setBlkInstrDets :: [Block] -> [(Int, InstrDets)] -> [Block]
+setBlkInstrDets blks blkDets
+ = case blkDets of 
+        []           -> blks
+        (i, dets):ds -> let (pre, Block bId instrs _, post)
+                             = breakElem (\(Block b _ _) -> b == i) blks
+                            newBlks 
+                             = pre 
+                                ++ [Block bId instrs dets]
+                                ++ post
+                        in setBlkInstrDets newBlks ds
+
+
 graphInEdges :: [CFGEdge] -> [Block] -> [(Int, InstrDets)] -> [Int] -> ([Block], [(Int, InstrDets)], [Int])
 graphInEdges edges blks blkInstrDets queue
  = case queue of
         []    -> (blks, blkInstrDets, queue)
-        b:bs  -> let (pre, thisBlock, post) = breakElem (\(Block bid _) -> bid == b) blks
-                     (instrDets, _) = getInstrDets b
-                     (newBlock, newInstrDets) = blockInstrEdges thisBlock instrDets
-                     queueItems = filter (isNewOrDiff newInstrDets) $ map (\(CFGEdge _ d) -> d) $ edgesFrom edges b
-                     newqueue = bs ++ queueItems
-                     newBlks = pre ++ [newBlock] ++ post
-                     queueInstrDets = zip queueItems $ map (mergeInstrDets newInstrDets . fst . getInstrDets) queueItems
-                     newBlkInstrDets =  queueInstrDets ++ filter (\(i, _) -> i `notElem` queueItems) blkInstrDets
+        b:bs  -> let (pre, thisBlock, post)
+                      = breakElem (\(Block bid _ _) -> bid == b) blks
+                     (instrDets, _)
+                      = getInstrDets b
+                     (newBlock, newInstrDets)
+                      = blockInstrEdges thisBlock instrDets
+                     queueItems 
+                      = filter (isNewOrDiff newInstrDets) $ map (\(CFGEdge _ d) -> d) $ edgesFrom edges b
+                     newqueue 
+                      = bs ++ queueItems
+                     newBlks 
+                      = pre ++ [newBlock] ++ post
+                     queueInstrDets 
+                      = zip queueItems $ map (mergeInstrDets newInstrDets . fst . getInstrDets) queueItems
+                     newBlkInstrDets 
+                      = queueInstrDets ++ filter (\(i, _) -> i `notElem` queueItems) blkInstrDets
                  in graphInEdges edges newBlks newBlkInstrDets newqueue
  where getInstrDets blkId
         = case lookup blkId blkInstrDets of
@@ -60,10 +83,10 @@ graphInEdges edges blks blkInstrDets queue
 
 
 blockInstrEdges :: Block -> InstrDets -> (Block, InstrDets)
-blockInstrEdges (Block bid instrs) instrDets
+blockInstrEdges (Block bid instrs dets) instrDets
  = let (newInstrs, newInstrDets)
         = instrEdges instrs instrDets
-   in (Block bid newInstrs, newInstrDets)
+   in (Block bid newInstrs dets, newInstrDets)
 
 instrEdges :: [InstrNode] -> InstrDets -> ([InstrNode], InstrDets)
 instrEdges instrs instrDets
@@ -85,14 +108,24 @@ instrEdges instrs instrDets
 instrEdge :: InstrNode -> InstrDets -> (InstrNode, InstrDets)
 instrEdge instrN@(InstrNode inst addr _ _) instrDets
  = case inst of
-        IConst reg _  -> ( instrN
-                         , setRegDets (reg, [addr]) instrDets )
-        ILoad  reg vId  -> ( setInstrIns instrN (getVarD vId)
-                           , setRegDets (reg, [addr]) instrDets )
-        IStore vId reg  -> ( setInstrIns instrN (getRegD reg) 
-                           , setVarDets (vId, [addr]) instrDets )
-        IArith _ rout rin1 rin2 -> ( setInstrIns instrN (rmDups (concatMap getRegD [rin1, rin2]))
-                                   , setRegDets (rout, [addr]) instrDets )
+        IConst reg v  -> ( instrN
+                         , setRegDets (reg, ([addr], VNum v)) instrDets )
+        ILoad  reg vId  -> let val = case getVarVal instrDets vId of
+                                          VBot -> VTop
+                                          v    -> v
+                           in ( setInstrIns instrN (getVarD vId)
+                              , setRegDets (reg, ([addr], val)) instrDets )
+        IStore vId reg  -> let val = getRegVal instrDets reg
+                           in ( setInstrIns instrN (getRegD reg)
+                              , setVarDets (vId, ([addr], val)) instrDets )
+        IArith op rout rin1 rin2 -> let val1 = getRegVal instrDets rin1
+                                        val2 = getRegVal instrDets rin2
+                                        outval = if valIsNum val1 && valIsNum val2
+                                                  then VNum (I.arithCalc op (getValNum val1) (getValNum val2))
+                                                  else VTop
+                                       
+                                    in ( setInstrIns instrN (rmDups (concatMap getRegD [rin1, rin2]))
+                                       , setRegDets (rout, ([addr], outval)) instrDets )
         IBranch reg _ _ -> ( setInstrIns instrN (getRegD reg)
                            , instrDets )
 
@@ -101,7 +134,7 @@ instrEdge instrN@(InstrNode inst addr _ _) instrDets
         ICall reg _ rlist -> let detList 
                                   = rmDups $ concatMap getRegD rlist
                              in ( setInstrIns instrN detList
-                                , setRegDets (reg, [addr]) instrDets )
+                                , setRegDets (reg, ([addr], VTop)) instrDets )
         IPrint rlist      -> let detList
                                   = rmDups $ concatMap getRegD rlist
                              in ( setInstrIns instrN detList
@@ -110,6 +143,15 @@ instrEdge instrN@(InstrNode inst addr _ _) instrDets
         = getRegDet instrDets
        getVarD
         = getVarDet instrDets
+       valIsNum v
+        = case v of
+               VNum _ -> True
+               _      -> False
+       getValNum val 
+        = case val of
+               VNum v -> v
+               _      -> 666
+        
 
 setInstrIns :: InstrNode -> [InstrAddr] -> InstrNode
 setInstrIns (InstrNode inst addr _ outs) newIns
@@ -141,7 +183,7 @@ reachStep (CFG _ _ _ edges) reached
 -- | remove blocks not in the list, edges with endpoints not in the list.
 retainBlocks :: CFG -> [Int] -> CFG
 retainBlocks (CFG name args blocks edges) toRetain
- = let keptBlocks = filter (\(Block i _) -> i `elem` toRetain) blocks
+ = let keptBlocks = filter (\(Block i _ _) -> i `elem` toRetain) blocks
        keptEdges  = filter (\(CFGEdge i j)  -> i `elem` toRetain || j `elem` toRetain) edges
    in CFG name args keptBlocks keptEdges
 
@@ -149,8 +191,8 @@ removeUnreachedInstrs :: CFG -> CFG
 removeUnreachedInstrs (CFG cId args blks edges)
  = let instrReached (InstrNode _ _ ins outs)
         = not (null ins && null outs)
-       removeInBlk (Block bId instrs)
-        = Block bId (filter instrReached instrs)
+       removeInBlk (Block bId instrs dets)
+        = Block bId (filter instrReached instrs) dets
   in CFG cId args (map removeInBlk blks) edges
 
 
@@ -166,7 +208,7 @@ removeDeadCode (CFG cID args blks edges)
 
 instrComplement :: [Block] -> [InstrAddr] -> [InstrAddr]
 instrComplement blks initSet
- = let blockCompInstrs (Block _ instrs)
+ = let blockCompInstrs (Block _ instrs _)
         = filter (`notElem` initSet) $ map (\(InstrNode _ addr _ _) -> addr) instrs
    in concatMap blockCompInstrs blks
 
@@ -185,7 +227,7 @@ backClosure blks queue visited
        
 findAllUsed :: [Block] -> [InstrAddr]
 findAllUsed blks
- = map extractAddress $ concatMap (\(Block _ instrs) -> filter isUseInstr instrs) blks
+ = map extractAddress $ concatMap (\(Block _ instrs _) -> filter isUseInstr instrs) blks
  where isUseInstr (InstrNode i _ _ _)
         = case i of
                IBranch{}    -> True

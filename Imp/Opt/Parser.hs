@@ -34,7 +34,7 @@ block
         instrs     <- some instr
         only KRoundKet
         let instrnodes = map (\i -> InstrNode i (InstrAddr (-1) (-1)) [] []) instrs
-        return         $  Block n instrnodes
+        return         $  Block n instrnodes (InstrDets [] [])
 
 
 -- | A machine instruction.
@@ -180,7 +180,7 @@ register
 -- | Given a block, determine which blocks it might branch to.
 -- | Only check up to the first return or branch instruction.
 blockBranches :: Block -> (Int, [CFGEdge])
-blockBranches (Block o instrnodes)
+blockBranches (Block o instrnodes _)
  = let (rpre, rpost)
         = break isRet instrnodes
        brs
@@ -218,19 +218,19 @@ setInstrAddrs (CFG i args blks edges)
 
 
 setBlockInstrAddrs :: Block -> Block
-setBlockInstrAddrs (Block i instrnodes)
+setBlockInstrAddrs (Block i instrnodes dets)
  = let aPairs
         = zip [0..] instrnodes
        setAddr addr (InstrNode inst _ ins outs)
         = InstrNode inst addr ins outs
-   in Block i (map (\(n, instrN) -> setAddr (InstrAddr i n) instrN) aPairs)
+   in Block i (map (\(n, instrN) -> setAddr (InstrAddr i n) instrN) aPairs) dets
 
 
 
 addOutEdge :: CFG -> InstrAddr -> InstrAddr -> CFG
 addOutEdge (CFG i args blks edges) adr@(InstrAddr adrb _) new
- = let (bpre, Block bId instrnodes, bpost)
-        = breakElem (\(Block b _) -> b == adrb) blks
+ = let (bpre, Block bId instrnodes dets, bpost)
+        = breakElem (\(Block b _ _) -> b == adrb) blks
        (ipre, InstrNode inst _ ins outs, ipost)
         = breakElem (\(InstrNode _ n _ _) -> n == adr) instrnodes
        newouts
@@ -239,7 +239,7 @@ addOutEdge (CFG i args blks edges) adr@(InstrAddr adrb _) new
                   ++ [Block bId (ipre
                                  ++ [InstrNode inst adr ins newouts]
                                  ++ ipost
-                                )
+                                ) dets
                      ]
                   ++ bpost
                  ) edges

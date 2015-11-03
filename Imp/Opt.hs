@@ -32,7 +32,7 @@ cfgsToProgram :: [CFG] -> C.Program
 cfgsToProgram cfgs
  = let nodeToInst (InstrNode i _ _ _)
         = i
-       cToBlock (Block i instrs)
+       cToBlock (Block i instrs _)
         = C.Block i $ map nodeToInst instrs
        cfgToFunc (CFG name args blks _)
         = C.Function name args $ map cToBlock blks

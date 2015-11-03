@@ -20,7 +20,7 @@ data InstrAddr
 
 -- | Core Blocks; block id, instruction list, 
 data Block
-        = Block Int [InstrNode]
+        = Block Int [InstrNode] InstrDets
         deriving Show
         
 
@@ -31,6 +31,53 @@ data InstrNode
         = InstrNode Instr InstrAddr [InstrAddr] [InstrAddr]
         deriving Show
 
+data InstrDets
+        = InstrDets [(Reg, ([InstrAddr], Val))] [(Id, ([InstrAddr], Val))]
+        deriving (Show, Eq, Ord)
+
+data Val
+       = VTop
+       | VVar Id
+       | VNum Int
+       | VBot
+       deriving (Show, Eq)
+
+instance Ord Val where
+    _ <= VTop        = True
+    VTop <= VVar _   = False
+    VTop <= VNum _   = False
+    VTop <= VBot     = False
+    
+    VBot <= _        = True
+    VNum _ <= VBot   = False
+    VVar _ <= VBot   = False
+
+    VNum _ <= VVar _ = True
+    VNum a <= VNum b = a <= b
+    
+    VVar a <= VVar b = a <= b
+    VVar _ <= VNum _ = False
+
+
+vJoin :: Val -> Val -> Val
+vJoin a b 
+ = case a of
+        VTop -> VTop
+        VBot -> b
+        _    -> case b of
+                     VTop -> VTop
+                     VBot -> a
+                     _    -> if a == b then a else VTop
+
+vMeet :: Val -> Val -> Val
+vMeet a b
+ = case a of
+        VBot -> VBot
+        VTop -> b
+        _    -> case b of
+                     VBot -> VBot
+                     VTop -> a
+                     _    -> if a == b then a else VTop
 
 edgesFrom :: [CFGEdge] -> Int -> [CFGEdge]
 edgesFrom edges orig
@@ -40,65 +87,69 @@ edgesTo :: [CFGEdge] -> Int -> [CFGEdge]
 edgesTo edges dest
  = filter (\(CFGEdge _ d) -> d == dest) edges
 
-data InstrDets
-        = InstrDets [(Reg, [InstrAddr])] [(Id, [InstrAddr])]
-        deriving (Show, Eq, Ord)
+getRegVal :: InstrDets -> Reg -> Val
+getRegVal (InstrDets regDets _) reg
+ = snd $ fromMaybe ([], VBot) (lookup reg regDets)
+
+getVarVal :: InstrDets -> Id -> Val
+getVarVal (InstrDets _ varDets) vId
+ = snd $ fromMaybe ([], VBot) (lookup vId varDets)
 
 getRegDet :: InstrDets -> Reg -> [InstrAddr]
 getRegDet (InstrDets regDets _) reg
- = fromMaybe [] (lookup reg regDets)
+ = fst $ fromMaybe ([], VBot) (lookup reg regDets)
 
 getVarDet :: InstrDets -> Id -> [InstrAddr]
 getVarDet (InstrDets _ varDets) vId
- = fromMaybe [] (lookup vId varDets)
+ = fst $ fromMaybe ([], VBot) (lookup vId varDets)
 
-setRegDets :: (Reg, [InstrAddr]) -> InstrDets -> InstrDets
+setRegDets :: (Reg, ([InstrAddr], Val)) -> InstrDets -> InstrDets
 setRegDets regDet@(reg, _) (InstrDets regDets varDets)
  = InstrDets (regDet : filter(\(r, _) -> r /= reg) regDets) varDets
 
-setVarDets :: (Id, [InstrAddr]) -> InstrDets -> InstrDets
+setVarDets :: (Id, ([InstrAddr], Val)) -> InstrDets -> InstrDets
 setVarDets varDet@(vId, _) (InstrDets regDets varDets)
  = InstrDets regDets (varDet : filter(\(i, _) -> i /= vId) varDets)
 
-addRegDets :: (Reg, [InstrAddr]) -> InstrDets -> InstrDets
-addRegDets regDet@(reg, adrs) (InstrDets regDets varDets)
+addRegDets :: (Reg, ([InstrAddr], Val)) -> InstrDets -> InstrDets
+addRegDets regDet@(reg, (adrs, val)) (InstrDets regDets varDets)
  = case lookup reg regDets of
-        Just prevAdrs -> let newAdrs
-                              = rmDups (prevAdrs ++ adrs)
-                         in InstrDets ((reg, newAdrs) : filter (\(r, _) -> r /= reg) regDets) varDets
+        Just (prevAdrs, pVal) -> let newAdrs
+                                      = rmDups (prevAdrs ++ adrs)
+                                 in InstrDets ((reg, (newAdrs, vJoin val pVal)) : filter (\(r, _) -> r /= reg) regDets) varDets
         _             -> InstrDets (regDet:regDets) varDets
 
-addVarDets :: (Id, [InstrAddr]) -> InstrDets -> InstrDets
-addVarDets varDet@(vId, adrs) (InstrDets regDets varDets)
+addVarDets :: (Id, ([InstrAddr], Val)) -> InstrDets -> InstrDets
+addVarDets varDet@(vId, (adrs, val)) (InstrDets regDets varDets)
  = case lookup vId varDets of
-        Just prevAdrs -> let newAdrs
-                              = rmDups (prevAdrs ++ adrs)
-                         in InstrDets regDets ((vId, newAdrs) : filter (\(i, _) -> i /= vId) varDets)
+        Just (prevAdrs, pVal) -> let newAdrs
+                                      = rmDups (prevAdrs ++ adrs)
+                                 in InstrDets regDets ((vId, (newAdrs, vJoin val pVal)) : filter (\(i, _) -> i /= vId) varDets)
         _             -> InstrDets regDets (varDet:varDets)
 
-mergeRegDets :: [(Reg, [InstrAddr])] -> [(Reg, [InstrAddr])] -> [(Reg, [InstrAddr])]
+mergeRegDets :: [(Reg, ([InstrAddr], Val))] -> [(Reg, ([InstrAddr], Val))] -> [(Reg, ([InstrAddr], Val))]
 mergeRegDets a b
  = case a of
         []  -> b
         rd:rds -> mergeRegDets rds (addRegDs rd b)
- where addRegDs regDet@(reg, adrs) regDets
+ where addRegDs regDet@(reg, (adrs, val)) regDets
         = case lookup reg regDets of
-               Just prevAdrs -> let newAdrs
-                                     = rmDups (prevAdrs ++ adrs)
-                                in (reg, newAdrs) : filter (\(r, _) -> r /= reg) regDets
+               Just (prevAdrs, pVal) -> let newAdrs
+                                             = rmDups (prevAdrs ++ adrs)
+                                        in (reg, (newAdrs, vJoin val pVal)) : filter (\(r, _) -> r /= reg) regDets
                _             -> regDet:regDets
 
 
-mergeVarDets :: [(Id, [InstrAddr])] -> [(Id, [InstrAddr])] -> [(Id, [InstrAddr])]
+mergeVarDets :: [(Id, ([InstrAddr], Val))] -> [(Id, ([InstrAddr], Val))] -> [(Id, ([InstrAddr], Val))]
 mergeVarDets a b
  = case a of
         []  -> b
         vd:vds -> mergeVarDets vds (addVarDs vd b)
- where addVarDs varDet@(vId, adrs) varDets
+ where addVarDs varDet@(vId, (adrs, val)) varDets
         = case lookup vId varDets of
-               Just prevAdrs -> let newAdrs
-                                     = rmDups (prevAdrs ++ adrs)
-                                in (vId, newAdrs) : filter (\(i, _) -> i /= vId) varDets
+               Just (prevAdrs, pVal) -> let newAdrs
+                                             = rmDups (prevAdrs ++ adrs)
+                                        in (vId, (newAdrs, vJoin val pVal)) : filter (\(i, _) -> i /= vId) varDets
                _             -> varDet:varDets
 
 
@@ -107,8 +158,7 @@ mergeInstrDets (InstrDets rd vd) (InstrDets rd' vd')
  = InstrDets (mergeRegDets rd rd') (mergeVarDets vd vd')
 
 
-
-xDetsEqual :: Ord a => [(a, [InstrAddr])] -> [(a, [InstrAddr])] -> Bool
+xDetsEqual :: Ord a => [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))] -> Bool
 xDetsEqual p q
  = let sa = sort p
        sb = sort q
@@ -116,11 +166,12 @@ xDetsEqual p q
            [] -> case sb of
                       [] -> True
                       _  -> False
-           (ar, aadrs):as -> case sb of
-                                  (br, badrs):bs -> ar == br
-                                                     && sort aadrs == sort badrs
-                                                     && xDetsEqual as bs
-                                  []             -> False
+           (ar, (aadrs, aval)):as -> case sb of
+                                          (br, (badrs, bval)):bs -> ar == br
+                                                                     && aval == bval
+                                                                     && sort aadrs == sort badrs
+                                                                     && xDetsEqual as bs
+                                          []             -> False
 
 instrDetsEqual :: InstrDets -> InstrDets -> Bool
 instrDetsEqual (InstrDets rd vd) (InstrDets rd' vd')
@@ -129,20 +180,21 @@ instrDetsEqual (InstrDets rd vd) (InstrDets rd' vd')
 
 lookupInstr :: [Block] -> InstrAddr -> Maybe InstrNode
 lookupInstr blks tAddr@(InstrAddr bId _)
- = let (Block _ instrs) = fromMaybe (Block (-1) []) (find (\(Block b _) -> b == bId) blks)
+ = let (Block _ instrs _) 
+        = fromMaybe (Block (-1) [] (InstrDets [] [])) (find (\(Block b _ _) -> b == bId) blks)
    in find (\(InstrNode _ addr _ _) -> tAddr == addr) instrs
 
 removeAddrFromInstr :: [Block] -> InstrAddr -> InstrAddr -> [Block]
 removeAddrFromInstr blks tAddr@(InstrAddr bId _) remove
- = let (pre, Block rBId instrs, post) 
-        = breakElem (\(Block b _) -> bId == b) blks
+ = let (pre, Block rBId instrs dets, post) 
+        = breakElem (\(Block b _ _) -> bId == b) blks
        (ipre, InstrNode inst riAddr ins outs , ipost) 
         = breakElem (\(InstrNode _ addr _ _) -> addr == tAddr) instrs
        newInstrs 
         = ipre 
            ++ [InstrNode inst riAddr (filter (/= remove) ins) (filter (/= remove) outs)]
            ++ ipost
-   in pre ++ [Block rBId newInstrs] ++ post
+   in pre ++ [Block rBId newInstrs dets] ++ post
    
 
 removeInstr :: [Block] -> InstrAddr -> [Block]
@@ -152,10 +204,12 @@ removeInstr blks tAddr@(InstrAddr bId _)
         Just (InstrNode _ _ ins outs) 
          -> let danglers
                  = ins ++ outs
-                (pre, Block rBId instrs, post) 
-                 = breakElem (\(Block b _) -> bId == b) blks
+                (pre, Block rBId instrs dets, post) 
+                 = breakElem (\(Block b _ _) -> bId == b) blks
                 newBlks
-                 = pre ++ [Block rBId (filter (\(InstrNode _ addr _ _) -> addr /= tAddr) instrs)] ++ post
+                 = pre 
+                    ++ [Block rBId (filter (\(InstrNode _ addr _ _) -> addr /= tAddr) instrs) dets]
+                    ++ post
             in rmEdges newBlks danglers tAddr
 
 rmEdges :: [Block] -> [InstrAddr] -> InstrAddr -> [Block]
