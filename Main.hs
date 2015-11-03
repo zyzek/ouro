@@ -131,26 +131,16 @@ main
           | otherwise
           -> error $ "Cannot parse " ++ file
           
-          -- Eliminate unreachable IR blocks.
+          -- Eliminate unreachable IR instructions/blocks.
          ["-cb", file]
           | ".ir" `isSuffixOf` file         
           -> do contents    <- readFile file
                 let cfgs     = fromJust $ O.cfgsOfString contents
-                let out = Text.ppShow $ map O.blockClosure cfgs
+                let out = Text.ppShow $ map (O.removeUnreachedInstrs . O.blockClosure) cfgs
                 showResult out (file ++ ".cb")
           | otherwise
           -> error $ "Cannot parse " ++ file
         
-          -- Eliminate unreachable IR instructions.
-         ["-cbi", file]
-          | ".ir" `isSuffixOf` file
-          -> do contents   <- readFile file
-                let cfgs    = fromJust $ O.cfgsOfString contents
-                let out     = Text.ppShow $ map O.removeUnreachedInstrs cfgs
-                showResult out (file ++ ".cbi")
-          | otherwise
-          -> error $ "Cannot parse " ++ file
-
           -- Remove dead code.
          ["-dead", file] 
           | ".ir" `isSuffixOf` file
