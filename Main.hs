@@ -121,6 +121,14 @@ main
           | otherwise
           -> error $ "Cannot parse " ++ file
          
+         ["-cir", file]
+          | ".ir" `isSuffixOf` file
+          -> do contents    <- readFile file
+                let out = C.progString $ O.cfgsToProgram $ fromJust $ O.cfgsOfString contents
+                showResult out (file ++ ".cfg")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+
           -- Produce the ids of the blocks in each CFG's zero closure.
          ["-cid", file]
           | ".ir" `isSuffixOf` file
@@ -159,6 +167,27 @@ main
                 showResult out (file ++ ".cd")
           | otherwise
           -> error $ "Cannot parse " ++ file
+            
+          -- Remove redundant instructions.
+         ["-cr", file]
+          | ".ir" `isSuffixOf` file
+          -> do contents   <- readFile file
+                let cfgs   =  fromJust $ O.cfgsOfString contents
+                let out    =  Text.ppShow $ map O.removeRedundantInstrs cfgs
+                showResult out (file ++ ".cr")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+        
+         ["-redund", file]
+          | ".ir" `isSuffixOf` file
+          -> do contents  <- readFile file
+                let cfgs   = fromJust $ O.cfgsOfString contents
+                let out    = C.progString $ O.cfgsToProgram $ map O.removeRedundantInstrs cfgs
+                showResult out (file ++ ".redund")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+
+
 
           -- Interpret a file.
          ("-interpret":file:progArgs)

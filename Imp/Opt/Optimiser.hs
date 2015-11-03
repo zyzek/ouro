@@ -105,45 +105,31 @@ instrEdges instrs instrDets
                IBranch{} -> True
                _         -> False
 
-instrEdge :: InstrNode -> InstrDets -> (InstrNode, InstrDets)
-instrEdge instrN@(InstrNode inst addr _ _) instrDets
+updateInstrDets :: InstrNode -> InstrDets -> InstrDets
+updateInstrDets (InstrNode inst addr _ _) instrDets
  = case inst of
-        IConst reg v  -> ( instrN
-                         , setRegDets (reg, ([addr], VNum v)) instrDets )
-        ILoad  reg vId  -> let val = case getVarVal instrDets vId of
-                                          VBot -> VTop
+        IConst reg v  -> setRegDets (reg, ([addr], VNum v)) instrDets
+        ILoad  reg vId  -> let varVal = getVarVal instrDets vId  
+                               val = case varVal of
+                                          VBot -> VVar vId
+                                          VTop -> VVar vId
                                           v    -> v
-                           in ( setInstrIns instrN (getVarD vId)
-                              , setRegDets (reg, ([addr], val)) instrDets )
+                               newDets = case varVal of
+                                              VBot -> setVarDets (vId, ([], VTop)) instrDets
+                                              _    -> instrDets
+                           in setRegDets (reg, ([addr], val)) newDets
         IStore vId reg  -> let val = getRegVal instrDets reg
-                           in ( setInstrIns instrN (getRegD reg)
-                              , setVarDets (vId, ([addr], val)) instrDets )
+                           in setVarDets (vId, ([addr], val)) instrDets
         IArith op rout rin1 rin2 -> let val1 = getRegVal instrDets rin1
                                         val2 = getRegVal instrDets rin2
                                         outval = if valIsNum val1 && valIsNum val2
                                                   then VNum (I.arithCalc op (getValNum val1) (getValNum val2))
                                                   else VTop
                                        
-                                    in ( setInstrIns instrN (rmDups (concatMap getRegD [rin1, rin2]))
-                                       , setRegDets (rout, ([addr], outval)) instrDets )
-        IBranch reg _ _ -> ( setInstrIns instrN (getRegD reg)
-                           , instrDets )
-
-        IReturn reg     -> ( setInstrIns instrN (getRegD reg)
-                           , instrDets )
-        ICall reg _ rlist -> let detList 
-                                  = rmDups $ concatMap getRegD rlist
-                             in ( setInstrIns instrN detList
-                                , setRegDets (reg, ([addr], VTop)) instrDets )
-        IPrint rlist      -> let detList
-                                  = rmDups $ concatMap getRegD rlist
-                             in ( setInstrIns instrN detList
-                                , instrDets )
- where getRegD
-        = getRegDet instrDets
-       getVarD
-        = getVarDet instrDets
-       valIsNum v
+                                    in setRegDets (rout, ([addr], outval)) instrDets
+        ICall reg _ _ -> setRegDets (reg, ([addr], VTop)) instrDets
+        _             -> instrDets
+ where valIsNum v
         = case v of
                VNum _ -> True
                _      -> False
@@ -151,6 +137,30 @@ instrEdge instrN@(InstrNode inst addr _ _) instrDets
         = case val of
                VNum v -> v
                _      -> 666
+
+
+instrEdge :: InstrNode -> InstrDets -> (InstrNode, InstrDets)
+instrEdge instrN@(InstrNode inst _ _ _) instrDets
+ = let newInstrDets = updateInstrDets instrN instrDets
+       newInstrN
+        = case inst of
+               IConst{}             ->  instrN
+               ILoad  _ vId         ->  setInstrIns instrN (getVarD vId)
+               IStore _ reg         -> setInstrIns instrN (getRegD reg)
+               IArith _ _ rin1 rin2 -> setInstrIns instrN (rmDups (concatMap getRegD [rin1, rin2]))
+               IBranch reg _ _      -> setInstrIns instrN (getRegD reg)
+               IReturn reg          -> setInstrIns instrN (getRegD reg)
+               ICall _ _ rlist      -> let detList 
+                                            = rmDups $ concatMap getRegD rlist
+                                       in setInstrIns instrN detList
+               IPrint rlist         -> let detList
+                                            = rmDups $ concatMap getRegD rlist
+                                       in setInstrIns instrN detList
+   in (newInstrN, newInstrDets)
+ where getRegD
+        = getRegDet instrDets
+       getVarD
+        = getVarDet instrDets
         
 
 setInstrIns :: InstrNode -> [InstrAddr] -> InstrNode
@@ -238,6 +248,81 @@ findAllUsed blks
         = addr
         
 
--- | Redundant Load Elimination
+-- | Redundant Instruction Elimination
+
+removeRedundantInstrs :: CFG -> CFG
+removeRedundantInstrs (CFG name args blks edges)
+ = let newBlks = removeRedundantBlkInstrs blks blockIds
+   in genGraphEdges $ CFG name args newBlks edges
+   where blockIds = map (\(Block i _ _) -> i) blks
+
+
+removeRedundantBlkInstrs :: [Block] -> [Int] -> [Block]
+removeRedundantBlkInstrs blks bIds
+ = case bIds of
+        []   -> blks
+        i:is -> let (_, Block _ instrs dets, _)
+                     = breakElem (\(Block b _ _) -> b == i) blks
+                    (newBlks, _, _) = handleRedundantInstrs blks dets instrs
+                in removeRedundantBlkInstrs newBlks  is
+
+handleRedundantInstrs :: [Block] -> InstrDets -> [InstrNode] -> ([Block], InstrDets, [InstrNode])
+handleRedundantInstrs blks dets instrs
+ = case instrs of
+        []
+         -> (blks, dets, [])
+        instrN@(InstrNode inst addr@(InstrAddr bId _) ins outs):is
+         -> let (pre, Block b bInstrs bDets, post)
+                 = breakElem (\(Block i _ _) -> i == bId) (removeAddrsFromOuts blks ins addr)
+                (iPre, _, iPost)
+                 = breakElem (\(InstrNode _ iAddr _ _) -> iAddr == addr) bInstrs
+            in case inst of
+                    (ILoad reg vId) -> case getVarPair dets vId of
+                                            (_, VNum n) 
+                                             -> let newInstr 
+                                                     = InstrNode (IConst reg n) addr [] outs
+                                                    newBlks 
+                                                     = pre 
+                                                       ++ [Block b (iPre ++ [newInstr] ++ iPost) bDets]
+                                                       ++ post
+                                                in (newBlks, updateInstrDets newInstr dets, is)
+                                            (detAddrs, VVar newId) 
+                                             -> let newInstr 
+                                                     = InstrNode (ILoad reg newId) addr detAddrs outs
+                                                    newBlks
+                                                     = pre
+                                                       ++ [Block b (iPre ++ [newInstr] ++ iPost) bDets]
+                                                       ++ post
+                                                in (addOutEdges newBlks detAddrs addr,
+                                                    updateInstrDets newInstr dets, is)
+                                            _ -> (blks, updateInstrDets instrN dets, is)
+                    (IBranch reg b1 b2) -> case getRegVal dets reg of
+                                                VNum 0 
+                                                 -> let newIns = getRegDet dets (Reg b2)
+                                                        newInstr 
+                                                         = InstrNode (IBranch reg b2 b2) addr newIns outs
+                                                        newBlks
+                                                         = pre
+                                                            ++ [Block b (iPre ++ [newInstr] ++ iPost) bDets]
+                                                            ++ post
+                                                    in (addOutEdges newBlks newIns addr,
+                                                        updateInstrDets newInstr dets, is)
+                                                VNum _ 
+                                                 -> let newIns = getRegDet dets (Reg b1)
+                                                        newInstr 
+                                                         = InstrNode (IBranch reg b1 b1) addr newIns outs
+                                                        newBlks
+                                                         = pre
+                                                            ++ [Block b (iPre ++ [newInstr] ++ iPost) bDets]
+                                                            ++ post
+                                                    in (addOutEdges newBlks newIns addr,
+                                                        updateInstrDets newInstr dets, is)
+
+                                                _      -> (blks, updateInstrDets instrN dets, is)
+                    _             -> (blks, updateInstrDets instrN dets, is)
+                    
+                
+       
+
 
 
