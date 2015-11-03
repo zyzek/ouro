@@ -229,9 +229,9 @@ setBlockInstrAddrs (Block i instrnodes)
 addOutEdge :: CFG -> InstrAddr -> InstrAddr -> CFG
 addOutEdge (CFG i args blks edges) adr@(InstrAddr adrb _) new
  = let (bpre, Block bId instrnodes, bpost)
-        = spanElem (\(Block b _) -> b == adrb) blks
+        = breakElem (\(Block b _) -> b == adrb) blks
        (ipre, InstrNode inst _ ins outs, ipost)
-        = spanElem (\(InstrNode _ n _ _) -> n == adr) instrnodes
+        = breakElem (\(InstrNode _ n _ _) -> n == adr) instrnodes
        newouts
         = if new `elem` outs then outs else new:outs
    in CFG i args (bpre

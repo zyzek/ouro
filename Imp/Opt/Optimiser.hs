@@ -2,7 +2,6 @@
 module Imp.Opt.Optimiser where
 import Imp.Opt.Exp
 import Data.List
--- import Debug.Trace
 
 -- | Graph building.
 
@@ -41,7 +40,7 @@ graphInEdges :: [CFGEdge] -> [Block] -> [(Int, InstrDets)] -> [Int] -> ([Block],
 graphInEdges edges blks blkInstrDets queue
  = case queue of
         []    -> (blks, blkInstrDets, queue)
-        b:bs  -> let (pre, thisBlock, post) = spanElem (\(Block bid _) -> bid /= b) blks
+        b:bs  -> let (pre, thisBlock, post) = breakElem (\(Block bid _) -> bid == b) blks
                      (instrDets, _) = getInstrDets b
                      (newBlock, newInstrDets) = blockInstrEdges thisBlock instrDets
                      queueItems = filter (isNewOrDiff newInstrDets) $ map (\(CFGEdge _ d) -> d) $ edgesFrom edges b
@@ -164,11 +163,8 @@ removeDeadCode (CFG cID args blks edges)
  = let used      = findAllUsed blks
        transused = backClosure blks used []
        compl     = instrComplement blks transused
-       removeAll bs addrs
-        = case addrs of
-               []   -> bs
-               a:as -> removeAll (removeInstr bs a) as
-   in CFG cID args (removeAll blks compl) edges
+       trimmed   = removeAllInstr blks compl
+   in CFG cID args trimmed edges
        
 
 instrComplement :: [Block] -> [InstrAddr] -> [InstrAddr]

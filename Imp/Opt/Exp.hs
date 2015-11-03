@@ -165,7 +165,6 @@ mergeInstrDets (InstrDets rd vd) (InstrDets rd' vd')
 
 
 
-
 xDetsEqual :: Ord a => [(a, [InstrAddr])] -> [(a, [InstrAddr])] -> Bool
 xDetsEqual p q
  = let sa = sort p
@@ -193,9 +192,9 @@ lookupInstr blks tAddr@(InstrAddr bId _)
 removeAddrFromInstr :: [Block] -> InstrAddr -> InstrAddr -> [Block]
 removeAddrFromInstr blks tAddr@(InstrAddr bId _) remove
  = let (pre, Block rBId instrs, post) 
-        = spanElem (\(Block b _) -> bId == b) blks
+        = breakElem (\(Block b _) -> bId == b) blks
        (ipre, InstrNode inst riAddr ins outs , ipost) 
-        = spanElem (\(InstrNode _ addr _ _) -> addr == tAddr) instrs
+        = breakElem (\(InstrNode _ addr _ _) -> addr == tAddr) instrs
        newInstrs 
         = ipre 
            ++ [InstrNode inst riAddr (filter (/= remove) ins) (filter (/= remove) outs)]
@@ -211,23 +210,29 @@ removeInstr blks tAddr@(InstrAddr bId _)
          -> let danglers
                  = ins ++ outs
                 (pre, Block rBId instrs, post) 
-                 = spanElem (\(Block b _) -> bId == b) blks
+                 = breakElem (\(Block b _) -> bId == b) blks
                 newBlks
                  = pre ++ [Block rBId (filter (\(InstrNode _ addr _ _) -> addr /= tAddr) instrs)] ++ post
-                rmEdges bs targets remove
-                 = case targets of
-                        []   -> bs
-                        t:ts -> rmEdges (removeAddrFromInstr bs t remove) ts remove
             in rmEdges newBlks danglers tAddr
- 
-            
-            
+
+rmEdges :: [Block] -> [InstrAddr] -> InstrAddr -> [Block]
+rmEdges blks targets remove
+ = case targets of
+        []   -> blks
+        t:ts -> rmEdges (removeAddrFromInstr blks t remove) ts remove
+
+removeAllInstr :: [Block] -> [InstrAddr] -> [Block]
+removeAllInstr blks addrs
+ = case addrs of
+        []      -> blks
+        a:as    -> removeAllInstr (removeInstr blks a) as
+
 
 rmDups :: Ord a => [a] -> [a]
 rmDups l = map head $ group $ sort l
 
-spanElem :: (a -> Bool) -> [a] -> ([a], a, [a])
-spanElem preds sequ
- = let (pre, post) = span preds sequ
+breakElem :: (a -> Bool) -> [a] -> ([a], a, [a])
+breakElem preds sequ
+ = let (pre, post) = break preds sequ
    in (pre, head post, tail post)
  
