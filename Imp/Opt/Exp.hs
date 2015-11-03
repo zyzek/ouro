@@ -181,9 +181,16 @@ xDetsEqual p q
                                                                      && xDetsEqual as bs
                                           []             -> False
 
+detRegsByValue :: InstrDets -> Val -> [(Reg, ([InstrAddr], Val))]
+detRegsByValue (InstrDets regDets _) val
+ = filter (\(_, (_, v)) -> val == v) regDets
+
+
 instrDetsEqual :: InstrDets -> InstrDets -> Bool
 instrDetsEqual (InstrDets rd vd) (InstrDets rd' vd')
  = xDetsEqual rd rd' && xDetsEqual vd vd'
+
+
 
 
 lookupInstr :: [Block] -> InstrAddr -> Maybe InstrNode
@@ -249,6 +256,7 @@ removeAllInstr blks addrs
  = case addrs of
         []      -> blks
         a:as    -> removeAllInstr (removeInstr blks a) as
+
 
 
 rmDups :: Ord a => [a] -> [a]

@@ -140,6 +140,15 @@ main
           -> error $ "Cannot parse " ++ file
           
           -- Eliminate unreachable IR instructions/blocks.
+         ["-unreach", file]
+          | ".ir" `isSuffixOf` file         
+          -> do contents    <- readFile file
+                let cfgs     = fromJust $ O.cfgsOfString contents
+                let out = C.progString $ O.cfgsToProgram $ map (O.removeUnreachedInstrs . O.blockClosure) cfgs
+                showResult out (file ++ ".cb")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+
          ["-cb", file]
           | ".ir" `isSuffixOf` file         
           -> do contents    <- readFile file
