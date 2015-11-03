@@ -38,4 +38,9 @@ cfgsToProgram cfgs
         = C.Function name args $ map cToBlock blks
    in C.Program $ map cfgToFunc cfgs
 
-
+optUntilFixed :: CFG -> CFG
+optUntilFixed cfg
+ = let stepped = (removeRedundantInstrs . genGraphEdges . removeDeadCode . removeUnreachedInstrs . blockClosure) cfg
+   in if stepped == cfg then cfg else optUntilFixed stepped
+ 
+ 

@@ -195,6 +195,26 @@ main
                 showResult out (file ++ ".redund")
           | otherwise
           -> error $ "Cannot parse " ++ file
+        
+          -- Optimise until stable
+         ["-fix", file]
+          | ".ir" `isSuffixOf` file
+          -> do contents  <- readFile file
+                let cfgs   = fromJust $ O.cfgsOfString contents
+                let out    = C.progString $ O.cfgsToProgram $ map O.optUntilFixed cfgs
+                showResult out (file ++ ".fix")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+         
+         ["-cf", file]
+          | ".ir" `isSuffixOf` file
+          -> do contents  <- readFile file
+                let cfgs   = fromJust $ O.cfgsOfString contents
+                let out    = Text.ppShow $ map O.optUntilFixed cfgs
+                showResult out (file ++ ".cf")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+
 
 
 

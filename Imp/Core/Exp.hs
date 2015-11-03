@@ -30,7 +30,7 @@ data Instr
         | IReturn       Reg                     -- ^ ret
         | ICall         Reg Id [Reg]            -- ^ call
         | IPrint        [Reg]                   -- ^ print
-        deriving Show
+        deriving (Show, Eq)
 
 
 -- | Arithmetic operators.
@@ -59,7 +59,7 @@ data OpArith
         -- Unaries (both OpArith source Regs are taken to be the same register in the unary case)
         | OpNot
         | OpNeg
-        deriving Show
+        deriving (Show, Eq)
 
 
 -- | Identifiers.

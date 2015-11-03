@@ -7,7 +7,7 @@ import Imp.Core.Exp hiding (Block)
 
 data CFG
         = CFG Id [Id] [Block] [CFGEdge]
-        deriving Show
+        deriving (Show, Eq)
 
 data CFGEdge
         = CFGEdge Int Int
@@ -21,7 +21,7 @@ data InstrAddr
 -- | Core Blocks; block id, instruction list, 
 data Block
         = Block Int [InstrNode] InstrDets
-        deriving Show
+        deriving (Show, Eq)
         
 
 -- |Instruction, Instruction id (block, instr), [predecessors] [descendents]
@@ -29,7 +29,7 @@ data Block
 -- other instructions.
 data InstrNode
         = InstrNode Instr InstrAddr [InstrAddr] [InstrAddr]
-        deriving Show
+        deriving (Show, Eq)
 
 data InstrDets
         = InstrDets [(Reg, ([InstrAddr], Val))] [(Id, ([InstrAddr], Val))]
