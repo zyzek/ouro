@@ -1,0 +1,12 @@
+(
+  (main (x)
+    (0
+       (ld r1 x)
+       (st n r1)
+       (br r1 1 1) )
+    (1
+       (ld r2 n)
+       (ret r2) )
+  )
+)
+

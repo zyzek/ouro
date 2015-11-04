@@ -1,0 +1,14 @@
+(
+  (main ()
+    (0
+       (lc r0 0)
+       (br r0 1 1) )
+    (1
+       (lc r2 1)
+       (not r3 r2 r2)
+       (lc r4 0)
+       (and r5 r3 r4)
+       (not r6 r5 r5)
+       (ret r6) )
+  )
+)

@@ -23,7 +23,8 @@ funcCFG
         only KRoundKet
         blks       <- some block
         only KRoundKet
-        return     $  setInstrAddrs $ CFG i args blks $ cfgEdges $ map blockBranches blks
+        let brBlks = map blockBranches blks
+        return     $  branchUnterminated $ setCFGAddrs $ CFG i args brBlks $ genBlkEdges brBlks
 
 
 -- | Code block: a sequence of instructions with a particular id: a constituent of a function.
@@ -34,7 +35,7 @@ block
         instrs     <- some instr
         only KRoundKet
         let instrnodes = map (\i -> InstrNode i (InstrAddr (-1) (-1)) [] []) instrs
-        return         $  Block n instrnodes (InstrDets [] []) (InstrDets [] [])
+        return         $  Block n instrnodes (InstrDets [] []) (InstrDets [] []) []
 
 
 -- | A machine instruction.
@@ -179,8 +180,8 @@ register
 
 -- | Given a block, determine which blocks it might branch to.
 -- | Only check up to the first return or branch instruction.
-blockBranches :: Block -> (Int, [CFGEdge])
-blockBranches (Block o instrnodes _ _)
+blockBranches :: Block -> Block
+blockBranches blk@(Block _ instrnodes _ _ _)
  = let (rpre, rpost)
         = break isRet instrnodes
        brs
@@ -190,7 +191,7 @@ blockBranches (Block o instrnodes _ _)
        brsNoRet
         | null rpost && null brs = [-1]
         | otherwise              = brs
-   in (o, map (CFGEdge o) brsNoRet)
+   in setBlkBranches blk brsNoRet
  where isRet (InstrNode i _ _ _)
         = case i of
                IReturn _     -> True
@@ -200,30 +201,53 @@ blockBranches (Block o instrnodes _ _)
                IBranch{} -> True
                _             -> False 
 
-cfgEdges :: [(Int, [CFGEdge])] -> [CFGEdge]
-cfgEdges elists
- = case elists of
-        []                      -> []
-        (_, []):rest            -> cfgEdges rest
-        (_, [CFGEdge o (-1)]):rest -> case rest of
-                                        []        -> []
-                                        (d, es):r -> CFGEdge o d : cfgEdges ((d,es):r)
-        (_, es):rest            -> es ++ cfgEdges rest
-                                            
+branchUnterminated :: CFG -> CFG
+branchUnterminated (CFG name args blks edges)
+ = let (newBlks, correctedEdges)
+        = branchUnterminatedBlocks blks []
+       newEdges
+        = correctedEdges ++ filter (\(_, d) -> d /= -1) edges
+   in CFG name args newBlks newEdges
+
+branchUnterminatedBlocks :: [Block] -> [(Int, Int)] -> ([Block], [(Int, Int)])
+branchUnterminatedBlocks blks correctedEdges
+ = let (pre, post)
+        = break (\(Block _ _ _ _ br) -> br == [-1]) blks
+   in case post of 
+           [] -> (blks, correctedEdges)
+           [blk] ->  (pre ++ [setBlkBranches blk []], correctedEdges) 
+           thisBlk@(Block tbId instrs _ _ _):nBlk@(Block nbId _ _ _ _):rest
+            -> let lastAddr = case instrs of 
+                                   [] -> -1
+                                   _  -> extractNodeAddr (last instrs)
+                   jmpInstrs = [ InstrNode 
+                                  (IConst (Reg 666) 0) 
+                                  (InstrAddr tbId (lastAddr + 1)) 
+                                  [] [InstrAddr tbId (lastAddr + 2)]
+                               , InstrNode 
+                                  (IBranch (Reg 666) nbId nbId)
+                                  (InstrAddr tbId (lastAddr + 2))
+                                  [InstrAddr tbId (lastAddr + 1)] [] ]
+                   newBlk = setBlkInstrs thisBlk (instrs ++ jmpInstrs)
+                   newEdge = (tbId, nbId)
+                   (newRest, newCorrected)
+                    = branchUnterminatedBlocks (nBlk:rest) (newEdge:correctedEdges)
+               in ( pre 
+                     ++ [setBlkBranches newBlk [nbId]]
+                     ++ newRest
+                  , newCorrected)
+ where extractNodeAddr (InstrNode _ (InstrAddr _ q)  _ _) = q
+
+setCFGAddrs :: CFG -> CFG
+setCFGAddrs (CFG i args blks edges)
+ = CFG i args (map setBlockAddrs blks) edges
 
 
-setInstrAddrs :: CFG -> CFG
-setInstrAddrs (CFG i args blks edges)
- = CFG i args (map setBlockInstrAddrs blks) edges
-
-
-setBlockInstrAddrs :: Block -> Block
-setBlockInstrAddrs (Block i instrnodes preDets postDets)
+setBlockAddrs :: Block -> Block
+setBlockAddrs blk@(Block i instrnodes _ _ _)
  = let aPairs
         = zip [0..] instrnodes
-       setAddr addr (InstrNode inst _ ins outs)
-        = InstrNode inst addr ins outs
-   in Block i (map (\(n, instrN) -> setAddr (InstrAddr i n) instrN) aPairs) preDets postDets
+   in setBlkInstrs blk (map (\(n, instrN) -> setNodeAddr instrN (InstrAddr i n)) aPairs)
 
 
 
