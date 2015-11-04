@@ -297,7 +297,7 @@ redundantInstrs blks dets instrs forbidRewrite
                                                     (updateInstrDets newInstr dets) 
                                                     is
                                                     forbidRewrite
-                             VVar _
+                             _
                               -> let (newBlks, success)
                                       = tryRewriteRegs blks outs (addr:forbidRewrite) reg
                                      newForbids 
@@ -308,7 +308,6 @@ redundantInstrs blks dets instrs forbidRewrite
                                                     (updateInstrDets instrN dets)
                                                     is
                                                     newForbids
-                             _ -> dflt 
                     (IBranch reg b1 b2)
                      -> if b1 == b2
                         then case getRegVal dets reg of
@@ -378,6 +377,7 @@ redundantInstrs blks dets instrs forbidRewrite
                            else dflt
                     _
                      -> dflt
+
 
 
 tryRewriteRegs :: [Block] -> [InstrAddr] -> [InstrAddr] -> Reg -> ([Block], Bool)
@@ -526,3 +526,18 @@ removeChains edges
                              || any (\(_, s) -> s == p) es)
                       then (p, c) : removeChains es
                       else removeChains es
+--removeEmptyBlocks 
+emptyBlockIds :: [Block] -> [Int]
+emptyBlockIds blks = map (\(Block bId _ _ _ _) -> bId) $ filter isEmptyBlock blks
+
+isEmptyBlock :: Block -> Bool
+isEmptyBlock (Block _ instrs _ _ brs)
+ = length brs == 1 && emptyInstrs instrs
+ where emptyInstrs is
+        = case is of
+               [InstrNode (IBranch{}) _ _ _]    -> True
+               _      -> False
+
+
+-- Load Constant Reduction.
+
