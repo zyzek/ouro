@@ -4,7 +4,6 @@ import Imp.Parsec
 import Imp.Opt.Exp
 import Imp.Core.Exp hiding (Block)
 import Imp.Core.Tokens
-import Data.List
 
 progCFGs :: Parser Token [CFG]
 progCFGs 
@@ -24,7 +23,7 @@ funcCFG
         blks       <- some block
         only KRoundKet
         let brBlks = map blockBranches blks
-        return     $  branchUnterminated $ setCFGAddrs $ CFG i args brBlks $ genBlkEdges brBlks
+        return     $  branchUnterminated $ setCFGAddrs $ CFG i args brBlks $ regenBlkEdges brBlks
 
 
 -- | Code block: a sequence of instructions with a particular id: a constituent of a function.
@@ -176,31 +175,6 @@ register
 
 
 
--- | CFG and instruction graph functions.
-
--- | Given a block, determine which blocks it might branch to.
--- | Only check up to the first return or branch instruction.
-blockBranches :: Block -> Block
-blockBranches blk@(Block _ instrnodes _ _ _)
- = let (rpre, rpost)
-        = break isRet instrnodes
-       brs
-        = case find isBranch rpre of
-               Just (InstrNode (IBranch _ j k) _ _ _) -> nub [j, k]
-               _ -> []
-       brsNoRet
-        | null rpost && null brs = [-1]
-        | otherwise              = brs
-   in setBlkBranches blk brsNoRet
- where isRet (InstrNode i _ _ _)
-        = case i of
-               IReturn _     -> True
-               _             -> False
-       isBranch (InstrNode i _ _ _)
-        = case i of
-               IBranch{} -> True
-               _             -> False 
-
 branchUnterminated :: CFG -> CFG
 branchUnterminated (CFG name args blks edges)
  = let (newBlks, correctedEdges)
@@ -237,17 +211,6 @@ branchUnterminatedBlocks blks correctedEdges
                      ++ newRest
                   , newCorrected)
  where extractNodeAddr (InstrNode _ (InstrAddr _ q)  _ _) = q
-
-setCFGAddrs :: CFG -> CFG
-setCFGAddrs (CFG i args blks edges)
- = CFG i args (map setBlockAddrs blks) edges
-
-
-setBlockAddrs :: Block -> Block
-setBlockAddrs blk@(Block i instrnodes _ _ _)
- = let aPairs
-        = zip [0..] instrnodes
-   in setBlkInstrs blk (map (\(n, instrN) -> setNodeAddr instrN (InstrAddr i n)) aPairs)
 
 
 

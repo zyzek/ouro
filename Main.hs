@@ -144,7 +144,7 @@ main
           | ".ir" `isSuffixOf` file         
           -> do contents    <- readFile file
                 let cfgs     = fromJust $ O.cfgsOfString contents
-                let out = C.progString $ O.cfgsToProgram $ map (O.removeUnreachedInstrs . O.blockClosure) cfgs
+                let out = C.progString $ O.cfgsToProgram $ map O.unreach cfgs
                 showResult out (file ++ ".cb")
           | otherwise
           -> error $ "Cannot parse " ++ file
@@ -153,7 +153,7 @@ main
           | ".ir" `isSuffixOf` file         
           -> do contents    <- readFile file
                 let cfgs     = fromJust $ O.cfgsOfString contents
-                let out = Text.ppShow $ map (O.removeUnreachedInstrs . O.blockClosure) cfgs
+                let out = Text.ppShow $ map O.unreach cfgs
                 showResult out (file ++ ".cb")
           | otherwise
           -> error $ "Cannot parse " ++ file
@@ -177,24 +177,44 @@ main
           | otherwise
           -> error $ "Cannot parse " ++ file
             
-          -- Remove redundant instructions.
+          -- Modify instructions in order to, for example, remove redundant ones.
          ["-cr", file]
           | ".ir" `isSuffixOf` file
           -> do contents   <- readFile file
                 let cfgs   =  fromJust $ O.cfgsOfString contents
-                let out    =  Text.ppShow $ map O.removeRedundantInstrs cfgs
+                let out    =  Text.ppShow $ map O.mutateRedundantInstrs cfgs
                 showResult out (file ++ ".cr")
           | otherwise
           -> error $ "Cannot parse " ++ file
         
-         ["-redund", file]
+         ["-mutate", file]
           | ".ir" `isSuffixOf` file
           -> do contents  <- readFile file
                 let cfgs   = fromJust $ O.cfgsOfString contents
-                let out    = C.progString $ O.cfgsToProgram $ map O.removeRedundantInstrs cfgs
+                let out    = C.progString $ O.cfgsToProgram $ map O.mutateRedundantInstrs cfgs
                 showResult out (file ++ ".redund")
           | otherwise
           -> error $ "Cannot parse " ++ file
+
+         -- Merge mergable blocks
+         ["-cm", file]
+          | ".ir" `isSuffixOf` file
+          -> do contents   <- readFile file
+                let cfgs   =  fromJust $ O.cfgsOfString contents
+                let out    =  Text.ppShow $ map O.coalesceCFG cfgs
+                showResult out (file ++ ".cm")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+        
+         ["-merge", file]
+          | ".ir" `isSuffixOf` file
+          -> do contents  <- readFile file
+                let cfgs   = fromJust $ O.cfgsOfString contents
+                let out    = C.progString $ O.cfgsToProgram $ map O.coalesceCFG cfgs
+                showResult out (file ++ ".merge")
+          | otherwise
+          -> error $ "Cannot parse " ++ file
+
         
           -- Optimise until stable
          ["-fix", file]

@@ -28,6 +28,9 @@ blockClosure cfg
  = let (_, reachable) = zeroClosure cfg
    in retainBlocks cfg reachable 
 
+unreach :: CFG -> CFG
+unreach = regenCFGEdges . genGraphEdges . removeUnreachedInstrs . blockClosure
+
 cfgsToProgram :: [CFG] -> C.Program
 cfgsToProgram cfgs
  = let nodeToInst (InstrNode i _ _ _)
@@ -40,7 +43,11 @@ cfgsToProgram cfgs
 
 optUntilFixed :: CFG -> CFG
 optUntilFixed cfg
- = let stepped = (removeRedundantInstrs . genGraphEdges . removeDeadCode . removeUnreachedInstrs . blockClosure) cfg
+ = let stepped = (
+                    coalesceCFG .
+                    mutateRedundantInstrs .
+                    removeDeadCode .
+                    unreach) cfg
    in if stepped == cfg then cfg else optUntilFixed stepped
  
  

@@ -114,6 +114,18 @@ setVarDets :: (Id, ([InstrAddr], Val)) -> InstrDets -> InstrDets
 setVarDets varDet@(vId, _) (InstrDets regDets varDets)
  = InstrDets regDets (varDet : filter(\(i, _) -> i /= vId) varDets)
 
+setAllRegDets :: [(Reg, ([InstrAddr], Val))] -> InstrDets -> InstrDets
+setAllRegDets rDets dets
+ = case rDets of
+        []   -> dets
+        r:rs -> setAllRegDets rs (setRegDets r dets)
+
+setAllVarDets :: [(Id, ([InstrAddr], Val))] -> InstrDets -> InstrDets
+setAllVarDets vDets dets
+ = case vDets of
+        []   -> dets
+        v:vs -> setAllVarDets vs (setVarDets v dets)
+
 addRegDets :: (Reg, ([InstrAddr], Val)) -> InstrDets -> InstrDets
 addRegDets regDet@(reg, (adrs, val)) (InstrDets regDets varDets)
  = case lookup reg regDets of
@@ -143,6 +155,14 @@ mergeXDets err a b
                              _ -> (err, ([], VBot))
   in map mergeDetList merged
 
+derefVar :: InstrDets -> Id -> InstrDets
+derefVar dets vId
+ = let regs = map (setDetVal VTop) (detRegsByValue dets (VVar vId))
+       vars = map (setDetVal VTop) (detVarsByValue dets (VVar vId))
+   in setAllRegDets regs (setAllVarDets vars dets)
+ where setDetVal v (a, (l, _)) = (a, (l, v))
+
+
 sortByKeys :: Ord a => [(a, b)] -> [(a, b)]
 sortByKeys al
  = let cmp (a1, _) (a2, _) = compare a1 a2
@@ -171,6 +191,10 @@ xDetsEqual p q
 detRegsByValue :: InstrDets -> Val -> [(Reg, ([InstrAddr], Val))]
 detRegsByValue (InstrDets regDets _) val
  = filter (\(_, (_, v)) -> val == v) regDets
+
+detVarsByValue :: InstrDets -> Val -> [(Id, ([InstrAddr], Val))]
+detVarsByValue (InstrDets _ varDets) val
+ = filter (\(_, (_, v)) -> val == v) varDets
 
 
 instrDetsEqual :: InstrDets -> InstrDets -> Bool
@@ -301,12 +325,58 @@ addOutEdges blks targets new
 
 regenCFGEdges :: CFG -> CFG
 regenCFGEdges (CFG name args blks _)
- = CFG name args blks $ genBlkEdges blks
+ = CFG name args blks $ regenBlkEdges blks
 
-genBlkEdges :: [Block] -> [(Int, Int)]
-genBlkEdges blks
- = let extractBlkEdges (Block bId _ _ _ branches)
+regenBlkEdges :: [Block] -> [(Int, Int)]
+regenBlkEdges blks
+ = let extractBlkEdges (Block bId _ _ _ branches) 
         = map (\i -> (bId, i)) branches
    in rmDups $ concatMap extractBlkEdges blks
+
+setCFGAddrs :: CFG -> CFG
+setCFGAddrs (CFG i args blks edges)
+ = CFG i args (map setBlockAddrs blks) edges
+
+
+setBlockAddrs :: Block -> Block
+setBlockAddrs blk@(Block i instrnodes _ _ _)
+ = let aPairs
+        = zip [0..] instrnodes
+   in setBlkInstrs blk (map (\(n, instrN) -> setNodeAddr instrN (InstrAddr i n)) aPairs)
+
+valIsNum :: Val -> Bool
+valIsNum v = case v of
+                  VNum _ -> True
+                  _      -> False
+
+getValNum :: Val -> Int
+getValNum val = case val of
+                     VNum v -> v
+                     _      -> 666
+
+-- | CFG and instruction graph functions.
+
+-- | Given a block, determine which blocks it might branch to.
+-- | Only check up to the first return or branch instruction.
+blockBranches :: Block -> Block
+blockBranches blk@(Block _ instrnodes _ _ _)
+ = let (rpre, rpost)
+        = break isRet instrnodes
+       brs
+        = case find isBranch rpre of
+               Just (InstrNode (IBranch _ j k) _ _ _) -> nub [j, k]
+               _ -> []
+       brsNoRet
+        | null rpost && null brs = [-1]
+        | otherwise              = brs
+   in setBlkBranches blk brsNoRet
+ where isRet (InstrNode i _ _ _)
+        = case i of
+               IReturn _     -> True
+               _             -> False
+       isBranch (InstrNode i _ _ _)
+        = case i of
+               IBranch{} -> True
+               _             -> False 
 
 

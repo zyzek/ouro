@@ -4,14 +4,29 @@ import Imp.Opt.Exp
 import Imp.Core.Exp hiding (Block)
 import Data.List
 import Data.List.Utils
+import Data.Maybe
 import qualified Imp.Core.Interpreter   as I
 
 -- | Graph building.
 
 genGraphEdges :: CFG -> CFG
-genGraphEdges (CFG name args blks edges)
- = let newBlks = graphInEdges edges blks [0]
-   in CFG name args (graphOutEdges newBlks) edges
+genGraphEdges (CFG name args blks _)
+ = let fresh    = wipeGraphEdges blks
+       newEdges = regenBlkEdges fresh
+       newBlks  = graphInEdges newEdges fresh [0]
+   in CFG name args (graphOutEdges newBlks) newEdges
+
+wipeGraphEdges :: [Block] -> [Block]
+wipeGraphEdges = map wipeBlockEdges
+
+wipeBlockEdges :: Block -> Block
+wipeBlockEdges (Block i instrs _ _ _)
+ = let newInstrs = map wipeInstrEdges instrs
+   in  blockBranches $ Block i newInstrs (InstrDets [] []) (InstrDets [] []) []
+
+wipeInstrEdges :: InstrNode -> InstrNode
+wipeInstrEdges (InstrNode inst addr _ _)
+ = InstrNode inst addr [] []
 
 
 graphOutEdges :: [Block] -> [Block]
@@ -72,9 +87,9 @@ graphInEdges edges blks queue
 
 blockInstrEdges :: Block -> Block
 blockInstrEdges (Block bid instrs preDets _ branches)
- = let (newInstrs, newInstrDets)
+ = let (newInstrs, newPostDets)
         = instrEdges instrs preDets
-   in Block bid newInstrs preDets newInstrDets branches
+   in Block bid newInstrs preDets newPostDets branches
 
 instrEdges :: [InstrNode] -> InstrDets -> ([InstrNode], InstrDets)
 instrEdges instrs instrDets
@@ -103,11 +118,23 @@ updateInstrDets (InstrNode inst addr _ _) instrDets
                                           VTop -> VVar vId
                                           v    -> v
                                newDets = case varVal of
-                                              VBot -> setVarDets (vId, ([], VTop)) instrDets
+                                              VBot -> setVarDets (vId, ([], VVar vId )) instrDets
                                               _    -> instrDets
                            in setRegDets (reg, ([addr], val)) newDets
-        IStore vId reg  -> let val = getRegVal instrDets reg
-                           in setVarDets (vId, ([addr], val)) instrDets
+        IStore avId reg  -> let val = getRegVal instrDets reg
+                                newDets = case val of
+                                               VVar bvId -> if avId == bvId 
+                                                              then instrDets
+                                                              else derefVar instrDets avId
+                                               VTop      -> let deref
+                                                                 = derefVar instrDets avId
+                                                                oldRegDets 
+                                                                 = getRegDet deref reg
+                                                            in setRegDets 
+                                                                (reg, (oldRegDets, VVar avId))
+                                                                deref
+                                               _         -> derefVar instrDets avId
+                           in setVarDets (avId, ([addr], val)) newDets
         IArith op rout rin1 rin2 -> let val1 = getRegVal instrDets rin1
                                         val2 = getRegVal instrDets rin2
                                         outval = if valIsNum val1 && valIsNum val2
@@ -117,14 +144,6 @@ updateInstrDets (InstrNode inst addr _ _) instrDets
                                     in setRegDets (rout, ([addr], outval)) instrDets
         ICall reg _ _ -> setRegDets (reg, ([addr], VTop)) instrDets
         _             -> instrDets
- where valIsNum v
-        = case v of
-               VNum _ -> True
-               _      -> False
-       getValNum val 
-        = case val of
-               VNum v -> v
-               _      -> 666
 
 
 instrEdge :: InstrNode -> InstrDets -> (InstrNode, InstrDets)
@@ -199,7 +218,7 @@ removeDeadCode (CFG cID args blks edges)
        transused = backClosure blks used []
        compl     = instrComplement blks transused
        trimmed   = removeAllInstr blks compl
-   in CFG cID args trimmed edges
+   in genGraphEdges $ CFG cID args trimmed edges
        
 
 instrComplement :: [Block] -> [InstrAddr] -> [InstrAddr]
@@ -236,92 +255,130 @@ findAllUsed blks
 
 -- | Redundant Instruction Elimination
 
-removeRedundantInstrs :: CFG -> CFG
-removeRedundantInstrs (CFG name args blks edges)
+mutateRedundantInstrs :: CFG -> CFG
+mutateRedundantInstrs (CFG name args blks edges)
  = let blockIds = map (\(Block i _ _ _ _) -> i) blks
-       newBlks = removeRedundantBlkInstrs blks [] blockIds
+       newBlks = mutateRedundantBlkInstrs blks [] blockIds
    in regenCFGEdges $ genGraphEdges $ CFG name args newBlks edges
 
 
-removeRedundantBlkInstrs :: [Block] -> [InstrAddr] -> [Int] -> [Block]
-removeRedundantBlkInstrs blks forbidRewrite bIds
+mutateRedundantBlkInstrs :: [Block] -> [InstrAddr] -> [Int] -> [Block]
+mutateRedundantBlkInstrs blks forbidRewrite bIds
  = case bIds of
         []   -> blks
         i:is -> let (_, Block _ instrs preDets _ _, _)
                      = breakElem (\(Block b _ _ _ _) -> b == i) blks
                     (newBlks, newForbids) = redundantInstrs blks preDets instrs forbidRewrite
-                in removeRedundantBlkInstrs newBlks newForbids is
+                in mutateRedundantBlkInstrs newBlks newForbids is
 
 redundantInstrs :: [Block] -> InstrDets -> [InstrNode] -> [InstrAddr] -> ([Block], [InstrAddr])
 redundantInstrs blks dets instrs forbidRewrite
  = case instrs of
         []
          -> (blks, forbidRewrite)
-        instrN@(InstrNode inst addr@(InstrAddr bId _) ins outs):is
+        instrN@(InstrNode inst addr@(InstrAddr bId iId) ins outs):is
          -> let (pre, blk@(Block _ bInstrs _ _ _), post)
                  = breakElem (\(Block i _ _ _ _) -> i == bId) (removeAddrsFromOuts blks ins addr)
                 (iPre, _, iPost)
                  = breakElem (\(InstrNode _ iAddr _ _) -> iAddr == addr) bInstrs
+                dflt
+                 = redundantInstrs blks (updateInstrDets instrN dets) is forbidRewrite
             in case inst of
-                    (ILoad reg vId) -> case getVarVal dets vId of
-                                            VNum n 
-                                             -> let newInstr 
-                                                     = InstrNode (IConst reg n) addr [] outs
-                                                    newBlks 
-                                                     = pre 
-                                                       ++ [setBlkInstrs blk (iPre ++ [newInstr] ++ iPost)]
-                                                       ++ post
-                                                in redundantInstrs newBlks 
-                                                                   (updateInstrDets newInstr dets) 
-                                                                   is
-                                                                   forbidRewrite
-                                            VVar _
-                                             -> let (newBlks, success)
-                                                     = tryRewriteRegs blks outs (addr:forbidRewrite) reg
-                                                    newForbids 
-                                                     = if success
-                                                        then outs ++ forbidRewrite
-                                                        else forbidRewrite
-                                                in redundantInstrs newBlks
-                                                                   (updateInstrDets instrN dets)
-                                                                   is
-                                                                   newForbids
-                                            _ -> redundantInstrs blks 
-                                                                 (updateInstrDets instrN dets) 
-                                                                 is
-                                                                 forbidRewrite
-                    (IBranch reg b1 b2) -> case getRegVal dets reg of
-                                                VNum 0 
-                                                 -> let newInstr 
-                                                         = InstrNode (IBranch reg b2 b2) addr ins outs
-                                                        newBlks
-                                                         = pre
-                                                            ++ [setBlkBranches (setBlkInstrs blk (iPre ++ [newInstr] ++ iPost)) [b2]]
-                                                            ++ post
-                                                    in redundantInstrs newBlks 
-                                                                       (updateInstrDets newInstr dets)
-                                                                       is
-                                                                       forbidRewrite
-                                                VNum _ 
-                                                 -> let newInstr 
-                                                         = InstrNode (IBranch reg b1 b1) addr ins outs
-                                                        newBlks
-                                                         = pre
-                                                            ++ [setBlkBranches (setBlkInstrs blk (iPre ++ [newInstr] ++ iPost)) [b1]]
-                                                            ++ post
-                                                    in redundantInstrs newBlks 
-                                                                       (updateInstrDets newInstr dets)
-                                                                       is
-                                                                       forbidRewrite
-                                                _      -> redundantInstrs blks
-                                                                          (updateInstrDets instrN dets)
-                                                                          is
-                                                                          forbidRewrite
-                    _             -> redundantInstrs blks 
-                                                     (updateInstrDets instrN dets)
-                                                     is
-                                                     forbidRewrite
-                    
+                    (ILoad reg vId)
+                     -> case getVarVal dets vId of
+                             VNum n 
+                              -> let newInstr 
+                                      = InstrNode (IConst reg n) addr [] outs
+                                     newBlks 
+                                      = pre 
+                                        ++ [setBlkInstrs blk (iPre ++ [newInstr] ++ iPost)]
+                                        ++ post
+                                 in redundantInstrs newBlks 
+                                                    (updateInstrDets newInstr dets) 
+                                                    is
+                                                    forbidRewrite
+                             VVar _
+                              -> let (newBlks, success)
+                                      = tryRewriteRegs blks outs (addr:forbidRewrite) reg
+                                     newForbids 
+                                      = if success
+                                         then outs ++ forbidRewrite
+                                         else forbidRewrite
+                                 in redundantInstrs newBlks
+                                                    (updateInstrDets instrN dets)
+                                                    is
+                                                    newForbids
+                             _ -> dflt 
+                    (IBranch reg b1 b2)
+                     -> if b1 == b2
+                        then case getRegVal dets reg of
+                                  VNum _ 
+                                   -> dflt
+                                  _
+                                   -> let newLC
+                                           = InstrNode 
+                                              (IConst (Reg 666) 0) 
+                                              addr 
+                                              [] [InstrAddr bId (iId + 1)]
+                                          newBr
+                                           = InstrNode
+                                             (IBranch (Reg 666) b1 b1)
+                                             (InstrAddr bId (iId + 1)) 
+                                             [addr] []
+                                          newBlks
+                                           = pre ++ [setBlkInstrs blk (iPre ++ [newLC, newBr])] ++ post
+                                      in redundantInstrs newBlks
+                                                         (updateInstrDets newLC dets)
+                                                         is
+                                                         forbidRewrite
+                        else case getRegVal dets reg of
+                                  VNum 0 
+                                   -> let newInstr 
+                                           = InstrNode (IBranch reg b2 b2) addr ins outs
+                                          newBlks
+                                           = pre
+                                              ++ [setBlkBranches (setBlkInstrs blk (iPre
+                                                                                     ++ [newInstr] 
+                                                                                     ++ iPost)) [b2]]
+                                              ++ post
+                                      in redundantInstrs newBlks 
+                                                         (updateInstrDets newInstr dets)
+                                                         is
+                                                         forbidRewrite
+                                  VNum _ 
+                                   -> let newInstr 
+                                           = InstrNode (IBranch reg b1 b1) addr ins outs
+                                          newBlks
+                                           = pre
+                                              ++ [setBlkBranches (setBlkInstrs blk (iPre
+                                                                                     ++ [newInstr] 
+                                                                                     ++ iPost)) [b1]]
+                                              ++ post
+                                      in redundantInstrs newBlks 
+                                                         (updateInstrDets newInstr dets)
+                                                         is
+                                                         forbidRewrite
+                                  _
+                                   -> dflt
+                    (IArith op rout rin1 rin2)
+                     -> let v1 = getRegVal dets rin1
+                            v2 = getRegVal dets rin2
+                        in if valIsNum v1 && valIsNum v2 
+                           then let res = I.arithCalc op (getValNum v1) (getValNum v2)
+                                    newInstr
+                                     = InstrNode (IConst rout res) addr [] outs
+                                    newBlks
+                                     = pre
+                                        ++ [setBlkInstrs blk (iPre ++ [newInstr] ++ iPost)]
+                                        ++ post
+                                in redundantInstrs newBlks
+                                                   (updateInstrDets newInstr dets)
+                                                   is
+                                                   forbidRewrite
+                           else dflt
+                    _
+                     -> dflt
+
 
 tryRewriteRegs :: [Block] -> [InstrAddr] -> [InstrAddr] -> Reg -> ([Block], Bool)
 tryRewriteRegs blks instrsToRewrite forbidRewrite targetReg
@@ -418,3 +475,54 @@ replaceInstrReg dets oldReg newReg instrN@(InstrNode inst addr _ outs)
        newRegDets rs
         = rmDups $ concatMap (getRegDet dets) rs
 
+
+-- Block Merging
+coalesceCFG :: CFG -> CFG
+coalesceCFG (CFG i args blks edges)
+ = let bridges = filter (isBridge edges) edges
+       noChains = removeChains bridges
+       newEdges = filter (`notElem` bridges) edges
+   in regenCFGEdges $ genGraphEdges $ setCFGAddrs $ CFG i args (mergeBlocks blks noChains) newEdges
+
+mergeBlocks :: [Block] -> [(Int, Int)]-> [Block]
+mergeBlocks blks bridges
+ = case bridges of     
+        []   -> blks
+        b:bs -> mergeBlocks (joinBridge blks b) bs
+
+joinBridge :: [Block] -> (Int, Int) -> [Block]
+joinBridge blks (p, c)
+ = let (pre, Block pId pInstrs pPreDets _ _, post)
+        = breakElem (\(Block i _ _ _ _) -> i == p) blks
+       (Block cId cInstrs _ cPostDets cBranches)
+        = fromJust $ find (\(Block i _ _ _ _) -> i == c) blks
+       newInstrsPre
+        = takeWhile (\(InstrNode i _ _ _) -> isNotBranch i) pInstrs
+       newBlock 
+        = Block pId (newInstrsPre ++ cInstrs) pPreDets cPostDets cBranches
+       newBlks
+        = pre ++ [newBlock] ++ post
+  in filter (\(Block i _ _ _ _) -> i /= cId) newBlks
+ where isNotBranch i
+        = case i of
+               IBranch{} -> False
+               _         -> True
+
+isBridge :: [(Int, Int)] -> (Int, Int) -> Bool
+isBridge edges (h, t)
+ = snd (findDegree h edges) == 1 && fst (findDegree t edges) == 1
+
+findDegree :: Int -> [(Int, Int)] -> (Int, Int)
+findDegree bId edges
+ = let ins   = length (filter (\(_, q) -> (q == bId)) edges)
+       outs  = length (filter (\(p, _) -> (p == bId)) edges)
+   in (ins, outs)
+
+removeChains :: [(Int, Int)] -> [(Int, Int)]
+removeChains edges
+ = case edges of
+        []   -> []
+        (p, c):es -> if not (any (\(t, _) -> t == c) es
+                             || any (\(_, s) -> s == p) es)
+                      then (p, c) : removeChains es
+                      else removeChains es

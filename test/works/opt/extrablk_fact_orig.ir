@@ -57,7 +57,7 @@
     )
     (10
        (mul r26 r6 r1)
-       (add r27 r25 r26)
+       (add r27 r26 r26)
        (add r27 r24 r27)
        (ret r27)
     )
