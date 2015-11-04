@@ -3,7 +3,6 @@ module Imp.Opt.Exp where
 import Data.List
 import Data.Maybe
 import Imp.Core.Exp hiding (Block)
--- import Debug.Trace
 
 data CFG
         = CFG Id [Id] [Block] [CFGEdge]
@@ -20,7 +19,7 @@ data InstrAddr
 
 -- | Core Blocks; block id, instruction list, 
 data Block
-        = Block Int [InstrNode] InstrDets
+        = Block Int [InstrNode] InstrDets InstrDets
         deriving (Show, Eq)
         
 
@@ -79,6 +78,12 @@ vMeet a b
                      VTop -> a
                      _    -> if a == b then a else VTop
 
+edgeTail :: CFGEdge -> Int
+edgeTail (CFGEdge _ t) = t
+
+edgeHead :: CFGEdge -> Int
+edgeHead (CFGEdge h _) = h
+
 edgesFrom :: [CFGEdge] -> Int -> [CFGEdge]
 edgesFrom edges orig
  = filter (\(CFGEdge o _) -> o == orig) edges
@@ -135,6 +140,7 @@ addVarDets varDet@(vId, (adrs, val)) (InstrDets regDets varDets)
                                  in InstrDets regDets ((vId, (newAdrs, vJoin val pVal)) : filter (\(i, _) -> i /= vId) varDets)
         _             -> InstrDets regDets (varDet:varDets)
 
+{-
 mergeRegDets :: [(Reg, ([InstrAddr], Val))] -> [(Reg, ([InstrAddr], Val))] -> [(Reg, ([InstrAddr], Val))]
 mergeRegDets a b
  = case a of
@@ -146,24 +152,43 @@ mergeRegDets a b
                                              = rmDups (prevAdrs ++ adrs)
                                         in (reg, (newAdrs, vJoin val pVal)) : filter (\(r, _) -> r /= reg) regDets
                _             -> (reg, (adrs, VTop)):regDets
+-}
 
+mergeXDets :: Ord a => a -> [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))]
+mergeXDets err a b
+ = let merged = groupBy (\(a1, _) (a2, _) -> a1 == a2) $ sortByKeys  (a ++ b)
+       mergeDetList l = case l of
+                             (r, (a1, v1)):(_, (a2, v2)):_ 
+                               -> let newAdrs = rmDups (a1 ++ a2)
+                                      newVal = vJoin v1 v2
+                                  in (r, (newAdrs, newVal))
+                             (r, (addr, _)):_
+                               -> (r, (addr, VTop))
+                             _ -> (err, ([], VBot))
+  in map mergeDetList merged
 
+sortByKeys :: Ord a => [(a, b)] -> [(a, b)]
+sortByKeys al
+ = let cmp (a1, _) (a2, _) = compare a1 a2
+   in sortBy cmp al
+                                                                            
+{-
 mergeVarDets :: [(Id, ([InstrAddr], Val))] -> [(Id, ([InstrAddr], Val))] -> [(Id, ([InstrAddr], Val))]
 mergeVarDets a b
  = case a of
         []  -> b
         vd:vds -> mergeVarDets vds (addVarDs vd b)
- where addVarDs varDet@(vId, (adrs, val)) varDets
+ where addVarDs (vId, (adrs, val)) varDets
         = case lookup vId varDets of
                Just (prevAdrs, pVal) -> let newAdrs
                                              = rmDups (prevAdrs ++ adrs)
                                         in (vId, (newAdrs, vJoin val pVal)) : filter (\(i, _) -> i /= vId) varDets
-               _             -> varDet:varDets
-
+               _             -> (vId, (adrs, VTop)):varDets
+-}
 
 mergeInstrDets :: InstrDets -> InstrDets -> InstrDets
 mergeInstrDets (InstrDets rd vd) (InstrDets rd' vd')
- = InstrDets (mergeRegDets rd rd') (mergeVarDets vd vd')
+ = InstrDets (mergeXDets (Reg 666) rd rd') (mergeXDets (Id "__ERR__")  vd vd')
 
 
 xDetsEqual :: Ord a => [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))] -> Bool
@@ -195,33 +220,33 @@ instrDetsEqual (InstrDets rd vd) (InstrDets rd' vd')
 
 lookupInstr :: [Block] -> InstrAddr -> Maybe InstrNode
 lookupInstr blks tAddr@(InstrAddr bId _)
- = let (Block _ instrs _) 
-        = fromMaybe (Block (-1) [] (InstrDets [] [])) (find (\(Block b _ _) -> b == bId) blks)
+ = let (Block _ instrs _ _) 
+        = fromMaybe (Block (-1) [] (InstrDets [] []) (InstrDets [] [])) (find (\(Block b _ _ _) -> b == bId) blks)
    in find (\(InstrNode _ addr _ _) -> tAddr == addr) instrs
 
 removeAddrFromInstr :: [Block] -> InstrAddr -> InstrAddr -> [Block]
 removeAddrFromInstr blks tAddr@(InstrAddr bId _) remove
- = let (pre, Block rBId instrs dets, post) 
-        = breakElem (\(Block b _ _) -> bId == b) blks
+ = let (pre, Block rBId instrs preDets postDets, post) 
+        = breakElem (\(Block b _ _ _) -> bId == b) blks
        (ipre, InstrNode inst riAddr ins outs , ipost) 
         = breakElem (\(InstrNode _ addr _ _) -> addr == tAddr) instrs
        newInstrs 
         = ipre 
            ++ [InstrNode inst riAddr (filter (/= remove) ins) (filter (/= remove) outs)]
            ++ ipost
-   in pre ++ [Block rBId newInstrs dets] ++ post
+   in pre ++ [Block rBId newInstrs preDets postDets] ++ post
 
 removeAddrFromInstrOuts :: [Block] -> InstrAddr -> InstrAddr -> [Block]
 removeAddrFromInstrOuts blks tAddr@(InstrAddr bId _) remove
- = let (pre, Block rBId instrs dets, post) 
-        = breakElem (\(Block b _ _) -> bId == b) blks
+ = let (pre, Block rBId instrs preDets postDets, post) 
+        = breakElem (\(Block b _ _ _) -> bId == b) blks
        (ipre, InstrNode inst riAddr ins outs , ipost) 
         = breakElem (\(InstrNode _ addr _ _) -> addr == tAddr) instrs
        newInstrs 
         = ipre 
            ++ [InstrNode inst riAddr ins (filter (/= remove) outs)]
            ++ ipost
-   in pre ++ [Block rBId newInstrs dets] ++ post
+   in pre ++ [Block rBId newInstrs preDets postDets] ++ post
 
 removeAddrsFromOuts :: [Block] -> [InstrAddr] -> InstrAddr -> [Block]
 removeAddrsFromOuts blks targets remove
@@ -237,11 +262,11 @@ removeInstr blks tAddr@(InstrAddr bId _)
         Just (InstrNode _ _ ins outs) 
          -> let danglers
                  = ins ++ outs
-                (pre, Block rBId instrs dets, post) 
-                 = breakElem (\(Block b _ _) -> bId == b) blks
+                (pre, Block rBId instrs preDets postDets, post) 
+                 = breakElem (\(Block b _ _ _) -> bId == b) blks
                 newBlks
                  = pre 
-                    ++ [Block rBId (filter (\(InstrNode _ addr _ _) -> addr /= tAddr) instrs) dets]
+                    ++ [Block rBId (filter (\(InstrNode _ addr _ _) -> addr /= tAddr) instrs) preDets postDets]
                     ++ post
             in rmEdges newBlks danglers tAddr
 
@@ -270,8 +295,8 @@ breakElem preds sequ
 
 addOutEdge :: [Block] -> InstrAddr -> InstrAddr -> [Block]
 addOutEdge blks adr@(InstrAddr adrb _) new
- = let (bpre, Block bId instrnodes dets, bpost)
-        = breakElem (\(Block b _ _) -> b == adrb) blks
+ = let (bpre, Block bId instrnodes preDets postDets, bpost)
+        = breakElem (\(Block b _ _ _) -> b == adrb) blks
        (ipre, InstrNode inst _ ins outs, ipost)
         = breakElem (\(InstrNode _ n _ _) -> n == adr) instrnodes
        newouts
@@ -280,7 +305,7 @@ addOutEdge blks adr@(InstrAddr adrb _) new
        ++ [Block bId (ipre
                        ++ [InstrNode inst adr ins newouts]
                        ++ ipost
-                     ) dets ]
+                     ) preDets postDets]
        ++ bpost
 
 addOutEdges :: [Block] -> [InstrAddr] -> InstrAddr -> [Block]

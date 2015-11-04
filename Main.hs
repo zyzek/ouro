@@ -215,9 +215,6 @@ main
           | otherwise
           -> error $ "Cannot parse " ++ file
 
-
-
-
           -- Interpret a file.
          ("-interpret":file:progArgs)
           | ".imp" `isSuffixOf` file

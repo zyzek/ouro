@@ -34,7 +34,7 @@ block
         instrs     <- some instr
         only KRoundKet
         let instrnodes = map (\i -> InstrNode i (InstrAddr (-1) (-1)) [] []) instrs
-        return         $  Block n instrnodes (InstrDets [] [])
+        return         $  Block n instrnodes (InstrDets [] []) (InstrDets [] [])
 
 
 -- | A machine instruction.
@@ -180,7 +180,7 @@ register
 -- | Given a block, determine which blocks it might branch to.
 -- | Only check up to the first return or branch instruction.
 blockBranches :: Block -> (Int, [CFGEdge])
-blockBranches (Block o instrnodes _)
+blockBranches (Block o instrnodes _ _)
  = let (rpre, rpost)
         = break isRet instrnodes
        brs
@@ -218,12 +218,12 @@ setInstrAddrs (CFG i args blks edges)
 
 
 setBlockInstrAddrs :: Block -> Block
-setBlockInstrAddrs (Block i instrnodes dets)
+setBlockInstrAddrs (Block i instrnodes preDets postDets)
  = let aPairs
         = zip [0..] instrnodes
        setAddr addr (InstrNode inst _ ins outs)
         = InstrNode inst addr ins outs
-   in Block i (map (\(n, instrN) -> setAddr (InstrAddr i n) instrN) aPairs) dets
+   in Block i (map (\(n, instrN) -> setAddr (InstrAddr i n) instrN) aPairs) preDets postDets
 
 
 
