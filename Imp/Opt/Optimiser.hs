@@ -43,7 +43,7 @@ graphInEdges :: [CFGEdge] -> [Block] -> [Int] -> [Block]
 graphInEdges edges blks queue
  = case queue of
         []    -> blks
-        b:bs  -> let (pre, thisBlock@(Block _ _ preDets _), post)
+        b:bs  -> let (pre, Block blkId blkInstrs preDets postDets, post)
                       = breakElem (\(Block bid _ _ _) -> bid == b) blks
                      inNeighbours
                       = map edgeHead $ edgesTo edges b
@@ -52,7 +52,7 @@ graphInEdges edges blks queue
                              []  -> preDets
                              [n] -> snd (getInstrDets n)
                              l   -> let d:ds = map (snd . getInstrDets) l
-                                    in foldr mergeInstrDets d ds
+                                    in foldr mergeInstrDets d  ds
                      queueItems 
                       = if null inNeighbours || preDets /= newPreDets
                          then map edgeTail $ edgesFrom edges b
@@ -60,7 +60,7 @@ graphInEdges edges blks queue
                      newqueue 
                       = bs ++ queueItems
                      newBlock
-                      = blockInstrEdges thisBlock
+                      = blockInstrEdges (Block blkId blkInstrs newPreDets postDets)
                      newBlks 
                       = pre ++ [newBlock] ++ post
                  in graphInEdges edges newBlks newqueue
