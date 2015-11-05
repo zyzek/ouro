@@ -1,6 +1,7 @@
 
 module Imp.Opt.Optimiser where
-import Imp.Opt.Exp
+import Imp.Opt.CFG
+import Imp.Opt.CFGUtils
 import Imp.Core.Exp hiding (Block)
 import Data.List
 import Data.List.Utils
@@ -319,14 +320,38 @@ redundantInstrs blks dets instrs forbidRewrite
                                               (IConst (Reg 666) 0) 
                                               addr 
                                               [] [InstrAddr bId (iId + 1)]
+                                          (newBrReg, newBrIns)
+                                           = let (otherBlkRegs, thisBlkRegs)
+                                                  = partition 
+                                                     (\(_, (addrs, _)) 
+                                                      -> all (\(InstrAddr ibId _) 
+                                                              -> ibId /= bId) addrs)
+                                                     (constRegs dets)
+                                             in if not (null otherBlkRegs) 
+                                                 then let (r, (as, _)) = head otherBlkRegs
+                                                      in (r, as)
+                                                 else if not (null thisBlkRegs)
+                                                       then let (r, (as, _)) = head thisBlkRegs
+                                                            in (r, as)
+                                                       else (Reg 666, [addr])
+                                          newBrAddr 
+                                           = if newBrIns == [addr]
+                                              then InstrAddr bId (iId + 1)
+                                              else addr
                                           newBr
                                            = InstrNode
-                                             (IBranch (Reg 666) b1 b1)
-                                             (InstrAddr bId (iId + 1)) 
-                                             [addr] []
+                                             (IBranch newBrReg b1 b1)
+                                             newBrAddr
+                                             newBrIns []
+                                          newBrInstrs
+                                           = if newBrIns == [addr]
+                                              then [newLC, newBr]
+                                              else [newBr]
                                           newBlks
-                                           = pre ++ [setBlkInstrs blk (iPre ++ [newLC, newBr])] ++ post
-                                      in redundantInstrs newBlks
+                                           = pre ++ [setBlkInstrs blk (iPre ++ newBrInstrs)] ++ post
+                                          fBlks 
+                                           = addOutEdges newBlks newBrIns newBrAddr
+                                      in redundantInstrs fBlks
                                                          (updateInstrDets newLC dets)
                                                          is
                                                          forbidRewrite
@@ -479,16 +504,30 @@ replaceInstrReg dets oldReg newReg instrN@(InstrNode inst addr _ outs)
 -- Block Merging
 coalesceCFG :: CFG -> CFG
 coalesceCFG (CFG i args blks edges)
- = let bridges = filter (isBridge edges) edges
-       noChains = removeChains bridges
-       newEdges = filter (`notElem` bridges) edges
-   in regenCFGEdges $ genGraphEdges $ setCFGAddrs $ CFG i args (mergeBlocks blks noChains) newEdges
+ = let (newBlks, newEdges) = mergeBlocks blks edges
+   in regenCFGEdges $ genGraphEdges $ setCFGAddrs $ CFG i args newBlks newEdges
 
-mergeBlocks :: [Block] -> [(Int, Int)]-> [Block]
-mergeBlocks blks bridges
+mergeBlocks :: [Block] -> [(Int, Int)] -> ([Block], [(Int, Int)])
+mergeBlocks blks edges
+ = let (newBlks, newEdges)
+        = linearMerge blks edges
+       (resBlks, resEdges) 
+        = emptyMerge newBlks newEdges
+   in (resBlks, resEdges)
+
+linearMerge :: [Block] -> [(Int, Int)] -> ([Block], [(Int, Int)])
+linearMerge blks edges
+ = let bridges      = removeChains $ filter (isBridge edges) edges
+       burntBridges = joinBridges blks bridges
+       burntEdges   = filter (`notElem` bridges) edges
+   in (burntBridges, burntEdges)
+
+
+joinBridges :: [Block] -> [(Int, Int)] -> [Block]
+joinBridges blks bridges
  = case bridges of     
         []   -> blks
-        b:bs -> mergeBlocks (joinBridge blks b) bs
+        b:bs -> joinBridges (joinBridge blks b) bs
 
 joinBridge :: [Block] -> (Int, Int) -> [Block]
 joinBridge blks (p, c)
@@ -526,7 +565,57 @@ removeChains edges
                              || any (\(_, s) -> s == p) es)
                       then (p, c) : removeChains es
                       else removeChains es
---removeEmptyBlocks 
+
+emptyMerge :: [Block] -> [(Int, Int)] -> ([Block], [(Int, Int)])
+emptyMerge blks edges = removeEmptyBlocks (blks, edges) $ emptyBlockIds blks
+
+removeEmptyBlocks :: ([Block], [(Int, Int)]) -> [Int] -> ([Block], [(Int, Int)])
+removeEmptyBlocks (blks, edges) empties
+ = case empties of 
+        []   -> (blks, edges)
+        e:_ -> removeEmptyBlock blks edges e
+
+removeEmptyBlock :: [Block] -> [(Int, Int)] -> Int -> ([Block], [(Int, Int)])
+removeEmptyBlock blks edges emptyBlkId
+ = let newDest 
+        = snd $ head $ filter (\(o, _) -> o == emptyBlkId) edges
+       toRedirect 
+        = map fst $ filter (\(_, d) -> d == emptyBlkId) edges
+       newEdges
+        = map (\o -> (o, newDest)) toRedirect ++ filter (\(o, d) -> newDest `notElem` [o,d]) edges
+       newBlks
+        = filter (\(Block bId _ _ _ _) -> bId /= emptyBlkId) $ redirectBlocks blks toRedirect (emptyBlkId, newDest)
+   in (newBlks, newEdges)
+        
+
+redirectBlocks :: [Block] -> [Int] -> (Int, Int) -> [Block]
+redirectBlocks blks toRedirect conv
+ = case toRedirect of
+        []   -> blks
+        r:rs -> redirectBlocks (redirectBlock blks r conv) rs conv
+
+redirectBlock :: [Block] -> Int -> (Int, Int) -> [Block]
+redirectBlock blks blkId (old, new)
+ = let (pre, Block bId instrs preDets postDets branches, post)
+        = breakElem (\(Block b _ _ _ _) -> b == blkId) blks
+       newBranches 
+        = map ifOldNew branches
+       (iPre, instrN@(InstrNode (IBranch reg b1 b2) _ _ _), _)
+        = breakElem (\(InstrNode i _ _ _) -> isBranch i) instrs
+       newBrN
+        = setNodeInstr instrN (IBranch reg (ifOldNew b1) (ifOldNew b2))
+       newBlk
+        = Block bId (iPre ++ [newBrN]) preDets postDets newBranches
+   in pre
+       ++ [newBlk]
+       ++ post
+ where ifOldNew b = if b == old then new else b
+       isBranch i
+        = case i of
+               IBranch{} -> True
+               _         -> False
+       
+       
 emptyBlockIds :: [Block] -> [Int]
 emptyBlockIds blks = map (\(Block bId _ _ _ _) -> bId) $ filter isEmptyBlock blks
 
@@ -535,9 +624,10 @@ isEmptyBlock (Block _ instrs _ _ brs)
  = length brs == 1 && emptyInstrs instrs
  where emptyInstrs is
         = case is of
-               [InstrNode (IBranch{}) _ _ _]    -> True
-               _      -> False
+               [ InstrNode (IBranch{}) _ _ _ ]        -> True
+               [  InstrNode (IConst{}) cAddr _ cOut
+                , InstrNode (IBranch{}) bAddr bIn _ ]  -> cOut == [bAddr] && bIn == [cAddr]
+               _                                      -> False
 
 
--- Load Constant Reduction.
 

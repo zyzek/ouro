@@ -1,5 +1,6 @@
 module Imp.Opt where
-import Imp.Opt.Exp
+import Imp.Opt.CFG
+import Imp.Opt.CFGUtils
 import Imp.Opt.Parser
 import Imp.Opt.Optimiser
 import Imp.Core.Tokens
