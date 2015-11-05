@@ -1,6 +1,5 @@
 module Imp.Opt where
 import Imp.Opt.CFG
-import Imp.Opt.CFGUtils
 import Imp.Opt.Parser
 import Imp.Opt.Optimiser
 import Imp.Core.Tokens
@@ -14,24 +13,15 @@ lexParseCFG p str
         Nothing     -> Nothing
         Just tokens'
          -> case parse p tokens' of
-                [(cfgs, [])]       -> Just $ map genGraphEdges cfgs
+                [(cfgs, [])]       -> Just $ map genGraph cfgs
                 _               -> Nothing
 
 cfgsOfString :: String -> Maybe [CFG]
 cfgsOfString = lexParseCFG progCFGs
 
-closureIds :: [CFG] -> [(C.Id, [Int])]
-closureIds
- = map zeroClosure
 
-blockClosure :: CFG -> CFG
-blockClosure cfg
- = let (_, reachable) = zeroClosure cfg
-   in retainBlocks cfg reachable 
 
-unreach :: CFG -> CFG
-unreach = regenCFGEdges . genGraphEdges . removeUnreachedInstrs . blockClosure
-
+-- Convert from a CFG back to a Program
 cfgsToProgram :: [CFG] -> C.Program
 cfgsToProgram cfgs
  = let nodeToInst (InstrNode i _ _ _)
@@ -42,11 +32,13 @@ cfgsToProgram cfgs
         = C.Function name args $ map cToBlock blks
    in C.Program $ map cfgToFunc cfgs
 
+
+-- Apply all available optimisations in sequence until we reach a fixed point.
 optUntilFixed :: CFG -> CFG
 optUntilFixed cfg
  = let stepped = (
                     coalesceCFG .
-                    mutateRedundantInstrs .
+                    mutateGraph .
                     removeDeadCode .
                     unreach) cfg
    in if stepped == cfg then cfg else optUntilFixed stepped

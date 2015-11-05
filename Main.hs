@@ -182,7 +182,7 @@ main
           | ".ir" `isSuffixOf` file
           -> do contents   <- readFile file
                 let cfgs   =  fromJust $ O.cfgsOfString contents
-                let out    =  Text.ppShow $ map O.mutateRedundantInstrs cfgs
+                let out    =  Text.ppShow $ map O.mutateGraph cfgs
                 showResult out (file ++ ".cr")
           | otherwise
           -> error $ "Cannot parse " ++ file
@@ -191,7 +191,7 @@ main
           | ".ir" `isSuffixOf` file
           -> do contents  <- readFile file
                 let cfgs   = fromJust $ O.cfgsOfString contents
-                let out    = C.progString $ O.cfgsToProgram $ map O.mutateRedundantInstrs cfgs
+                let out    = C.progString $ O.cfgsToProgram $ map O.mutateGraph cfgs
                 showResult out (file ++ ".redund")
           | otherwise
           -> error $ "Cannot parse " ++ file

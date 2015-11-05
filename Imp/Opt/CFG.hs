@@ -41,16 +41,14 @@ data InstrAddr
 
 -- | This structure represents the program state at a given point in time.
 -- | It contains two associative lists, one for registers, and one for variables.
--- | Each is a mapping from a receptacle to a list of addresses of of the instructions which 
--- | possibly determine its value, and its current value.
--- | I can't remember why I originally called this structure "Dets", but maybe it has to do
--- | with the word "Determinants"
+-- | Each is a mapping from a given receptacle to its current value, and list of addresses 
+-- | of the instructions which possibly determine it.
 data InstrDets
         = InstrDets [(Reg, ([InstrAddr], Val))] [(Id, ([InstrAddr], Val))]
         deriving (Show, Eq, Ord)
 
 
--- | A Value.
+-- | Values form a lattice.
 -- | VTop: Intederminate, multiple possible values.
 -- | VVar: The (indeterminate) value of some variable.
 -- | VNum: A Numeric constant.
@@ -81,8 +79,6 @@ instance Ord Val where
     VVar a <= VVar b = a <= b
     VVar _ <= VNum _ = False
 
-
--- | Meet and join are defined over the Val lattice.
 
 vJoin :: Val -> Val -> Val
 vJoin a b 

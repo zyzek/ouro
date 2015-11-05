@@ -70,18 +70,26 @@ setAllVarDets vDets dets
 addRegDets :: (Reg, ([InstrAddr], Val)) -> InstrDets -> InstrDets
 addRegDets regDet@(reg, (adrs, val)) (InstrDets regDets varDets)
  = case lookup reg regDets of
-        Just (prevAdrs, pVal) -> let newAdrs
-                                      = rmDups (prevAdrs ++ adrs)
-                                 in InstrDets ((reg, (newAdrs, vJoin val pVal)) : filter (\(r, _) -> r /= reg) regDets) varDets
-        _             -> InstrDets (regDet:regDets) varDets
+        Just (prevAdrs, pVal)
+         -> let newAdrs
+                 = rmDups (prevAdrs ++ adrs)
+                newRegDets
+                 = (reg, (newAdrs, vJoin val pVal)) : filter (\(r, _) -> r /= reg) regDets
+            in InstrDets newRegDets  varDets
+        _
+         -> InstrDets (regDet:regDets) varDets
 
 addVarDets :: (Id, ([InstrAddr], Val)) -> InstrDets -> InstrDets
 addVarDets varDet@(vId, (adrs, val)) (InstrDets regDets varDets)
  = case lookup vId varDets of
-        Just (prevAdrs, pVal) -> let newAdrs
-                                      = rmDups (prevAdrs ++ adrs)
-                                 in InstrDets regDets ((vId, (newAdrs, vJoin val pVal)) : filter (\(i, _) -> i /= vId) varDets)
-        _             -> InstrDets regDets (varDet:varDets)
+        Just (prevAdrs, pVal)
+         -> let newAdrs
+                 = rmDups (prevAdrs ++ adrs)
+                newVarDets
+                 = (vId, (newAdrs, vJoin val pVal)) : filter (\(i, _) -> i /= vId) varDets
+            in InstrDets regDets newVarDets
+        _
+         -> InstrDets regDets (varDet:varDets)
 
 
 -- | Merge two Dets structures, as if each element of one was added to the other.
@@ -89,7 +97,8 @@ mergeInstrDets :: InstrDets -> InstrDets -> InstrDets
 mergeInstrDets (InstrDets rd vd) (InstrDets rd' vd')
  = InstrDets (mergeXDets (Reg 666) rd rd') (mergeXDets (Id "__ERR__")  vd vd')
 
-mergeXDets :: Ord a => a -> [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))]
+mergeXDets :: Ord a => a 
+           -> [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))]
 mergeXDets err a b
  = let merged = groupBy (\(a1, _) (a2, _) -> a1 == a2) $ sortByKeys  (a ++ b)
        mergeDetList l = case l of
@@ -173,6 +182,10 @@ lookupInstr blks tAddr@(InstrAddr bId _)
    in find (\(InstrNode _ addr _ _) -> tAddr == addr) instrs
 
 
+setNodeIns :: InstrNode -> [InstrAddr] -> InstrNode
+setNodeIns (InstrNode inst addr _ outs) newIns
+ = InstrNode inst addr newIns outs
+
 setNodeOuts :: InstrNode -> [InstrAddr] -> InstrNode
 setNodeOuts (InstrNode inst addr ins _)
  = InstrNode inst addr ins
@@ -242,8 +255,8 @@ removeInstr blks tAddr@(InstrAddr bId _)
                  = breakElem (\(Block b _ _ _ _) -> bId == b) blks
                 newBlks
                  = pre 
-                    ++ [setBlkInstrs blk (filter (\(InstrNode _ addr _ _) -> addr /= tAddr) instrs)]
-                    ++ post
+                   ++ [setBlkInstrs blk (filter (\(InstrNode _ addr _ _) -> addr /= tAddr) instrs)]
+                   ++ post
             in rmEdges newBlks danglers tAddr
 
 -- | Remove a list of instructions from the graph.
