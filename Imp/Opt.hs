@@ -1,3 +1,4 @@
+
 module Imp.Opt where
 import Imp.Opt.CFG
 import Imp.Opt.Parser
@@ -41,5 +42,4 @@ optUntilFixed cfg
                     removeDeadCode .
                     blockClosure) cfg
    in if stepped == cfg then cfg else optUntilFixed stepped
- 
  

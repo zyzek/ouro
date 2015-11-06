@@ -281,6 +281,16 @@ help
         , "This program will accept .imp (source) and .ir (intermediate language) files."
         , "-lex, -parse, and -interpret should work on both .imp and .ir extensions, while"
         , "  -check and -convert are restricted to .imp source code."
+        , ""
+        , "imp also includes an optimiser, which can take .ir files,"
+        , "and outputs optimised code."
+        , ""
+        , "  imp -unreach   <file>      Remove unreachable blocks."
+        , "  imp -dead      <file>      Dead code elimination."
+        , "  imp -mutate    <file>      Redundant instruction modification."
+        , "  imp -merge     <file>      Block merging."
+        , "  imp -fix       <file>      Apply all optimisations."
+        , ""
         ]
 
 

@@ -434,4 +434,3 @@ filterOrigs :: [(Int, [Int])] -> [Int] -> [(Int, [Int])]
 filterOrigs origs toKeep
  = map (\(i, os) -> (i, filter (`elem` toKeep) os)) $ filter (\(i, _) -> i `elem` toKeep) origs
 
-

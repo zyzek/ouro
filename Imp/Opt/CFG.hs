@@ -110,4 +110,3 @@ getValNum val = case val of
                      VNum v -> v
                      _      -> 666
 
-

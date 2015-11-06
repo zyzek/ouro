@@ -25,28 +25,102 @@ Completed Tasks:
    Branch Optimisations 
    Block Merging/Deletion
 
-  See the annotated source files in ./Imp/Opt for discussion.
+  See the annotated source files in ./Imp/Opt for descriptions of the solutions to these problems.
+  Read ./test/works/opt/discussion.txt for an exploration of the capabilities of the optimiser,
+  along with descriptions of example files and output upon optimising them. The ./test/works/opt/
+  directory contains the test files used.
 
 Stumbling Blocks:
   
   The actual implementation went well enough, if hastily. There's a bunch of stuff that I'd
   like to refactor, though. The sensation that I should be using monadic computations more
-  lingers with me.
+  lingers with me, and there is plenty of duplicated structure that should be abstracted.
   As ever, there is always more scope; not everything that was thought of was actually implemented.
 
   Lateness due to self-misinformation, crap organisation, zero teamwork.
 
-Optimisations:
-  -cfg
-    Generate the CFG of some IR code.
-  -cid
-    Produce the ids of the blocks in each CFGs zero closure.
-  -cb
-    Eliminate unreachable IR blocks.
-  -cbi
-    Eliminate unreachable IR instructions.
-  -dead
-    Remove dead code.
+Invocation:
+  In the following, the first flag produces ir code, the second one will display the internal
+  CFG structure of the program.
+  
+  Unreachable Code Optimisation:
+    -unreach
+    -cb
+  Dead Code Elimination
+    -dead
+    -cd
+  Redundant Load Elimination (and others)
+    -mutate
+    -cr
+  Block Merging
+    -merge
+    -cm
+  Apply All Optimisations Until Fixed
+    -fix
+    -cf
+
+  Other
+   -cfg
+     Generate the CFG of some IR code.
+   -cir
+     Echo back the parsed intermediate code.
+   -cid
+     Produce the ids of the blocks in each CFG's zero closure.
+
+-------------------------------------------------------------------------------
+
+1. Install the Haskell Platform.
+   Current version is 7.10.2
+   https://www.haskell.org/platform/
+
+   If this works you should now have the 'ghc', 'ghci' and 'cabal' commands.
+
+   Cabal is the Haskell package manager and build tool.
+
+   You can check the current install ghc version:
+
+   $ ghc --version
+
+
+2. Update the cabal package directory.
+   This gets the list of available libraries from the online Hackage database.
+   https://hackage.haskell.org/
+
+   $ cabal update
+
+
+3. Install some extra libraries.
+   The template code uses these.
+   The following command downloads them from Hackage.
+
+   $ cabal install pretty-show
+   $ cabal install Diff
+
+
+4. Build the template code.
+
+   $ cabal configure
+   $ cabal build
+
+
+5. Run some tests.
+
+   The compiled executable is written to dist/build/imp/imp
+
+   $ dist/build/imp/imp -lex test/works/factorial.imp
+
+
+6. If you like, install your compiler.
+
+   $ cabal install
+
+   The executable will be installed in your system, 
+   though the exact place depends on your OS.
+
+   On OSX:   /Users/USER/Library/Haskell/bin
+   On Linux: ~/.cabal/bin
+
+   Add the correct directory to your $PATH.
 
 -------------------------------------------------------------------------------
 
@@ -136,56 +210,4 @@ Stumbling Blocks:
       possible in the AST.
 
 
--------------------------------------------------------------------------------
-1. Install the Haskell Platform.
-   Current version is 7.10.2
-   https://www.haskell.org/platform/
 
-   If this works you should now have the 'ghc', 'ghci' and 'cabal' commands.
-
-   Cabal is the Haskell package manager and build tool.
-
-   You can check the current install ghc version:
-
-   $ ghc --version
-
-
-2. Update the cabal package directory.
-   This gets the list of available libraries from the online Hackage database.
-   https://hackage.haskell.org/
-
-   $ cabal update
-
-
-3. Install some extra libraries.
-   The template code uses these.
-   The following command downloads them from Hackage.
-
-   $ cabal install pretty-show
-   $ cabal install Diff
-
-
-4. Build the template code.
-
-   $ cabal configure
-   $ cabal build
-
-
-5. Run some tests.
-
-   The compiled executable is written to dist/build/imp/imp
-
-   $ dist/build/imp/imp -lex test/works/factorial.imp
-
-
-6. If you like, install your compiler.
-
-   $ cabal install
-
-   The executable will be installed in your system, 
-   though the exact place depends on your OS.
-
-   On OSX:   /Users/USER/Library/Haskell/bin
-   On Linux: ~/.cabal/bin
-
-   Add the correct directory to your $PATH.

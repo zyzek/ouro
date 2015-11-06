@@ -1,4 +1,5 @@
 
+-- | Optimisation Functions.
 module Imp.Opt.Optimiser where
 import Imp.Opt.CFG
 import Imp.Opt.CFGUtils
