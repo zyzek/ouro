@@ -427,6 +427,11 @@ isBranch (InstrNode i _ _ _)
         IBranch{} -> True
         _             -> False 
 
+blockIds :: [Block] -> [Int]
+blockIds = map (\(Block i _ _ _ _) -> i)
 
+filterOrigs :: [(Int, [Int])] -> [Int] -> [(Int, [Int])]
+filterOrigs origs toKeep
+ = map (\(i, os) -> (i, filter (`elem` toKeep) os)) $ filter (\(i, _) -> i `elem` toKeep) origs
 
 

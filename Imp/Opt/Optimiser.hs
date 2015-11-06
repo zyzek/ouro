@@ -128,7 +128,7 @@ setBlockPostScopes blks
 -- | blocks that originate it.
 setOrigScopes :: [Block] -> [(Int, Int)] -> [Block]
 setOrigScopes blks edges
- = let propped = propOrigScopes blks $ findOriginators edges
+ = let propped = propOrigScopes blks $ filterOrigs (findOriginators edges) (blockIds blks)
    in unionPostDets propped
  where unionDets (Block _ _ preDets postDets _)
         = unionScopes preDets postDets
@@ -407,7 +407,6 @@ graphOuts blks
 
 
 
-
 -- | Optimisation Passes  ========================================
 
 -- | Unreachable Block/Instruction Removal  ========================================
@@ -520,7 +519,11 @@ removeUnreachedInstrs (CFG cId args blks edges)
  = let instrReached instrN@(InstrNode _ _ ins outs)
         = not (null ins && null outs) || isUseInstr instrN
        removeInBlk blk@(Block _ instrs _ _ _)
-        = setBlkInstrs blk (filter instrReached instrs)
+        = let (pre, post) = break isBranchOrRet instrs
+              truncated = case post of
+                               []   -> pre
+                               br:_ -> pre ++ [br]
+          in setBlkInstrs blk (filter instrReached truncated)
   in CFG cId args (map removeInBlk blks) edges
 
 isUseInstr :: InstrNode -> Bool
@@ -590,8 +593,7 @@ isUseInstr (InstrNode i _ _ _)
 -- | Apply all of the above-listed optimisations
 mutateGraph :: CFG -> CFG
 mutateGraph (CFG name args blks edges)
- = let blockIds = map (\(Block i _ _ _ _) -> i) blks
-       newBlks = mutateBlks blks [] blockIds
+ = let newBlks = mutateBlks blks [] $ blockIds blks
    in regenCFGEdges $ genGraph $ CFG name args newBlks edges
 
 

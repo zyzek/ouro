@@ -789,3 +789,4 @@ I decided that this would not be in the spirit of the assignment, however: it is
 a possibility because we have infinite registers available. One could imagine substituting
 registers for every variable, and then adding some back in if the number of active registers
 gets too high, but this is somewhat out of scope.
+
