@@ -1,0 +1,744 @@
+
+All examples discussed in this file can be found in the test/works/opt/ directory.
+
+
+First, let us see how the fixed-point solver does with the example program, fact_spec.ir:
+
+(
+  (factorial (n)
+    (0
+       (ld r1 n)
+       (lc r2 0)
+       (eq r3 r1 r2)
+       (br r3 1 2) )
+    (1
+       (lc r6 1)
+       (ret r6) )
+    (2
+       (lc r8 1)
+       (sub r9 r1 r8)
+       (call r11 factorial r9)
+       (mul r13 r11 r1)
+       (ret r13) )
+  )
+  (main (n)
+    (0
+       (ld r1 n)
+       (call r2 factorial r1)
+       (ret r2) )
+  )
+)
+
+It is not a bad result, having been reduced from 26 to 14 instructions. Significantly, the number
+of load and store operations has been decreased to the minimum, one load is performed to obtain
+each function argument. There is a slight inefficiency insofar as an (lc r* 1) is duplicated
+in the two branches 1 and 2. One could be moved to block 0, and the other made redundant. 
+However, this is no gain in speed, only in program size. Naive ways of moving lc instructions
+around can make the program slower, and increase the number of live registers. Much depends
+upon how many times a block will be run.
+
+The other examples, deadcode.ir and redundant.ir, produce the expected results when run through
+the relevant optimisation steps.
+
+Now, let's move on to specific examples.
+
+Unreachable Block Elimination
+=============================
+
+extrablks.ir contains the following:
+
+    (
+      (main (x)
+        (0
+          (lc r0 0)
+          (ret r0) )
+        (1
+          (ld r1 x)
+          (br r1 2 3) )
+        (2
+          (lc r2 1)
+          (mul r2 r1 r2)
+          (br r2 4 4) )
+        (3
+          (br r1 4 4) )
+        (4
+          (mul r1 r2 r1)
+          (ret r1) )
+      )
+    )
+
+which is collapsed down, upon running the unreachable code optimisation, to this: 
+
+    (
+      (main (x)
+        (0
+           (lc r0 0)
+           (ret r0) )
+      )
+    )
+
+
+As ever, branch instructions after return and other branch instructions are ignored.
+Thus, extrablks_after.ir,
+
+    (
+      (main (x)
+        (0
+          (lc r0 0)
+          (ret r0)
+          (br r0 1 1) )
+        (1
+          (ld r1 x)
+          (br r1 2 3) )
+      )
+    )
+
+still reduces to,
+
+    (
+      (main (x)
+        (0
+          (lc r0 0)
+          (ret r0)
+          (br r0 1 1) )
+      )
+    )
+
+Other examples are much the same. This optimisation is most useful to destroy blocks which have
+been rendered unreachable by the branch optimisations detailed below, in the Redundant Load 
+Elimination section.
+     
+
+Dead Code Elimination
+=====================
+
+Code that occurs after br or ret instructions is removed, thus:
+
+    (
+      (main ()
+        (0
+           (lc r0 0)
+           (br r0 1 1)
+           (lc r0 1) )
+        (1
+           (add r0 r0 r0)
+           (ret r0)
+           (st s r0) )
+      )
+    )
+
+becomes
+
+    (
+      (main ()
+        (0
+           (lc r0 0)
+           (br r0 1 1) )
+        (1
+           (add r0 r0 r0)
+           (ret r0) )
+      )
+    )
+
+
+Although they have no antecedents, branch and return instructions which use undefined registers
+are not removed:
+
+    (
+      (main ()
+        (0
+          (lc r0 0)
+          (br r1 1 1) )
+        (1
+          (add r0 r0 r0)
+          (ret r1) )
+      )
+    )
+
+is converted to 
+
+    (
+      (main ()
+        (0
+           (br r1 1 1) )
+        (1
+           (ret r1) )
+      )
+    )
+
+
+Note also that dead code elimination will remove instructions inside blocks that would be 
+removed by the unreachable code optimisation. For example, if the dead code is removed
+from extrablks.ir, mentioned in the above section, we obtain,
+
+    (
+      (main (x)
+        (0
+           (lc r0 0)
+           (ret r0) )
+        (1
+           (br r1 2 3) )
+        (2
+           (br r2 4 4) )
+        (3
+           (br r1 4 4) )
+        (4
+           (ret r1) )
+      )
+    )
+
+It probably makes sense, therefore, to eliminate unreachable before dead code.
+
+
+
+Redundant Load Elimination
+==========================
+
+The example redundant.ir demonstrates that the optimiser can perform redunant load elimination,
+but there are some other capabilities it has, too.
+For example, the file load_const.ir demonstrates the constant propagation optimisation.
+The source,
+
+    (
+      (main ()
+        (0
+           (lc r1 2)
+           (st n r1)
+           (br r1 1 1) )
+        (1
+           (ld r2 n)
+           (ret r2) )
+      )
+    )
+
+is optimised to become,
+
+    (
+      (main ()
+        (0
+           (lc r1 2)
+           (st n r1)
+           (br r1 1 1) )
+        (1
+           (lc r2 2)
+           (ret r2) )
+      )
+    )
+
+Notice that instruction (1, 0) has become a lc, where it was a ld before. This makes the
+preceding store dead code.
+
+load_var.ir is much the same, but the first instruction is a ld, rather than a lc
+
+    (
+      (main (x)
+        (0
+           (ld r1 x)
+           (st n r1)
+           (br r1 1 1) )
+        (1
+           (ld r2 n)
+           (ret r2) )
+      )
+    )
+
+becomes,
+
+    (
+      (main (x)
+        (0
+           (ld r1 x)
+           (st n r1)
+           (lc r666 0)
+           (br r666 1 1) )
+        (1
+           (ld r2 n)
+           (ret r1) )
+      )
+    )
+
+In this case, the final ret instruction is rewritten by the same redundant load elimination
+procedure, but there's also now a new lc, and the program branches on r666.
+
+The reason is that it was determined that the branch was an unconditional jump whose register
+held a non-constant value. If these conditions are detected, then some register with a constant
+value in it will be substituted, if one exists. If not, then a new one is created.
+In doing this, one less instruction depends upon an indeterminate value, which ultimately
+must be derived from a slow ld. In this case, introducing the new register has made n an
+unnecessary variable.
+
+
+Here is another example, const_branch.ir:
+
+    (
+      (n (x)
+        (0
+           (lc r1 1)
+           (br r1 1 2) )
+        (1
+           (lc r2 0)
+           (br r2 2 3) )
+        (2
+           (lc r3 1)
+           (ret r3) )
+        (3
+           (lc r4 1)
+           (ret r4) )
+      )
+    )
+
+However, as the branches only have constant values in them, they can be modified:
+
+    (
+      (n (x)
+        (0
+           (lc r1 1)
+           (br r1 1 1) )
+        (1
+           (lc r2 0)
+           (br r2 3 3) )
+        (2
+           (lc r3 1)
+           (ret r1) )
+        (3
+           (lc r4 1)
+           (ret r1) )
+      )
+    )
+
+Notice that the first branch, which evaluated to True, became an unconditional jump to its left
+branch, whereas the second jumps to its right.
+By performing this optimisation, Block 2 has become entirely redundant.
+
+There is an an optimisation for eliminating redundant lc instructions, analogous to the one
+for removing ld instructions.
+
+Given the following input from redund_const.ir:
+
+    (
+      (main (x)
+        (0
+           (lc r0 0)
+           (ld r1 x)
+           (br r1 1 2) )
+        (1
+           (lc r2 0)
+           (ret r0) )
+        (2
+           (lc r2 0)
+           (ret r0) )
+      )
+    )
+
+the result is obtained:
+
+    (
+      (main (x)
+        (0
+           (lc r0 0)
+           (ld r1 x)
+           (br r1 1 2) )
+        (1
+           (lc r2 0)
+           (ret r2) )
+        (2
+           (lc r2 0)
+           (ret r2) )
+      )
+    )
+
+Each of the (ret r0) instructions has been rewritten to use r2, so that now (lc r0 0) is dead code.
+In truth, it would be more efficient in this case to have run the dead code removal optimisation
+first, and done away with the twin (lc r2 0) instructions. But ithe example, though confected,
+at least demonstrates the optimisation.
+
+Finally, constant propagation of course works through arithmetic ops. These as well, if known to
+evaluate to some numeric constant, are replaced by lcs. Thus, const_prop.ir goes from this:
+
+    (
+      (main ()
+        (0
+           (lc r1 4)
+           (lc r2 3)
+           (add r3 r1 r2)
+           (div r4 r3 r2)
+           (mul r5 r3 r4)
+           (sub r5 r5 r4)
+           (ret r5) )
+      )
+    )
+
+to this:
+
+    (
+      (main ()
+        (0
+           (lc r1 4)
+           (lc r2 3)
+           (lc r3 7)
+           (lc r4 2)
+           (lc r5 14)
+           (lc r5 12)
+           (ret r5) )
+      )
+    )
+
+So that all but the final two instructions are redundant. extrablk_arithmetic.ir goes quite far
+with this.
+
+
+Block Merging
+=============
+
+The file chains.ir contains the following:
+
+    (
+        (chain ()
+            (0  (lc r0 0)
+                (br r0 1 1) )
+            (1  (lc r1 1)
+                (br r1 2 2) )
+            (2  (lc r2 2)
+                (br r2 3 3) ) 
+            (3  (lc r3 3)
+                (br r3 4 4) )
+            (4  (lc r4 4)
+                (br r4 5 5) )
+            (5  (lc r5 5)
+                (br r5 6 6) )
+            (6  (ret r0) )
+        )
+        (split ()
+            (0  (lc r0 0)
+                (br r0 1 1) )
+            (1  (lc r1 1)
+                (br r1 2 2) )
+            (2  (lc r2 2)
+                (br r2 3 7) ) 
+            (3  (lc r3 3)
+                (br r3 4 4) )
+            (4  (lc r4 4)
+                (br r4 5 5) )
+            (5  (lc r5 5)
+                (br r5 6 6) )
+            (6  (ret r0) )
+            (7  (ret r2) )
+        )
+    )
+
+which is reduced by the block merging optimisations to:
+
+    (
+      (chain ()
+        (0
+           (lc r0 0)
+           (ret r0) )
+      )
+      (split ()
+        (0
+           (lc r0 0)
+           (lc r2 2)
+           (br r2 6 7) )
+        (6
+           (ret r0) )
+        (7
+           (ret r2) )
+      )
+    )
+
+The the chain and split functions have been reduced to rumps, but in different ways.
+The difference lies in the behaviour of the block merging optimisations.
+This consists of two stages: empty block are deleted, then linear chains of blocks are telescoped.
+
+In the empty block deletion stage, any block consisting of just a load and a jump (or just 
+a jump), with each depending on each other and nothing else, then that block can be resected.
+
+In the linear telescoping stage, no instructions except the branch are deleted, and it is applied
+whenever there is an edge between two nodes which, if cut, would disconnect the graph. That is to
+say, if A branches only to B, and B is branched to only by A, then the two can be concatenated
+without issue.
+
+Both have occurred here. chain has been reduced by simply block deletion, but split had to be 
+treated a little differently. Block 0 is relies upon by Block 6, and the branch in Block 2 has
+two destinations, so these cannot be removed. 
+
+So after deletion, we are at the intermediate stage,
+
+  (split ()
+    (0  (lc r0 0)
+        (br r0 2 2) )
+    (2  (lc r2 2)
+        (br r2 6 7) ) 
+    (6  (ret r0) )
+    (7  (ret r2) )
+  )
+
+And now blocks 0 and 2 can be telescoped down, to obtain the final block 0 we see above.
+
+Note that the telescoping stage didn't leave the (lc r0 0) instruction in because it was used
+by (ret r0), but just because telescoping only removes jumps. The difference can be illustrated
+if we run the telescoping step first on chains.ir, yielding the following.
+
+    (
+      (chain ()
+        (0
+           (lc r0 0)
+           (lc r1 1)
+           (lc r2 2)
+           (lc r3 3)
+           (lc r4 4)
+           (lc r5 5)
+           (ret r0) )
+      )
+      (split ()
+        (0
+           (lc r0 0)
+           (lc r1 1)
+           (lc r2 2)
+           (br r2 3 7) )
+        (3
+           (lc r3 3)
+           (lc r4 4)
+           (lc r5 5)
+           (ret r0) )
+        (7
+           (ret r2) )
+      )
+    )
+
+None of the constant loads have been destroyed, despite most being dead code.
+
+As with the unreachable block optimisations, these ones come into its own only in combination
+with the dead code and branch optimisations.
+
+
+Fixed Point Demonstrations
+==========================
+
+If we examine the example from the specification, contained in deadcode.ir, we see that in fact
+none of the instructions but the last two have any effect whatsoever on the output.
+
+    (
+        (main (x)
+            (0  (ld r1 x)
+                (br r1 1 2) )
+            (1  (lc r2 1)
+                (add r1 r1 r2)
+                (br r1 3 3) )
+            (2  (ld r2 x)
+                (lc r3 2)
+                (add r1 r1 r3)
+                (br r1 3 3) )
+            (3  (ld r5 x)
+                (ret r5) )
+        )
+    )
+
+Seeing that this is the case, let's see how the fixed-point combinator does on this input.
+
+    (
+      (main (x)
+        (0
+           (ld r1 x)
+           (ret r1) )
+      )
+    )
+
+Not such a bad result. Similar results occur if the final result is a constant.
+For example:
+
+    (
+        (main (x)
+            (0  (ld r1 x)
+                (br r1 1 2) )
+            (1  (lc r2 1)
+                (add r2 r2 r2)
+                (br r1 3 3) )
+            (2  (lc r2 2)
+                (br r1 3 3) )
+            (3  (mul r2 r2 r2)
+                (ret r2) )
+        )
+    )
+
+becomes
+
+    (
+      (main (x)
+        (0
+           (lc r2 4)
+           (ret r2) )
+      )
+    )
+
+Note that it has been deduced that, despite r2 obtaining its value by different means in both
+block 1 and 2, which merge together at block 3, it is nonetheless carrying the numeric constant 2
+by the time it arrives at the final return statement, no matter which execution path was taken.
+
+As 4 is then always returned, the program boils down quite nicely.
+
+
+Some Edge Cases
+===============
+
+Although it is a broken program, whose functions which never, selfloop.ir shows how circular
+loops can be collapsed down.
+
+    (
+        (main ()
+            (0  (lc r1 0)
+                (br r1 0 0) )
+        )
+        (trans ()
+            (0  (lc r0 0)
+                (br r0 1 1) )
+            (1  (lc r1 1)
+                (br r1 0 0) )
+        )
+        (loop ()
+            (0  (lc r0 0)
+                (br r0 1 1) )
+            (1  (br r1 2 2) )
+            (2  (br r1 3 3) )
+            (3  (br r1 0 0) )
+        )
+        (exec ()
+            (0  (lc r0 0)
+                (lc r1 1)
+                (br r0 1 1) )
+            (1  (add r0 r0 r0)
+                (br r1 2 2) )
+            (2  (add r0 r0 r1)
+                (br r1 3 3) )
+            (3  (print r0)
+                (br r1 1 1) )
+        )
+    )
+
+This reduces to,
+
+    (
+      (main ()
+        (0
+           (lc r1 0)
+           (br r1 0 0) )
+      )
+      (trans ()
+        (0
+           (lc r0 0)
+           (br r0 0 0) )
+      )
+      (loop ()
+        (0
+           (lc r0 0)
+           (br r0 0 0) )
+      )
+      (exec ()
+        (0
+           (lc r0 0)
+           (lc r1 1)
+           (br r0 1 1) )
+        (1
+           (add r0 r0 r0)
+           (add r0 r0 r1)
+           (print r0)
+           (lc r666 0)
+           (br r666 1 1) )
+      )
+    )
+
+Each of the infinite loops has been reduced down to a single block (the print statement in the
+exec function is required so that the value in r0 is actually used, so not optimised out).
+
+The branch in exec block 1 has been rewritten due to a limitation in the optimiser: 
+it believes that the value in r1 is indeterminate.
+
+Although it is true that r1 always contains the value 1, when the flow graph is being constructed,
+and block 1 is being entered for the first time, the incoming edges are examined.
+Block 1 is branched to from both 0 and 1, so that its initial state is potentially determined
+by the final states of either of them.
+The first time the the program tries to work out the initial state of block 1, it does not yet know
+the final state of block 1. The value in r1 could potentially have changed by that point, and so
+it is concluded that r1's value at the start of block 1 is indeterminate.
+
+This is a severe hamper on the efficiency of my optimiser in cases where there are loops in the 
+code.
+
+Consider the following non-recursive factorial program, fact_loop.ir.
+
+    (
+      (factorial (n)
+        (0
+           (lc r0 0)
+           (st total r0)
+           (br r0 1 1) )
+        (1
+           (lc r1 1)
+           (st total r1)
+           (lc r2 0)
+           (br r2 2 2) )
+        (2
+           (ld r3 n)
+           (lc r4 1)
+           (gt r5 r3 r4)
+           (br r5 3 4) )
+        (3
+           (ld r7 total)
+           (ld r8 n)
+           (mul r9 r7 r8)
+           (st total r9)
+           (ld r10 n)
+           (lc r11 1)
+           (sub r12 r10 r11)
+           (st n r12)
+           (lc r13 0)
+           (br r13 2 2) )
+        (4
+           (ld r14 total)
+           (ld r15 n)
+           (lc r16 0)
+           (geq r17 r15 r16)
+           (mul r18 r14 r17)
+           (ret r18) )
+      )
+    )
+
+The program optimises this down to the marginally-better
+
+    (
+      (factorial (n)
+        (0
+           (lc r0 0)
+           (lc r1 1)
+           (st total r1)
+           (br r0 2 2) )
+        (2
+           (ld r3 n)
+           (lc r4 1)
+           (gt r5 r3 r4)
+           (br r5 3 4) )
+        (3
+           (ld r7 total)
+           (mul r9 r7 r3)
+           (st total r9)
+           (sub r12 r3 r4)
+           (st n r12)
+           (lc r13 0)
+           (br r13 2 2) )
+        (4
+           (ld r14 total)
+           (lc r16 0)
+           (geq r17 r3 r16)
+           (mul r18 r14 r17)
+           (ret r18) )
+      )
+    )
+
+Notice that there are several pointless lc instructions which load up 0 and 1, even though
+those values already exist in r0 and r1. Additionally, the total and n variables could be 
+optimised away. However, for the same reasons as above, the fact that such variable and constant
+values exists in registers is destroyed in the loop entry point.
+
+A solution to this problem is pretty easy: simply pre-initialise 
+
+     loop fact, self loop

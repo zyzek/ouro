@@ -20,7 +20,6 @@ cfgsOfString :: String -> Maybe [CFG]
 cfgsOfString = lexParseCFG progCFGs
 
 
-
 -- Convert from a CFG back to a Program
 cfgsToProgram :: [CFG] -> C.Program
 cfgsToProgram cfgs

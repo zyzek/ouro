@@ -1,0 +1,36 @@
+(
+  (factorial (n)
+    (0
+       (lc r0 0)
+       (st total r0)
+       (br r0 1 1) )
+    (1
+       (lc r1 1)
+       (st total r1)
+       (lc r2 0)
+       (br r2 2 2) )
+    (2
+       (ld r3 n)
+       (lc r4 1)
+       (gt r5 r3 r4)
+       (br r5 3 4) )
+    (3
+       (ld r7 total)
+       (ld r8 n)
+       (mul r9 r7 r8)
+       (st total r9)
+       (ld r10 n)
+       (lc r11 1)
+       (sub r12 r10 r11)
+       (st n r12)
+       (lc r13 0)
+       (br r13 2 2) )
+    (4
+       (ld r14 total)
+       (ld r15 n)
+       (lc r16 0)
+       (geq r17 r15 r16)
+       (mul r18 r14 r17)
+       (ret r18) )
+  )
+)

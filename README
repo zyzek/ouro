@@ -1,13 +1,40 @@
 
 -------------------------------------------------------------------------------
-COMP3109 Assignment 2. Compiler Front End
+
+COMP3109 Assignment 3. Compiler Optimizer
 
 Authors:
 
   Anton Jurisevic   311180051
   Jeremy Short      440353151
 
-Source files that correspond to optimisation are found in "./Imp/Opt"
+Tools:
+  GHC 7.8.4
+  cabal-install 1.22.6.0 using version 1.22.4.0 of the Cabal library
+  check imp.cabal for Haskell build dependencies.
+
+Completed Tasks:
+
+  Control-Flow Graph Construction
+  Unreachable Code Removal
+  Dead Code Elimination
+  Redundant Load Elimination
+
+  Other:
+   Constant Propagation
+   Branch Optimisations 
+   Block Merging/Deletion
+
+  See the annotated source files in ./Imp/Opt for discussion.
+
+Stumbling Blocks:
+  
+  The actual implementation went well enough, if hastily. There's a bunch of stuff that I'd
+  like to refactor, though. The sensation that I should be using monadic computations more
+  lingers with me.
+  As ever, there is always more scope; not everything that was thought of was actually implemented.
+
+  Lateness due to self-misinformation, crap organisation, zero teamwork.
 
 Optimisations:
   -cfg
@@ -20,6 +47,10 @@ Optimisations:
     Eliminate unreachable IR instructions.
   -dead
     Remove dead code.
+
+-------------------------------------------------------------------------------
+
+COMP3109 Assignment 2. Compiler Front End
 
 Completed Tasks:
 

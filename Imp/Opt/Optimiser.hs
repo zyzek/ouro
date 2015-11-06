@@ -8,7 +8,6 @@ import Data.List.Utils
 import Data.Maybe
 import qualified Imp.Core.Interpreter   as I
 
-
 -- | Flow Graph Construction  ========================================
 
 -- | Immediately after parsing, no edges or state information exists, so needs to be calculated.
@@ -47,10 +46,11 @@ import qualified Imp.Core.Interpreter   as I
 
 -- | Recalculate the flow graph.
 genGraph :: CFG -> CFG
-genGraph (CFG name args blks _)
+genGraph (CFG name args blks edges)
  = let fresh    = wipeGraph blks
        newEdges = regenBlkEdges fresh
-       newBlks  = graphInEdges newEdges fresh [0]
+       zeroChildren = filter (/= 0) $ map snd $ edgesFrom edges 0
+       newBlks  = graphInEdges newEdges fresh (0:zeroChildren)
    in CFG name args (graphOutEdges newBlks) newEdges
 
 
@@ -84,11 +84,11 @@ graphInEdges edges blks queue
                              l   -> let d:ds = map (snd . getInstrDets) l
                                     in foldr mergeInstrDets d  ds
                      queueItems 
-                      = if null inNeighbours || preDets /= newPreDets
+                      = if preDets /= newPreDets
                          then map snd $ edgesFrom edges b
                          else []
                      newqueue 
-                      = bs ++ queueItems
+                      = bs ++ filter (`notElem` bs) queueItems
                      newBlock
                       = blockInstrEdges $ setBlkPreDets blk newPreDets 
                      newBlks 
@@ -262,7 +262,7 @@ graphOuts blks
 -- Remove all unreachable code. 
 -- Since this may remove blocks, instructions, the graph's edges are regenerated before returning.
 unreach :: CFG -> CFG
-unreach = regenCFGEdges . genGraph . removeUnreachedInstrs . blockClosure
+unreach = blockClosure
 
 
 -- | In order to remove unreachable blocks, it is straightforward to find the transitive closure
@@ -293,7 +293,7 @@ closureStep (CFG _ _ _ edges) reached
         = o == n
        edgeDests n
         = map snd (filter (isOrig n) edges)
-   in rmDups reached ++ concatMap edgeDests reached
+   in rmDups $ reached ++ concatMap edgeDests reached
 
 -- | Take a CFG, a list of block numbers to keep, 
 -- | remove blocks not in the list, and edges with endpoints not in the list.
@@ -302,18 +302,6 @@ retainBlocks (CFG name args blocks edges) toRetain
  = let keptBlocks = filter (\(Block i _ _ _ _) -> i `elem` toRetain) blocks
        keptEdges  = filter (\(i, j)  -> i `elem` toRetain || j `elem` toRetain) edges
    in CFG name args keptBlocks keptEdges
-
-
--- | In constructing the flow graph, only valid block edges are followed, and nothing after
--- | a branch or a return is processed. Hence, any instruction that can never be executed should
--- | have no edges incident upon them. This function removes such instructions.
-removeUnreachedInstrs :: CFG -> CFG
-removeUnreachedInstrs (CFG cId args blks edges)
- = let instrReached (InstrNode _ _ ins outs)
-        = not (null ins && null outs)
-       removeInBlk blk@(Block _ instrs _ _ _)
-        = setBlkInstrs blk (filter instrReached instrs)
-  in CFG cId args (map removeInBlk blks) edges
 
 
 
@@ -337,9 +325,9 @@ removeUnreachedInstrs (CFG cId args blks edges)
 -- | can be discarded from the flow graph.
 -- |
 -- | This will not eliminate orphaned code that, while not actually reachable, still terminates
--- | with a used instruction, however. But the unreachable code optimisations above will
--- | eliminate them, as it performs a forward traversal; the inverse counterpart to that 
--- | performed here.
+-- | with a used instruction. However, the removeUnreachedInstrs optimisation below will
+-- | eliminate them, as it relies upon the forward traversal performed in constructing the
+-- | flow graph initially; it is the inverse counterpart to that performed here.
 
 removeDeadCode :: CFG -> CFG
 removeDeadCode (CFG cID args blks edges)
@@ -347,7 +335,7 @@ removeDeadCode (CFG cID args blks edges)
        transused = backClosure blks used []
        compl     = instrComplement blks transused
        trimmed   = removeAllInstr blks compl
-   in genGraph $ CFG cID args trimmed edges
+   in genGraph $ removeUnreachedInstrs $ CFG cID args trimmed edges
 
 instrComplement :: [Block] -> [InstrAddr] -> [InstrAddr]
 instrComplement blks initSet
@@ -370,15 +358,28 @@ backClosure blks queue visited
 findAllUsed :: [Block] -> [InstrAddr]
 findAllUsed blks
  = map extractAddress $ concatMap (\(Block _ instrs _ _ _) -> filter isUseInstr instrs) blks
- where isUseInstr (InstrNode i _ _ _)
-        = case i of
-               IBranch{}    -> True
-               IReturn _    -> True
-               IPrint _     -> True
-               _            -> False
-       extractAddress (InstrNode _ addr _ _)
-        = addr
-        
+ where extractAddress (InstrNode _ addr _ _) = addr
+
+-- | In constructing the flow graph, only valid block edges are followed, and nothing after
+-- | a branch or a return is processed. Hence, any instruction that can never be executed should
+-- | have no edges incident upon them. This function removes such instructions. This will also
+-- | remove some dead code, such as isolated loads.
+removeUnreachedInstrs :: CFG -> CFG
+removeUnreachedInstrs (CFG cId args blks edges)
+ = let instrReached instrN@(InstrNode _ _ ins outs)
+        = not (null ins && null outs) || isUseInstr instrN
+       removeInBlk blk@(Block _ instrs _ _ _)
+        = setBlkInstrs blk (filter instrReached instrs)
+  in CFG cId args (map removeInBlk blks) edges
+
+isUseInstr :: InstrNode -> Bool
+isUseInstr (InstrNode i _ _ _)
+ = case i of
+        IBranch{}    -> True
+        IReturn _    -> True
+        IPrint _     -> True
+        _            -> False
+
 
 -- | Instruction Mutation and Elimination  ========================================
 
@@ -387,6 +388,7 @@ findAllUsed blks
 -- | or providing opportunities for further optimisation.
 -- |
 -- | Load optimisations:
+-- |
 -- |  Constant Propagation: 
 -- |   If the input variable contains a constant, then the load can be replaced with a load const.
 -- |
@@ -400,7 +402,11 @@ findAllUsed blks
 -- |   The end product is a node with 0 out-degree, and which is not a "use", so that it can later
 -- |   be removed by dead code elimination.
 -- |
+-- |   This also works for Load Constant instructions. If a number is already available in some
+-- |   register there is no need for a new one.
+-- |
 -- | Branch optimisations:
+-- |
 -- |  Const Register -> Unconditional Jump:
 -- |   If the value in the input register of a branch is a constant, then one or the other of the
 -- |   branches can be eliminated entirely, which can later be cleaned up by the unreachable code
@@ -421,6 +427,7 @@ findAllUsed blks
 -- |   either ancestors or descendents except the branch that it determines.
 -- |
 -- | Arithmetic Optimisations:
+-- |
 -- |  Constant Propagation:
 -- |   If the result of an arithmetic expression is constant, replace the operation by an lc.
 -- |  
@@ -574,6 +581,17 @@ mutateInstrs blks dets instrs forbidRewrite
                                                 is
                                                 forbidRewrite
                            else dflt
+                    (IConst reg _)                      -- Redundant Constant Load Elimination
+                     -> let (newBlks, success)
+                             = tryRewriteRegs blks outs (addr:forbidRewrite) reg
+                            newForbids 
+                             = if success
+                                then addr:forbidRewrite
+                                else forbidRewrite
+                        in mutateInstrs newBlks
+                                        (updateInstrDets instrN dets)
+                                        is
+                                        newForbids
                     _
                      -> dflt
 
@@ -692,18 +710,14 @@ replaceInstrReg dets oldReg newReg instrN@(InstrNode inst addr _ outs)
 
 -- Contract the graph by removing removable blocks.
 -- Since we modify the large scale structure, the graph may need to be relabeled after doing so.
+-- In what follows, block 0 is never removed
 coalesceCFG :: CFG -> CFG
 coalesceCFG (CFG i args blks edges)
- = let (newBlks, newEdges) = mergeBlocks blks edges
+ = let (newBlks, newEdges) = mergeBlocks (blks, edges)
    in regenCFGEdges $ genGraph $ setCFGAddrs $ CFG i args newBlks newEdges
 
-mergeBlocks :: [Block] -> [(Int, Int)] -> ([Block], [(Int, Int)])
-mergeBlocks blks edges
- = let (newBlks, newEdges)
-        = linearMerge blks edges
-       (resBlks, resEdges) 
-        = emptyMerge newBlks newEdges
-   in (resBlks, resEdges)
+mergeBlocks :: ([Block], [(Int, Int)]) -> ([Block], [(Int, Int)])
+mergeBlocks = linearMerge . emptyMerge
 
 
 -- | Linear Merge
@@ -713,40 +727,48 @@ mergeBlocks blks edges
 -- | The instructions of B are appended to the instructions of A, minus the final branch.
 -- | The incoming edges to the new block are the in-edges of A, and its outgoing edges are those
 -- | of B.
-linearMerge :: [Block] -> [(Int, Int)] -> ([Block], [(Int, Int)])
-linearMerge blks edges
- = let bridges      = removeChains $ filter (isBridge edges) edges
-       burntBridges = joinBridges blks bridges
-       burntEdges   = filter (`notElem` bridges) edges
-   in (burntBridges, burntEdges)
+linearMerge :: ([Block], [(Int, Int)]) -> ([Block], [(Int, Int)])
+linearMerge (blks, edges)
+ = let bridges = filter (isBridge edges) edges
+   in joinBridges (blks, edges, bridges)
 
-joinBridges :: [Block] -> [(Int, Int)] -> [Block]
-joinBridges blks bridges
+joinBridges :: ([Block], [(Int, Int)], [(Int, Int)]) -> ([Block], [(Int, Int)])
+joinBridges beb@(blks, edges, bridges)
  = case bridges of     
-        []   -> blks
-        b:bs -> joinBridges (joinBridge blks b) bs
+        []   -> (blks, edges)
+        _ -> joinBridges $ joinBridge beb
 
-joinBridge :: [Block] -> (Int, Int) -> [Block]
-joinBridge blks (p, c)
- = let (pre, Block pId pInstrs pPreDets _ _, post)
-        = breakElem (\(Block i _ _ _ _) -> i == p) blks
-       (Block cId cInstrs _ cPostDets cBranches)
-        = fromJust $ find (\(Block i _ _ _ _) -> i == c) blks
-       newInstrsPre
-        = takeWhile (\(InstrNode i _ _ _) -> isNotBranch i) pInstrs
-       newBlock 
-        = Block pId (newInstrsPre ++ cInstrs) pPreDets cPostDets cBranches
-       newBlks
-        = pre ++ [newBlock] ++ post
-  in filter (\(Block i _ _ _ _) -> i /= cId) newBlks
+joinBridge :: ([Block], [(Int, Int)], [(Int, Int)]) -> ([Block], [(Int, Int)], [(Int, Int)])
+joinBridge beb@(blks, edges, bridges)
+ = case bridges of
+        [] 
+         -> beb
+        (p, c):bs 
+         -> let (pre, Block pId pInstrs pPreDets _ _, post)
+                 = breakElem (\(Block i _ _ _ _) -> i == p) blks
+                (Block cId cInstrs _ cPostDets cBranches)
+                 = fromJust $ find (\(Block i _ _ _ _) -> i == c) blks
+                newInstrsPre
+                 = takeWhile (\(InstrNode i _ _ _) -> isNotBranch i) pInstrs
+                newBlock 
+                 = Block pId (newInstrsPre ++ cInstrs) pPreDets cPostDets cBranches
+                newBlks
+                 = filter (\(Block i _ _ _ _) -> i /= cId) (pre ++ [newBlock] ++ post)
+                newEdges
+                 = filter (\e -> e /= (p, c)) $ map (reRootFrom c p) edges
+                newBridges
+                 = filter (\(o, d) -> o /= d) $ map (reRootFrom c p) bs
+            in (newBlks, newEdges, newBridges)
  where isNotBranch i
         = case i of
                IBranch{} -> False
                _         -> True
+       reRootFrom c p (o, d) 
+        = if o == c then (p, d) else (o, d)
 
 isBridge :: [(Int, Int)] -> (Int, Int) -> Bool
 isBridge edges (h, t)
- = snd (findDegree h edges) == 1 && fst (findDegree t edges) == 1
+ = snd (findDegree h edges) == 1 && fst (findDegree t edges) == 1 && h /= t && t /= 0
 
 findDegree :: Int -> [(Int, Int)] -> (Int, Int)
 findDegree bId edges
@@ -754,7 +776,8 @@ findDegree bId edges
        outs  = length (filter (\(p, _) -> (p == bId)) edges)
    in (ins, outs)
 
--- | Remove linear chains as a crap way of avoiding having to redesignate edges.
+-- | We can remove linear chains as a crap way of avoiding 
+-- |  having to redesignate edges in the bridge list. Unused now.
 removeChains :: [(Int, Int)] -> [(Int, Int)]
 removeChains edges
  = case edges of
@@ -775,39 +798,37 @@ removeChains edges
 -- | A truly empty block with no instructions can never exist, as all unterminated blocks
 -- | have branches inserted during the parsing stage.
 
-emptyMerge :: [Block] -> [(Int, Int)] -> ([Block], [(Int, Int)])
-emptyMerge blks edges = removeEmptyBlocks (blks, edges) $ emptyBlockIds blks
+emptyMerge :: ([Block], [(Int, Int)]) -> ([Block], [(Int, Int)])
+emptyMerge be@(blks, _) = removeEmptyBlocks be $ emptyBlockIds blks
 
--- | As with the linear chains, I only remove one at a time here because I didn't rewrite the
--- | edges properly, and can simply wait for the next optimisation pass to remove the next one.
 removeEmptyBlocks :: ([Block], [(Int, Int)]) -> [Int] -> ([Block], [(Int, Int)])
-removeEmptyBlocks (blks, edges) empties
+removeEmptyBlocks be empties
  = case empties of 
-        []   -> (blks, edges)
-        e:_ -> removeEmptyBlock blks edges e
+        []   -> be
+        e:es -> removeEmptyBlocks (removeEmptyBlock be e) es
 
-removeEmptyBlock :: [Block] -> [(Int, Int)] -> Int -> ([Block], [(Int, Int)])
-removeEmptyBlock blks edges emptyBlkId
+removeEmptyBlock :: ([Block], [(Int, Int)]) -> Int -> ([Block], [(Int, Int)])
+removeEmptyBlock (blks, edges) emptyBlkId
  = let newDest 
         = snd $ head $ filter (\(o, _) -> o == emptyBlkId) edges
        toRedirect 
         = map fst $ filter (\(_, d) -> d == emptyBlkId) edges
-       newEdges
-        = map (\o -> (o, newDest)) toRedirect ++ filter (\(o, d) -> newDest `notElem` [o,d]) edges
-       newBlks
-        = filter (\(Block bId _ _ _ _) -> bId /= emptyBlkId) $ redirectBlocks blks 
-                                                                              toRedirect
-                                                                              (emptyBlkId, newDest)
-   in (newBlks, newEdges)
+       (newBlks, newEdges)
+        = redirectBlocks (blks, edges) toRedirect (emptyBlkId, newDest)
+       fBlks 
+        = filter (\(Block b _ _ _ _) -> b /= emptyBlkId) newBlks
+       fEdges 
+        = filter (\(o, d) -> o /= emptyBlkId && d /= emptyBlkId) newEdges
+   in (fBlks, fEdges)
         
-redirectBlocks :: [Block] -> [Int] -> (Int, Int) -> [Block]
-redirectBlocks blks toRedirect conv
+redirectBlocks :: ([Block], [(Int, Int)]) -> [Int] -> (Int, Int) -> ([Block], [(Int, Int)])
+redirectBlocks be toRedirect conv
  = case toRedirect of
-        []   -> blks
-        r:rs -> redirectBlocks (redirectBlock blks r conv) rs conv
+        []   -> be
+        r:rs -> redirectBlocks (redirectBlock be r conv) rs conv
 
-redirectBlock :: [Block] -> Int -> (Int, Int) -> [Block]
-redirectBlock blks blkId (old, new)
+redirectBlock :: ([Block], [(Int, Int)]) -> Int -> (Int, Int) -> ([Block], [(Int, Int)])
+redirectBlock (blks, edges) blkId (old, new)
  = let (pre, Block bId instrs preDets postDets branches, post)
         = breakElem (\(Block b _ _ _ _) -> b == blkId) blks
        newBranches 
@@ -818,9 +839,9 @@ redirectBlock blks blkId (old, new)
         = setNodeInstr instrN (IBranch reg (ifOldNew b1) (ifOldNew b2))
        newBlk
         = Block bId (iPre ++ [newBrN]) preDets postDets newBranches
-   in pre
-       ++ [newBlk]
-       ++ post
+       newEdges
+        = map (\e -> if e == (blkId, old) then (blkId, new) else e) edges
+   in (pre ++ [newBlk] ++ post, newEdges)
  where ifOldNew b = if b == old then new else b
        isBranch i
         = case i of
@@ -832,13 +853,13 @@ emptyBlockIds :: [Block] -> [Int]
 emptyBlockIds blks = map (\(Block bId _ _ _ _) -> bId) $ filter isEmptyBlock blks
 
 isEmptyBlock :: Block -> Bool
-isEmptyBlock (Block _ instrs _ _ brs)
- = length brs == 1 && emptyInstrs instrs
+isEmptyBlock (Block bId instrs _ _ brs)
+ = length brs == 1 && emptyInstrs instrs && bId /= 0
  where emptyInstrs is
         = case is of
-               [ InstrNode (IBranch _ b1 b2) _ _ _ ]         -> b1 == b2
+               [ InstrNode (IBranch _ b1 b2) _ _ _ ]         -> b1 == b2 && b1 /= bId
                [  InstrNode (IConst{}) cAddr _ cOut
-                , InstrNode (IBranch _ b1 b2) bAddr bIn _ ]  -> b1 == b2 
+                , InstrNode (IBranch _ b1 b2) bAddr bIn _ ]  -> b1 == b2 && b1 /= bId
                                                                  && cOut == [bAddr] 
                                                                  && bIn == [cAddr]
                _                                             -> False

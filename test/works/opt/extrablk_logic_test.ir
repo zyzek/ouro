@@ -1,5 +1,5 @@
 (
-  (xor (a b)
+  (ixorl (a b)
     (0
        (lc r0 0)
        (br r0 2 2) )
@@ -36,7 +36,7 @@
        (xor r3 r1 r2)
        (ld r4 a)
        (ld r5 b)
-       (call r6 xor r4 r5)
+       (call r6 ixorl r4 r5)
        (and r7 r3 r6)
        (ret r7) )
     (2
@@ -45,7 +45,7 @@
        (xor r3 r1 r2)
        (ld r4 a)
        (ld r5 b)
-       (call r6 xor r4 r5)
+       (call r6 ixorl r4 r5)
        (and r7 r3 r6)
        (ret r7) )
   )

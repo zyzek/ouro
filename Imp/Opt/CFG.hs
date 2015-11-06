@@ -19,7 +19,7 @@ data CFG
 data Block
         = Block Int [InstrNode] InstrDets InstrDets [Int]
         deriving (Show, Eq)
-        
+
 deadBlock :: Block 
 deadBlock = Block (-1) [] (InstrDets [] []) (InstrDets [] []) []
 

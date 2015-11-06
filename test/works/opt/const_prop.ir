@@ -1,0 +1,13 @@
+(
+  (main ()
+    (0
+       (lc r1 4)
+       (lc r2 3)
+       (add r3 r1 r2)
+       (div r4 r3 r2)
+       (mul r5 r3 r4)
+       (sub r5 r5 r4)
+       (ret r5) )
+  )
+)
+ 
