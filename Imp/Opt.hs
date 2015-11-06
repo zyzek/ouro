@@ -39,7 +39,7 @@ optUntilFixed cfg
                     coalesceCFG .
                     mutateGraph .
                     removeDeadCode .
-                    unreach) cfg
+                    blockClosure) cfg
    in if stepped == cfg then cfg else optUntilFixed stepped
  
  

@@ -16,8 +16,10 @@ import qualified Imp.Core.Interpreter   as I
 -- |
 -- | This process happens in several stages.
 -- |
+-- |
 -- | First, determine the edges that go between blocks, for the next stage to operate on.
 -- | This only requires finding the first branch instruction in each block, if it exists.
+-- |
 -- |
 -- | Second, determine which registers and variables are defined in which blocks.
 -- | This involves first finding for each block, the blocks which originate it.
@@ -41,6 +43,7 @@ import qualified Imp.Core.Interpreter   as I
 -- | and the size of each set is monotonically decreasing, so that it must eventually terminate
 -- | with the final sets being only the correct ones.
 -- |
+-- |
 -- | The third step is to produce the actual flow graph by starting a traversal from Block 0.
 -- | The traversal maintains a queue of blocks to update, which it pops off one at a time until 
 -- | there are none left.
@@ -60,6 +63,7 @@ import qualified Imp.Core.Interpreter   as I
 -- |   state, and proceed to the next item in the queue.
 -- | The queue must eventually empty once the states stabilise.
 -- |
+-- |
 -- | Finally, collect all in-neighbourhoods in the graph and add the corresponding addresses to 
 -- | the out-neighbourhood of each instruction.
 -- |
@@ -72,14 +76,15 @@ genGraph (CFG name args blks _)
  = let fresh     = wipeGraph blks
        newEdges  = regenBlkEdges fresh
        zChildren = filter (/= 0) $ map snd $ edgesFrom newEdges 0
-       -- scoped    = detScopes newEdges (setArgScope fresh args) (0:zChildren)
        scoped    = setOrigScopes (setBlockPostScopes (setArgScope fresh args)) newEdges
        newBlks   = graphInEdges newEdges (setArgDets scoped args) (0:zChildren)
    in CFG name args (graphOutEdges newBlks) newEdges
-   --in CFG name args scoped newEdges
 
 
--- | Wipe out all edges and state in a graph. Returns the block list with block edges recomputed.
+
+-- | Step 1 - Wipe the graph clean and calculate interblock edges.
+
+-- | Destroy all edges and state in a graph. Returns the block list with block edges recomputed.
 wipeGraph :: [Block] -> [Block]
 wipeGraph = map wipeBlock
 
@@ -93,7 +98,94 @@ wipeInstrEdges (InstrNode inst addr _ _)
  = InstrNode inst addr [] []
 
 
--- | Given an edge list, determine, for each block, which blocks it originates from.
+
+-- | Step 2 - Determine originators and define objects in the scopes where they should exist.
+
+-- | Make sure the function arguments are defined throughout the graph.
+setArgScope :: [Block] -> [Id] -> [Block]
+setArgScope blks args 
+ = case blks of 
+        []   -> []
+        b:bs -> argedBlk b : setArgScope bs args
+ where argDets
+        = map (\i -> (i, ([], VBot))) args
+       argedBlk (Block bId instrs preDets postDets brs)
+        = Block bId instrs (setAllVarDets argDets preDets) postDets brs
+
+
+-- Set the program state at the end of each block to know about objects defined within that block.
+setBlockPostScopes :: [Block] -> [Block]
+setBlockPostScopes blks
+ = case blks of 
+        []   -> []
+        b:bs -> setBlockPostScope b : setBlockPostScopes bs
+ where setBlockPostScope (Block bid instrs preDets _ branches)
+        = let newPostDets = instrScopes instrs preDets
+          in Block bid instrs preDets newPostDets branches
+
+
+-- | Set the initial state of each block to be the union of the final states of all the
+-- | blocks that originate it.
+setOrigScopes :: [Block] -> [(Int, Int)] -> [Block]
+setOrigScopes blks edges
+ = let propped = propOrigScopes blks $ findOriginators edges
+   in unionPostDets propped
+ where unionDets (Block _ _ preDets postDets _)
+        = unionScopes preDets postDets
+       unionPostDets inBlks
+        = case inBlks of
+               []   -> []
+               b:bs -> setBlkPostDets b (unionDets b) : unionPostDets bs
+
+propOrigScopes :: [Block] -> [(Int, [Int])] -> [Block]
+propOrigScopes blks origList
+ = case origList of
+        []   -> blks
+        o:os -> propOrigScopes (getOrigs o) os
+   where getOrigs (n, origs)
+          = let (pre, blk@(Block _ _ preDets _ _), post)
+                 = breakElem (\(Block b _ _ _ _) -> b == n) blks
+                newPreDets
+                 = unionScopeList $ preDets : map (snd . getInstrDets blks) origs
+
+            in pre ++ [setBlkPreDets blk newPreDets] ++ post
+
+unionScopeList :: [InstrDets] -> InstrDets
+unionScopeList scopeList
+ = case scopeList of
+        []   -> InstrDets [] []
+        s:ss -> unionScopes s (unionScopeList ss)
+
+unionScopes :: InstrDets -> InstrDets -> InstrDets
+unionScopes (InstrDets rd vd) (InstrDets rd' vd')
+ = InstrDets (unionScopeDets rd rd') (unionScopeDets vd vd')
+ where unionDetScopeList l = case l of
+                             (r, _):_ -> [(r, ([], VBot))]
+                             _          -> []
+       unionScopeDets a b
+        = let merged = groupBy (\(a1, _) (a2, _) -> a1 == a2) $ sortByKeys  (a ++ b)
+          in concatMap unionDetScopeList merged
+
+
+-- Determine which objects were defined in a sequence of instructions.
+instrScopes :: [InstrNode] -> InstrDets -> InstrDets
+instrScopes instrs instrDets
+ = case instrs of
+        []      -> instrDets
+        i:is    -> let newInstrDets = instrScope i instrDets
+                   in if isBranchOrRet i then newInstrDets else instrScopes is newInstrDets
+ where instrScope (InstrNode i _ _ _) dets
+        = case i of
+               IConst reg _     -> setRegDets (newDet reg) dets
+               ILoad  reg _     -> setRegDets (newDet reg) dets
+               IArith _ reg _ _ -> setRegDets (newDet reg) dets
+               ICall reg _ _    -> setRegDets (newDet reg) dets
+               IStore vId _     -> setVarDets (newDet vId) dets
+               _                ->  dets
+       newDet a = (a, ([], VBot))
+
+
+-- | Given an edge list, determine for each block which blocks it originates from.
 -- | That is to say, the set of blocks where registers and variables defined in them are also 
 -- | defined in the entirety of the block we're looking at.
 findOriginators :: [(Int, Int)] -> [(Int, [Int])]
@@ -124,6 +216,9 @@ recalcOrigs edges origList node
 
 
 
+-- | Step 3 - Flow Graph Construction
+
+-- | Define program arguments in the initial program state.
 setArgDets :: [Block] -> [Id] -> [Block]
 setArgDets blks args 
  = let argDets 
@@ -135,129 +230,7 @@ setArgDets blks args
    in pre ++ [newBlk] ++ post
 
 
-setBlockPostScopes :: [Block] -> [Block]
-setBlockPostScopes blks
- = case blks of 
-        []   -> []
-        b:bs -> setBlockPostScope b : setBlockPostScopes bs
- where setBlockPostScope (Block bid instrs preDets _ branches)
-        = let newPostDets = instrScopes instrs preDets
-          in Block bid instrs preDets newPostDets branches
-
-setArgScope :: [Block] -> [Id] -> [Block]
-setArgScope blks args 
- = case blks of 
-        []   -> []
-        b:bs -> argedBlk b : setArgScope bs args
- where argDets
-        = map (\i -> (i, ([], VBot))) args
-       argedBlk (Block bId instrs preDets postDets brs)
-        = Block bId instrs (setAllVarDets argDets preDets) postDets brs
-
-setOrigScopes :: [Block] -> [(Int, Int)] -> [Block]
-setOrigScopes blks edges
- = let propped = propOrigScopes blks $ findOriginators edges
-   in unionPostDets propped
- where unionDets (Block _ _ preDets postDets _)
-        = unionScopes preDets postDets
-       unionPostDets inBlks
-        = case inBlks of
-               []   -> []
-               b:bs -> setBlkPostDets b (unionDets b) : unionPostDets bs
-
-propOrigScopes :: [Block] -> [(Int, [Int])] -> [Block]
-propOrigScopes blks origList
- = case origList of
-        []   -> blks
-        o:os -> propOrigScopes (getOrigs o) os
-   where getOrigs (n, origs)
-          = let (pre, blk@(Block _ _ preDets _ _), post)
-                 = breakElem (\(Block b _ _ _ _) -> b == n) blks
-                newPreDets
-                 = unionScopeList $ preDets : map (snd . getInstrDets blks) origs
-
-            in pre ++ [setBlkPreDets blk newPreDets] ++ post
-                
-
-unionScopeList :: [InstrDets] -> InstrDets
-unionScopeList scopeList
- = case scopeList of
-        []   -> InstrDets [] []
-        s:ss -> unionScopes s (unionScopeList ss)
-
-unionScopes :: InstrDets -> InstrDets -> InstrDets
-unionScopes (InstrDets rd vd) (InstrDets rd' vd')
- = InstrDets (unionScopeDets rd rd') (unionScopeDets vd vd')
- where unionDetScopeList l = case l of
-                             (r, _):_ -> [(r, ([], VBot))]
-                             _          -> []
-       unionScopeDets a b
-        = let merged = groupBy (\(a1, _) (a2, _) -> a1 == a2) $ sortByKeys  (a ++ b)
-          in concatMap unionDetScopeList merged
-
-
-mergeScopes :: InstrDets -> InstrDets -> InstrDets
-mergeScopes (InstrDets rd vd) (InstrDets rd' vd')
- = InstrDets (mergeScopeDets rd rd') (mergeScopeDets vd vd')
- where mergeDetScopeList l = case l of
-                             (r, _):_:_ -> [(r, ([], VBot))]
-                             _          -> []
-       mergeScopeDets a b
-        = let merged = groupBy (\(a1, _) (a2, _) -> a1 == a2) $ sortByKeys  (a ++ b)
-          in concatMap mergeDetScopeList merged
-
-
-detScopes :: [(Int, Int)] -> [Block] -> [Int] -> [Block]
-detScopes edges blks queue
- = case queue of
-        []    -> blks
-        b:bs  -> let (pre, blk@(Block _ _ preDets _ _), post)
-                      = breakElem (\(Block bid _ _ _ _) -> bid == b) blks
-                     inNeighbours
-                      = map fst $ edgesTo edges b
-                     newPreDets
-                      = case inNeighbours of
-                             []  -> preDets
-                             [n] -> snd (getInstrDets blks n)
-                             l   -> let d:ds = map (snd . getInstrDets blks) l
-                                    in foldr mergeScopes d ds
-                     queueItems 
-                      = if preDets /= newPreDets
-                         then map snd $ edgesFrom edges b
-                         else []
-                     newqueue 
-                      = bs ++ filter (`notElem` bs) queueItems
-                     newBlock
-                      = blockScope $ setBlkPreDets blk newPreDets 
-                     newBlks 
-                      = pre ++ [newBlock] ++ post
-                 in detScopes edges newBlks newqueue
-
-
-blockScope :: Block -> Block
-blockScope (Block bid instrs preDets _ branches)
- = let newPostDets = instrScopes instrs preDets
-   in Block bid instrs preDets newPostDets branches
-
-instrScopes :: [InstrNode] -> InstrDets -> InstrDets
-instrScopes instrs instrDets
- = case instrs of
-        []      -> instrDets
-        i:is    -> let newInstrDets = instrScope i instrDets
-                   in if isBranchOrRet i then newInstrDets else instrScopes is newInstrDets
-
-instrScope :: InstrNode -> InstrDets -> InstrDets 
-instrScope (InstrNode i _ _ _) dets
- = case i of
-        IConst reg _     -> setRegDets (newDet reg) dets
-        ILoad  reg _     -> setRegDets (newDet reg) dets
-        IArith _ reg _ _ -> setRegDets (newDet reg) dets
-        ICall reg _ _    -> setRegDets (newDet reg) dets
-        IStore vId _     -> setVarDets (newDet vId) dets
-        _                ->  dets
- where newDet a = (a, ([], VBot))
-
--- | Flow graph construction step.
+-- | Flow graph in-edges and block initial/terminal states.
 graphInEdges :: [(Int, Int)] -> [Block] -> [Int] -> [Block]
 graphInEdges edges blks queue
  = case queue of
@@ -284,12 +257,14 @@ graphInEdges edges blks queue
                       = pre ++ [newBlock] ++ post
                  in graphInEdges edges newBlks newqueue
 
+
 -- | Update the edges and states of a given block.
 blockInstrEdges :: Block -> Block
 blockInstrEdges (Block bid instrs preDets _ branches)
  = let (newInstrs, newPostDets)
         = instrEdges instrs preDets
    in Block bid newInstrs preDets newPostDets branches
+
 
 -- | Update the edges of a sequence of instructions in order and return the final state.
 instrEdges :: [InstrNode] -> InstrDets -> ([InstrNode], InstrDets)
@@ -304,7 +279,6 @@ instrEdges instrs instrDets
                              else instrEdges is newInstrDets
                    in (newI:fIs, fInstrDets)
 
--- | Update the program state given a particular instruction.
 
 -- | The value of a register is determined by the last instruction that writes to it.
 -- | The value itself depends on the instruction, and its inputs:
@@ -338,6 +312,7 @@ instrEdges instrs instrDets
 -- |
 -- | Other instructions do not change any values, so do on update the program state.
 
+-- | Update the program state given a particular instruction.
 updateInstrDets :: InstrNode -> InstrDets -> InstrDets
 updateInstrDets (InstrNode inst addr _ _) instrDets
  = case inst of
@@ -372,7 +347,6 @@ updateInstrDets (InstrNode inst addr _ _) instrDets
                                                                          (getValNum val1)
                                                                          (getValNum val2))
                                                   else VTop
-                                       
                                     in setRegDets (rout, ([addr], outval)) instrDets
         ICall reg _ _ -> setRegDets (reg, ([addr], VTop)) instrDets
         _             -> instrDets
@@ -405,14 +379,14 @@ instrEdge instrN@(InstrNode inst _ _ _) instrDets
 
 
 
+-- | Step 4 -- Set outgoing flow graph edges.
+
 -- | Set all out-neighbourhoods of nodes in the graph, given that all in-neighbourhoods
 -- | have already been populated.
 graphOutEdges :: [Block] -> [Block]
 graphOutEdges blks
- = let gOuts 
-        = graphOuts blks
-       setInstrOuts iNode@(InstrNode i adr ins _)
-        = case lookup adr gOuts of
+ = let setInstrOuts iNode@(InstrNode i adr ins _)
+        = case lookup adr (graphOuts blks) of
                Just newOuts -> InstrNode i adr ins newOuts
                _            -> iNode
        setBlockOuts blk@(Block _ instrs _ _ _)
@@ -433,15 +407,10 @@ graphOuts blks
 
 
 
+
 -- | Optimisation Passes  ========================================
 
 -- | Unreachable Block/Instruction Removal  ========================================
-
--- Remove all unreachable code. 
--- Since this may remove blocks, instructions, the graph's edges are regenerated before returning.
-unreach :: CFG -> CFG
-unreach = blockClosure
-
 
 -- | In order to remove unreachable blocks, it is straightforward to find the transitive closure
 -- | of the graph from Block 0. Any that are not reached by this are discarded.
@@ -509,11 +478,12 @@ retainBlocks (CFG name args blocks edges) toRetain
 
 removeDeadCode :: CFG -> CFG
 removeDeadCode (CFG cID args blks edges)
- = let used      = findAllUsed blks
+ = let used      = findBasicUsed blks
        transused = backClosure blks used []
        compl     = instrComplement blks transused
        trimmed   = removeAllInstr blks compl
    in genGraph $ removeUnreachedInstrs $ CFG cID args trimmed edges
+
 
 instrComplement :: [Block] -> [InstrAddr] -> [InstrAddr]
 instrComplement blks initSet
@@ -521,6 +491,8 @@ instrComplement blks initSet
         = filter (`notElem` initSet) $ map (\(InstrNode _ addr _ _) -> addr) instrs
    in concatMap blockCompInstrs blks
 
+
+-- Find the addresses of instructions in the backwards closure of a flow graph,
 backClosure :: [Block] -> [InstrAddr] -> [InstrAddr] -> [InstrAddr]
 backClosure blks queue visited
  = case queue of 
@@ -533,10 +505,11 @@ backClosure blks queue visited
                                _                          -> []
                    in q : backClosure blks (ancestors ++ qs) (q : visited)
        
-findAllUsed :: [Block] -> [InstrAddr]
-findAllUsed blks
+findBasicUsed :: [Block] -> [InstrAddr]
+findBasicUsed blks
  = map extractAddress $ concatMap (\(Block _ instrs _ _ _) -> filter isUseInstr instrs) blks
  where extractAddress (InstrNode _ addr _ _) = addr
+
 
 -- | In constructing the flow graph, only valid block edges are followed, and nothing after
 -- | a branch or a return is processed. Hence, any instruction that can never be executed should
@@ -557,6 +530,7 @@ isUseInstr (InstrNode i _ _ _)
         IReturn _    -> True
         IPrint _     -> True
         _            -> False
+
 
 
 -- | Instruction Mutation and Elimination  ========================================
@@ -613,6 +587,7 @@ isUseInstr (InstrNode i _ _ _)
 -- |  up: e.g. things could be factored out, strings of additions merged, and so forth.
 -- |  Not included here.
 
+-- | Apply all of the above-listed optimisations
 mutateGraph :: CFG -> CFG
 mutateGraph (CFG name args blks edges)
  = let blockIds = map (\(Block i _ _ _ _) -> i) blks
@@ -629,6 +604,8 @@ mutateBlks blks forbidRewrite bIds
                     (newBlks, newForbids) = mutateInstrs blks preDets instrs forbidRewrite
                 in mutateBlks newBlks newForbids is
 
+-- | Given the instruction sequence of a block, apply optimisations to each of the instructions,
+-- | updating the graph and state as we go.
 mutateInstrs :: [Block] -> InstrDets -> [InstrNode] -> [InstrAddr] -> ([Block], [InstrAddr])
 mutateInstrs blks dets instrs forbidRewrite
  = case instrs of
@@ -884,7 +861,9 @@ replaceInstrReg dets oldReg newReg instrN@(InstrNode inst addr _ outs)
         = rmDups $ concatMap (getRegDet dets) rs
 
 
+
 -- | Block Merging Optimisations  ========================================
+
 
 -- Contract the graph by removing removable blocks.
 -- Since we modify the large scale structure, the graph may need to be relabeled after doing so.
@@ -955,7 +934,7 @@ findDegree bId edges
    in (ins, outs)
 
 -- | We can remove linear chains as a crap way of avoiding 
--- |  having to redesignate edges in the bridge list. Unused now.
+-- |  having to redesignate edges in the bridge list. Unused.
 removeChains :: [(Int, Int)] -> [(Int, Int)]
 removeChains edges
  = case edges of
@@ -964,6 +943,7 @@ removeChains edges
                              || any (\(_, s) -> s == p) es)
                       then (p, c) : removeChains es
                       else removeChains es
+
 
 
 -- | Empty Block Deletion
@@ -979,6 +959,7 @@ removeChains edges
 emptyMerge :: ([Block], [(Int, Int)]) -> ([Block], [(Int, Int)])
 emptyMerge be@(blks, _) = removeEmptyBlocks be $ emptyBlockIds blks
 
+-- | Given a graph and a known list of empty blocks, remove each empty block from the graph.
 removeEmptyBlocks :: ([Block], [(Int, Int)]) -> [Int] -> ([Block], [(Int, Int)])
 removeEmptyBlocks be empties
  = case empties of 
@@ -998,7 +979,9 @@ removeEmptyBlock (blks, edges) emptyBlkId
        fEdges 
         = filter (\(o, d) -> o /= emptyBlkId && d /= emptyBlkId) newEdges
    in (fBlks, fEdges)
-        
+
+
+-- | When a block is removed, its antecedents must be redirected to point to the block it jumps to.
 redirectBlocks :: ([Block], [(Int, Int)]) -> [Int] -> (Int, Int) -> ([Block], [(Int, Int)])
 redirectBlocks be toRedirect conv
  = case toRedirect of
@@ -1012,7 +995,7 @@ redirectBlock (blks, edges) blkId (old, new)
        newBranches 
         = map ifOldNew branches
        (iPre, instrN@(InstrNode (IBranch reg b1 b2) _ _ _), _)
-        = breakElem (\(InstrNode i _ _ _) -> isBranch i) instrs
+        = breakElem isBranch instrs
        newBrN
         = setNodeInstr instrN (IBranch reg (ifOldNew b1) (ifOldNew b2))
        newBlk
@@ -1021,12 +1004,9 @@ redirectBlock (blks, edges) blkId (old, new)
         = map (\e -> if e == (blkId, old) then (blkId, new) else e) edges
    in (pre ++ [newBlk] ++ post, newEdges)
  where ifOldNew b = if b == old then new else b
-       isBranch i
-        = case i of
-               IBranch{} -> True
-               _         -> False
        
-       
+
+-- | Return a list of the ids of empty blocks in a graph.
 emptyBlockIds :: [Block] -> [Int]
 emptyBlockIds blks = map (\(Block bId _ _ _ _) -> bId) $ filter isEmptyBlock blks
 

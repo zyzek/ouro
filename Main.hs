@@ -144,7 +144,7 @@ main
           | ".ir" `isSuffixOf` file         
           -> do contents    <- readFile file
                 let cfgs     = fromJust $ O.cfgsOfString contents
-                let out = C.progString $ O.cfgsToProgram $ map O.unreach cfgs
+                let out = C.progString $ O.cfgsToProgram $ map O.blockClosure cfgs
                 showResult out (file ++ ".cb")
           | otherwise
           -> error $ "Cannot parse " ++ file
@@ -153,7 +153,7 @@ main
           | ".ir" `isSuffixOf` file         
           -> do contents    <- readFile file
                 let cfgs     = fromJust $ O.cfgsOfString contents
-                let out = Text.ppShow $ map O.unreach cfgs
+                let out = Text.ppShow $ map O.blockClosure cfgs
                 showResult out (file ++ ".cb")
           | otherwise
           -> error $ "Cannot parse " ++ file

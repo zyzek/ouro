@@ -340,14 +340,7 @@ blockBranches blk@(Block _ instrnodes _ _ _)
         | null rpost && null brs = [-1]
         | otherwise              = brs
    in setBlkBranches blk brsNoRet
- where isRet (InstrNode i _ _ _)
-        = case i of
-               IReturn _     -> True
-               _             -> False
-       isBranch (InstrNode i _ _ _)
-        = case i of
-               IBranch{} -> True
-               _             -> False 
+
 
 -- | If a block is not terminated by either a return or a branch, 
 -- | we should add a branch to the next block in the list, if possible.
@@ -421,6 +414,19 @@ isBranchOrRet (InstrNode i _ _ _)
         IReturn _ -> True
         IBranch{} -> True
         _         -> False
+
+isRet :: InstrNode -> Bool
+isRet (InstrNode i _ _ _)
+ = case i of
+        IReturn _     -> True
+        _             -> False
+
+isBranch :: InstrNode -> Bool
+isBranch (InstrNode i _ _ _)
+ = case i of
+        IBranch{} -> True
+        _             -> False 
+
 
 
 
