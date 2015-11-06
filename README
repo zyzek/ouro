@@ -1,6 +1,7 @@
 
 -------------------------------------------------------------------------------
 
+
 COMP3109 Assignment 3. Compiler Optimizer
 
 Authors:
@@ -8,10 +9,12 @@ Authors:
   Anton Jurisevic   311180051
   Jeremy Short      440353151
 
+
 Tools:
   GHC 7.8.4
   cabal-install 1.22.6.0 using version 1.22.4.0 of the Cabal library
   check imp.cabal for Haskell build dependencies.
+
 
 Completed Tasks:
 
@@ -30,6 +33,7 @@ Completed Tasks:
   along with descriptions of example files and output upon optimising them. The ./test/works/opt/
   directory contains the test files used.
 
+
 Stumbling Blocks:
   
   The actual implementation went well enough, if hastily. There's a bunch of stuff that I'd
@@ -37,11 +41,21 @@ Stumbling Blocks:
   lingers with me, and there is plenty of duplicated structure that should be abstracted.
   As ever, there is always more scope; not everything that was thought of was actually implemented.
 
+  Since cabal does not seem to exist on ucpu1, it's hard to compile it on there; but it does
+  actually run.
+
   Lateness due to self-misinformation, crap organisation, zero teamwork.
 
+
 Invocation:
-  In the following, the first flag produces ir code, the second one will display the internal
-  CFG structure of the program.
+
+  In order to run the optimiser, do
+
+    imp -flag filepath
+    
+  Here the file must end in .ir, and -flag can be any of the following, where under each heading,
+  the first flag produces ir code, the second one will display the internal CFG structure of 
+  the program.
   
   Unreachable Code Optimisation:
     -unreach
@@ -67,7 +81,9 @@ Invocation:
    -cid
      Produce the ids of the blocks in each CFG's zero closure.
 
+
 -------------------------------------------------------------------------------
+
 
 1. Install the Haskell Platform.
    Current version is 7.10.2
@@ -122,7 +138,9 @@ Invocation:
 
    Add the correct directory to your $PATH.
 
+
 -------------------------------------------------------------------------------
+
 
 COMP3109 Assignment 2. Compiler Front End
 
@@ -210,4 +228,5 @@ Stumbling Blocks:
       possible in the AST.
 
 
+-------------------------------------------------------------------------------
 

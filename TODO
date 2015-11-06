@@ -1,5 +1,0 @@
-Add edges to the flow graph for variable storage/use
-
-Remove instructions after branches, returns as unreachable.
-Merge linear chains of blocks.
-Constant Folding
