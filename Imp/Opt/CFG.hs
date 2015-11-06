@@ -47,7 +47,6 @@ data InstrDets
         = InstrDets [(Reg, ([InstrAddr], Val))] [(Id, ([InstrAddr], Val))]
         deriving (Show, Eq, Ord)
 
-
 -- | Values form a lattice.
 -- | VTop: Intederminate, multiple possible values.
 -- | VVar: The (indeterminate) value of some variable.

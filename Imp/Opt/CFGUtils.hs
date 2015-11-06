@@ -12,6 +12,13 @@ import Data.Maybe
 
 -- | Getters
 
+getInstrDets :: [Block] -> Int -> (InstrDets, InstrDets)
+getInstrDets blks blkId
+ = case find (\(Block bId _ _ _ _) -> bId == blkId) blks of
+        Just (Block _ _ pre post _) -> (pre, post)
+        _       -> (InstrDets [] [], InstrDets [] [])
+
+
 -- | Get both addresses of determining instructions and the value of a receptacle.
 getRegPair :: InstrDets -> Reg -> ([InstrAddr], Val)
 getRegPair (InstrDets regDets _) reg
@@ -95,7 +102,7 @@ addVarDets varDet@(vId, (adrs, val)) (InstrDets regDets varDets)
 -- | Merge two Dets structures, as if each element of one was added to the other.
 mergeInstrDets :: InstrDets -> InstrDets -> InstrDets
 mergeInstrDets (InstrDets rd vd) (InstrDets rd' vd')
- = InstrDets (mergeXDets (Reg 666) rd rd') (mergeXDets (Id "__ERR__")  vd vd')
+ = InstrDets (mergeXDets (Reg 999) rd rd') (mergeXDets (Id "__ERR__")  vd vd')
 
 mergeXDets :: Ord a => a 
            -> [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))]
@@ -174,6 +181,12 @@ setBlkBranches (Block bId instrs preDets postDets _)
 setBlkPreDets :: Block -> InstrDets -> Block
 setBlkPreDets (Block bId instrs _ postDets branches) preDets
  = Block bId instrs preDets postDets branches
+
+setBlkPostDets :: Block -> InstrDets -> Block
+setBlkPostDets (Block bId instrs preDets _ branches) postDets
+ = Block bId instrs preDets postDets branches
+
+
 
 lookupInstr :: [Block] -> InstrAddr -> Maybe InstrNode
 lookupInstr blks tAddr@(InstrAddr bId _)
@@ -401,4 +414,13 @@ sortByKeys :: Ord a => [(a, b)] -> [(a, b)]
 sortByKeys al
  = let cmp (a1, _) (a2, _) = compare a1 a2
    in sortBy cmp al
+
+isBranchOrRet :: InstrNode -> Bool
+isBranchOrRet (InstrNode i _ _ _)
+ = case i of
+        IReturn _ -> True
+        IBranch{} -> True
+        _         -> False
+
+
 

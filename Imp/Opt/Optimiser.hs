@@ -19,7 +19,29 @@ import qualified Imp.Core.Interpreter   as I
 -- | First, determine the edges that go between blocks, for the next stage to operate on.
 -- | This only requires finding the first branch instruction in each block, if it exists.
 -- |
--- | Second, produce the actual flow graph by starting a traversal from Block 0.
+-- | Second, determine which registers and variables are defined in which blocks.
+-- | This involves first finding for each block, the blocks which originate it.
+-- | Everything defined in the originating blocks is defined in this block, and all of these
+-- | variables and registers are added to the state at the start of the block, with
+-- | an uninitialised status.
+-- |
+-- | To actually build the map from blocks to sets of originators, it's important to realise that
+-- | block A originates block B iff block A also originates all the parents of block B, block 0,
+-- | being the entry point, originates every other block, and each block originates itself.
+-- | Hence, first set zero to be originated only by itself. Then set each other block
+-- | to be originated by every block.
+-- | Then, for each block, look at the sets of originators of the parents of this block.
+-- | The intersection of these sets, plus the block itself, is the block's new set of originators.
+-- | Keep performing this until no further changes can be made, and we have obtained the
+-- | final mapping of originators.
+-- | 
+-- | An invariant is maintained that the true set of originators for a block is a subset of the 
+-- | interim set at all stages of the algorithm.
+-- | The set of correct sets of originators propagates out from block 0 as the algorithm iterates, 
+-- | and the size of each set is monotonically decreasing, so that it must eventually terminate
+-- | with the final sets being only the correct ones.
+-- |
+-- | The third step is to produce the actual flow graph by starting a traversal from Block 0.
 -- | The traversal maintains a queue of blocks to update, which it pops off one at a time until 
 -- | there are none left.
 -- | For each block: 
@@ -46,15 +68,18 @@ import qualified Imp.Core.Interpreter   as I
 
 -- | Recalculate the flow graph.
 genGraph :: CFG -> CFG
-genGraph (CFG name args blks edges)
- = let fresh    = wipeGraph blks
-       newEdges = regenBlkEdges fresh
-       zeroChildren = filter (/= 0) $ map snd $ edgesFrom edges 0
-       newBlks  = graphInEdges newEdges fresh (0:zeroChildren)
+genGraph (CFG name args blks _)
+ = let fresh     = wipeGraph blks
+       newEdges  = regenBlkEdges fresh
+       zChildren = filter (/= 0) $ map snd $ edgesFrom newEdges 0
+       -- scoped    = detScopes newEdges (setArgScope fresh args) (0:zChildren)
+       scoped    = setOrigScopes (setBlockPostScopes (setArgScope fresh args)) newEdges
+       newBlks   = graphInEdges newEdges (setArgDets scoped args) (0:zChildren)
    in CFG name args (graphOutEdges newBlks) newEdges
+   --in CFG name args scoped newEdges
 
 
--- | Wipe out all edges and state in a graph.
+-- | Wipe out all edges and state in a graph. Returns the block list with block edges recomputed.
 wipeGraph :: [Block] -> [Block]
 wipeGraph = map wipeBlock
 
@@ -68,6 +93,170 @@ wipeInstrEdges (InstrNode inst addr _ _)
  = InstrNode inst addr [] []
 
 
+-- | Given an edge list, determine, for each block, which blocks it originates from.
+-- | That is to say, the set of blocks where registers and variables defined in them are also 
+-- | defined in the entirety of the block we're looking at.
+findOriginators :: [(Int, Int)] -> [(Int, [Int])]
+findOriginators edges 
+ = let nodes = rmDups $ concatMap (\(o, d) -> [o, d]) edges
+       origList =  (0, [0]) : filter ((/= 0) . fst) (map (\n -> (n, nodes)) nodes)
+   in map (\(n, os) -> (n, filter (/=n) os)) $ originators (filter (/= 0) nodes) edges origList
+
+originators :: [Int] -> [(Int, Int)] -> [(Int, [Int])] -> [(Int, [Int])]
+originators nodes edges origList
+ | stepped == origList
+   = origList
+ | otherwise
+   = originators nodes edges stepped
+ where stepped 
+        = map (recalcOrigs edges origList . fst) origList 
+
+recalcOrigs :: [(Int, Int)] -> [(Int, [Int])] -> Int -> (Int, [Int])
+recalcOrigs edges origList node
+ = let ins = map fst (edgesTo edges node)
+       inOrigs =  map snd $ filter ((`elem` ins) . fst) origList 
+       newOrigs = rmDups $ node : polyIntersect inOrigs
+   in (node, newOrigs)
+ where polyIntersect ls = case ls of
+                               []     -> []
+                               [l]      -> l
+                               l:rest -> l `intersect` polyIntersect rest
+
+
+
+setArgDets :: [Block] -> [Id] -> [Block]
+setArgDets blks args 
+ = let argDets 
+        = map (\i -> (i, ([], VVar i))) args
+       (pre, Block _ instrs preDets postDets brs, post)
+        = breakElem (\(Block bId _ _ _ _) -> bId == 0) blks
+       newBlk
+        = Block 0 instrs (setAllVarDets argDets preDets) postDets brs
+   in pre ++ [newBlk] ++ post
+
+
+setBlockPostScopes :: [Block] -> [Block]
+setBlockPostScopes blks
+ = case blks of 
+        []   -> []
+        b:bs -> setBlockPostScope b : setBlockPostScopes bs
+ where setBlockPostScope (Block bid instrs preDets _ branches)
+        = let newPostDets = instrScopes instrs preDets
+          in Block bid instrs preDets newPostDets branches
+
+setArgScope :: [Block] -> [Id] -> [Block]
+setArgScope blks args 
+ = case blks of 
+        []   -> []
+        b:bs -> argedBlk b : setArgScope bs args
+ where argDets
+        = map (\i -> (i, ([], VBot))) args
+       argedBlk (Block bId instrs preDets postDets brs)
+        = Block bId instrs (setAllVarDets argDets preDets) postDets brs
+
+setOrigScopes :: [Block] -> [(Int, Int)] -> [Block]
+setOrigScopes blks edges
+ = let propped = propOrigScopes blks $ findOriginators edges
+   in unionPostDets propped
+ where unionDets (Block _ _ preDets postDets _)
+        = unionScopes preDets postDets
+       unionPostDets inBlks
+        = case inBlks of
+               []   -> []
+               b:bs -> setBlkPostDets b (unionDets b) : unionPostDets bs
+
+propOrigScopes :: [Block] -> [(Int, [Int])] -> [Block]
+propOrigScopes blks origList
+ = case origList of
+        []   -> blks
+        o:os -> propOrigScopes (getOrigs o) os
+   where getOrigs (n, origs)
+          = let (pre, blk@(Block _ _ preDets _ _), post)
+                 = breakElem (\(Block b _ _ _ _) -> b == n) blks
+                newPreDets
+                 = unionScopeList $ preDets : map (snd . getInstrDets blks) origs
+
+            in pre ++ [setBlkPreDets blk newPreDets] ++ post
+                
+
+unionScopeList :: [InstrDets] -> InstrDets
+unionScopeList scopeList
+ = case scopeList of
+        []   -> InstrDets [] []
+        s:ss -> unionScopes s (unionScopeList ss)
+
+unionScopes :: InstrDets -> InstrDets -> InstrDets
+unionScopes (InstrDets rd vd) (InstrDets rd' vd')
+ = InstrDets (unionScopeDets rd rd') (unionScopeDets vd vd')
+ where unionDetScopeList l = case l of
+                             (r, _):_ -> [(r, ([], VBot))]
+                             _          -> []
+       unionScopeDets a b
+        = let merged = groupBy (\(a1, _) (a2, _) -> a1 == a2) $ sortByKeys  (a ++ b)
+          in concatMap unionDetScopeList merged
+
+
+mergeScopes :: InstrDets -> InstrDets -> InstrDets
+mergeScopes (InstrDets rd vd) (InstrDets rd' vd')
+ = InstrDets (mergeScopeDets rd rd') (mergeScopeDets vd vd')
+ where mergeDetScopeList l = case l of
+                             (r, _):_:_ -> [(r, ([], VBot))]
+                             _          -> []
+       mergeScopeDets a b
+        = let merged = groupBy (\(a1, _) (a2, _) -> a1 == a2) $ sortByKeys  (a ++ b)
+          in concatMap mergeDetScopeList merged
+
+
+detScopes :: [(Int, Int)] -> [Block] -> [Int] -> [Block]
+detScopes edges blks queue
+ = case queue of
+        []    -> blks
+        b:bs  -> let (pre, blk@(Block _ _ preDets _ _), post)
+                      = breakElem (\(Block bid _ _ _ _) -> bid == b) blks
+                     inNeighbours
+                      = map fst $ edgesTo edges b
+                     newPreDets
+                      = case inNeighbours of
+                             []  -> preDets
+                             [n] -> snd (getInstrDets blks n)
+                             l   -> let d:ds = map (snd . getInstrDets blks) l
+                                    in foldr mergeScopes d ds
+                     queueItems 
+                      = if preDets /= newPreDets
+                         then map snd $ edgesFrom edges b
+                         else []
+                     newqueue 
+                      = bs ++ filter (`notElem` bs) queueItems
+                     newBlock
+                      = blockScope $ setBlkPreDets blk newPreDets 
+                     newBlks 
+                      = pre ++ [newBlock] ++ post
+                 in detScopes edges newBlks newqueue
+
+
+blockScope :: Block -> Block
+blockScope (Block bid instrs preDets _ branches)
+ = let newPostDets = instrScopes instrs preDets
+   in Block bid instrs preDets newPostDets branches
+
+instrScopes :: [InstrNode] -> InstrDets -> InstrDets
+instrScopes instrs instrDets
+ = case instrs of
+        []      -> instrDets
+        i:is    -> let newInstrDets = instrScope i instrDets
+                   in if isBranchOrRet i then newInstrDets else instrScopes is newInstrDets
+
+instrScope :: InstrNode -> InstrDets -> InstrDets 
+instrScope (InstrNode i _ _ _) dets
+ = case i of
+        IConst reg _     -> setRegDets (newDet reg) dets
+        ILoad  reg _     -> setRegDets (newDet reg) dets
+        IArith _ reg _ _ -> setRegDets (newDet reg) dets
+        ICall reg _ _    -> setRegDets (newDet reg) dets
+        IStore vId _     -> setVarDets (newDet vId) dets
+        _                ->  dets
+ where newDet a = (a, ([], VBot))
+
 -- | Flow graph construction step.
 graphInEdges :: [(Int, Int)] -> [Block] -> [Int] -> [Block]
 graphInEdges edges blks queue
@@ -80,9 +269,9 @@ graphInEdges edges blks queue
                      newPreDets
                       = case inNeighbours of
                              []  -> preDets
-                             [n] -> snd (getInstrDets n)
-                             l   -> let d:ds = map (snd . getInstrDets) l
-                                    in foldr mergeInstrDets d  ds
+                             [n] -> snd (getInstrDets blks n)
+                             l   -> let d:ds = map (snd . getInstrDets blks) l
+                                    in foldr mergeInstrDets d ds
                      queueItems 
                       = if preDets /= newPreDets
                          then map snd $ edgesFrom edges b
@@ -94,10 +283,6 @@ graphInEdges edges blks queue
                      newBlks 
                       = pre ++ [newBlock] ++ post
                  in graphInEdges edges newBlks newqueue
- where getInstrDets blkId
-        = case find (\(Block bId _ _ _ _) -> bId == blkId) blks of
-               Just (Block _ _ pre post _) -> (pre, post)
-               _       -> (InstrDets [] [], InstrDets [] [])
 
 -- | Update the edges and states of a given block.
 blockInstrEdges :: Block -> Block
@@ -118,12 +303,6 @@ instrEdges instrs instrDets
                              then (is, newInstrDets)
                              else instrEdges is newInstrDets
                    in (newI:fIs, fInstrDets)
- where isBranchOrRet (InstrNode i _ _ _)
-        = case i of
-               IReturn _ -> True
-               IBranch{} -> True
-               _         -> False
-
 
 -- | Update the program state given a particular instruction.
 
@@ -135,8 +314,7 @@ instrEdges instrs instrDets
 -- | ld: If the value of the variable being loaded is indeterminate, then the register is marked 
 -- |     as containing the same value as the input variable.
 -- |     Otherwise, the register inherits the value that was in the variable.
--- |     If the variable was not previously defined by a st instruction, it is assumed to be
--- |     a function argument and gets its own value.
+-- |     If the variable is not an arg and was not previously defined by a st, it is indeterminate. 
 -- |
 -- | st: First we convert all references to the value of the target variable to VTop.
 -- |     Since the variable has changed values, any receptacles marked as holding its value
@@ -166,7 +344,7 @@ updateInstrDets (InstrNode inst addr _ _) instrDets
         IConst reg v  -> setRegDets (reg, ([addr], VNum v)) instrDets
         ILoad  reg vId  -> let varVal = getVarVal instrDets vId  
                                val = case varVal of
-                                          VBot -> VVar vId
+                                          VBot -> VTop
                                           VTop -> VVar vId
                                           v    -> v
                                newDets = case varVal of

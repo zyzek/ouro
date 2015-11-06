@@ -42,8 +42,8 @@ the relevant optimisation steps.
 
 Now, let's move on to specific examples.
 
-Unreachable Block Elimination
-=============================
+Unreachable Block Elimination (-unreach)
+========================================
 
 extrablks.ir contains the following:
 
@@ -109,10 +109,10 @@ been rendered unreachable by the branch optimisations detailed below, in the Red
 Elimination section.
      
 
-Dead Code Elimination
-=====================
+Dead Code Elimination (-dead)
+=============================
 
-Code that occurs after br or ret instructions is removed, thus:
+Code that occurs after br or ret instructions is removed, thus, after_ret.ir:
 
     (
       (main ()
@@ -142,7 +142,7 @@ becomes
 
 
 Although they have no antecedents, branch and return instructions which use undefined registers
-are not removed:
+are not removed (undef_reg.ir):
 
     (
       (main ()
@@ -191,8 +191,8 @@ It probably makes sense, therefore, to eliminate unreachable before dead code.
 
 
 
-Redundant Load Elimination
-==========================
+Redundant Load Elimination (-mutate)
+====================================
 
 The example redundant.ir demonstrates that the optimiser can perform redunant load elimination,
 but there are some other capabilities it has, too.
@@ -387,8 +387,8 @@ So that all but the final two instructions are redundant. extrablk_arithmetic.ir
 with this.
 
 
-Block Merging
-=============
+Block Merging (-merge)
+======================
 
 The file chains.ir contains the following:
 
@@ -545,7 +545,7 @@ Seeing that this is the case, let's see how the fixed-point combinator does on t
     )
 
 Not such a bad result. Similar results occur if the final result is a constant.
-For example:
+For example, arith.ir:
 
     (
         (main (x)
@@ -581,8 +581,8 @@ As 4 is then always returned, the program boils down quite nicely.
 Some Edge Cases
 ===============
 
-Although it is a broken program, whose functions which never, selfloop.ir shows how circular
-loops can be collapsed down.
+Although it is a broken program, whose functions never terminate, selfloop.ir shows how cycles
+can be collapsed down.
 
     (
         (main ()
@@ -642,26 +642,40 @@ This reduces to,
            (add r0 r0 r0)
            (add r0 r0 r1)
            (print r0)
-           (lc r666 0)
-           (br r666 1 1) )
+           (br r1 1 1) )
       )
     )
 
 Each of the infinite loops has been reduced down to a single block (the print statement in the
 exec function is required so that the value in r0 is actually used, so not optimised out).
 
-The branch in exec block 1 has been rewritten due to a limitation in the optimiser: 
-it believes that the value in r1 is indeterminate.
+However, exec, used to optimise to this:
 
-Although it is true that r1 always contains the value 1, when the flow graph is being constructed,
-and block 1 is being entered for the first time, the incoming edges are examined.
+      (exec ()
+        (0
+           (lc r0 0)
+           (lc r1 1)
+           (br r0 1 1) )
+        (1
+           (add r0 r0 r0)
+           (add r0 r0 r1)
+           (print r0)
+           (lc r666 0)
+           (br r666 1 1) )
+      )
+
+The branch block 1 was rewritten due to a limitation in the optimiser: 
+it believed that the value in r1 was indeterminate.
+
+Although it is true that r1 always contains the value 1, when the flow graph is being 
+constructed, and block 1 is entered for the first time, the incoming edges are examined.
 Block 1 is branched to from both 0 and 1, so that its initial state is potentially determined
 by the final states of either of them.
-The first time the the program tries to work out the initial state of block 1, it does not yet know
+The first time the the program tried to work out the initial state of block 1, it did not yet know
 the final state of block 1. The value in r1 could potentially have changed by that point, and so
-it is concluded that r1's value at the start of block 1 is indeterminate.
+it was concluded that r1's value at the start of block 1 is indeterminate.
 
-This is a severe hamper on the efficiency of my optimiser in cases where there are loops in the 
+This was a severe hamper on the efficiency of the optimiser in cases where there were loops in the 
 code.
 
 Consider the following non-recursive factorial program, fact_loop.ir.
@@ -703,7 +717,7 @@ Consider the following non-recursive factorial program, fact_loop.ir.
       )
     )
 
-The program optimises this down to the marginally-better
+The program optimised this down to this somewhat better code:
 
     (
       (factorial (n)
@@ -735,10 +749,43 @@ The program optimises this down to the marginally-better
     )
 
 Notice that there are several pointless lc instructions which load up 0 and 1, even though
-those values already exist in r0 and r1. Additionally, the total and n variables could be 
-optimised away. However, for the same reasons as above, the fact that such variable and constant
-values exists in registers is destroyed in the loop entry point.
+those values already exist in r0 and r1. However, for the same reasons as above, the fact that such
+values exist in registers is destroyed in the loop entry point.
+A solution to this problem involved determining which blocks originate any given block, which is
+to say, in working out which registers are certainly defined at the start of any given block, so
+we don't throw away information. See the source for discussion of this solution.
 
-A solution to this problem is pretty easy: simply pre-initialise 
+The result, after having implemented originator-finding, is as follows:
 
-     loop fact, self loop
+    (
+      (factorial (n)
+        (0
+           (lc r0 0)
+           (lc r1 1)
+           (st total r1)
+           (br r0 2 2) )
+        (2
+           (ld r3 n)
+           (gt r5 r3 r1)
+           (br r5 3 4) )
+        (3
+           (ld r7 total)
+           (mul r9 r7 r3)
+           (st total r9)
+           (sub r12 r3 r1)
+           (st n r12)
+           (br r0 2 2) )
+        (4
+           (ld r14 total)
+           (geq r17 r3 r0)
+           (mul r18 r14 r17)
+           (ret r18) )
+      )
+    )
+
+We have thus managed to remove 3 pointless lc instructions. The variables are juicy optimisation
+targets, and could be turned into registers, though this avenue has not been pursued.
+I decided that this would not be in the spirit of the assignment, however: it is mainly
+a possibility because we have infinite registers available. One could imagine substituting
+registers for every variable, and then adding some back in if the number of active registers
+gets too high, but this is somewhat out of scope.
