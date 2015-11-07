@@ -34,5 +34,5 @@ block
         instrs     <- some instr
         only KRoundKet
         let instrnodes = map (\i -> InstrNode i (InstrAddr (-1) (-1)) [] []) instrs
-        return         $  Block n instrnodes (InstrDets [] []) (InstrDets [] []) []
+        return     $  Block n instrnodes (InstrDets [] []) (InstrDets [] []) []
 

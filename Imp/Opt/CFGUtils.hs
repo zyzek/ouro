@@ -16,7 +16,7 @@ getInstrDets :: [Block] -> Int -> (InstrDets, InstrDets)
 getInstrDets blks blkId
  = case find (\(Block bId _ _ _ _) -> bId == blkId) blks of
         Just (Block _ _ pre post _) -> (pre, post)
-        _       -> (InstrDets [] [], InstrDets [] [])
+        _                           -> (InstrDets [] [], InstrDets [] [])
 
 
 -- | Get both addresses of determining instructions and the value of a receptacle.
@@ -72,8 +72,8 @@ setAllVarDets vDets dets
         v:vs -> setAllVarDets vs (setVarDets v dets)
 
 -- | Like the setters above, but merge the lists and join the vals, rather than overwriting.
--- | These are required for if the value of a receptacle is determined from more than one
--- |  parent branch.
+-- | These are required for the case that the value of a receptacle is determined from more
+-- | than one parent branch.
 addRegDets :: (Reg, ([InstrAddr], Val)) -> InstrDets -> InstrDets
 addRegDets regDet@(reg, (adrs, val)) (InstrDets regDets varDets)
  = case lookup reg regDets of
@@ -100,6 +100,7 @@ addVarDets varDet@(vId, (adrs, val)) (InstrDets regDets varDets)
 
 
 -- | Merge two Dets structures, as if each element of one was added to the other.
+-- | If an object is defined in exactly one of them, its value is made to be indeterminate.
 mergeInstrDets :: InstrDets -> InstrDets -> InstrDets
 mergeInstrDets (InstrDets rd vd) (InstrDets rd' vd')
  = InstrDets (mergeXDets (Reg 999) rd rd') (mergeXDets (Id "__ERR__")  vd vd')
@@ -107,15 +108,15 @@ mergeInstrDets (InstrDets rd vd) (InstrDets rd' vd')
 mergeXDets :: Ord a => a 
            -> [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))] -> [(a, ([InstrAddr], Val))]
 mergeXDets err a b
- = let merged = groupBy (\(a1, _) (a2, _) -> a1 == a2) $ sortByKeys  (a ++ b)
-       mergeDetList l = case l of
-                             (r, (a1, v1)):(_, (a2, v2)):_ 
-                               -> let newAdrs = rmDups (a1 ++ a2)
-                                      newVal = vJoin v1 v2
-                                  in (r, (newAdrs, newVal))
-                             (r, (addr, _)):_
-                               -> (r, (addr, VTop))
-                             _ -> (err, ([], VBot))
+ = let merged 
+        = groupBy (\(a1, _) (a2, _) -> a1 == a2) $ sortByKeys (a ++ b)
+       mergeDetList l
+        = case l of
+               (r, (a1, v1)):(_, (a2, v2)):_ -> let newAdrs = rmDups (a1 ++ a2)
+                                                    newVal  = vJoin v1 v2
+                                                in (r, (newAdrs, newVal))
+               (r, (addr, _)):_              -> (r, (addr, VTop))
+               _                             -> (err, ([], VBot))
   in map mergeDetList merged
 
 
@@ -131,7 +132,7 @@ derefVar dets vId
 
                                                                             
 -- | Determine if two Dets structures are equal.
--- | Note that VTops evaluate to equal, though though might contain distinct values.
+-- | Note that VTops evaluate equal, though though might represent distinct values.
 instrDetsEqual :: InstrDets -> InstrDets -> Bool
 instrDetsEqual (InstrDets rd vd) (InstrDets rd' vd')
  = xDetsEqual rd rd' && xDetsEqual vd vd'
@@ -141,15 +142,19 @@ xDetsEqual p q
  = let sa = sort p
        sb = sort q
    in case sa of
-           [] -> case sb of
-                      [] -> True
-                      _  -> False
-           (ar, (aadrs, aval)):as -> case sb of
-                                          (br, (badrs, bval)):bs -> ar == br
-                                                                     && aval == bval
-                                                                     && sort aadrs == sort badrs
-                                                                     && xDetsEqual as bs
-                                          []             -> False
+           [] 
+            -> case sb of
+                    [] -> True
+                    _  -> False
+           (ar, (aadrs, aval)):as
+            -> case sb of
+                    (br, (badrs, bval)):bs 
+                     -> ar == br
+                         && aval == bval
+                         && sort aadrs == sort badrs
+                         && xDetsEqual as bs
+                    []
+                     -> False
 
 
 -- | Find all receptacles that contain a certain value.
@@ -260,7 +265,8 @@ rmEdges blks targets remove
 removeInstr :: [Block] -> InstrAddr -> [Block]
 removeInstr blks tAddr@(InstrAddr bId _)
  = case lookupInstr blks tAddr of
-        Nothing -> blks
+        Nothing 
+         -> blks
         Just (InstrNode _ _ ins outs) 
          -> let danglers
                  = ins ++ outs
@@ -334,8 +340,10 @@ blockBranches blk@(Block _ instrnodes _ _ _)
         = break isRet instrnodes
        brs
         = case find isBranch rpre of
-               Just (InstrNode (IBranch _ j k) _ _ _) -> nub [j, k]
-               _ -> []
+               Just (InstrNode (IBranch _ j k) _ _ _)
+                -> nub [j, k]
+               _ 
+                -> []
        brsNoRet
         | null rpost && null brs = [-1]
         | otherwise              = brs
@@ -348,23 +356,22 @@ blockBranches blk@(Block _ instrnodes _ _ _)
 -- | Any such unterminated blocks have only -1 in their branch list.
 branchUnterminated :: CFG -> CFG
 branchUnterminated (CFG name args blks edges)
- = let (newBlks, correctedEdges)
-        = branchUnterminatedBlocks blks []
-       newEdges
-        = correctedEdges ++ filter (\(_, d) -> d /= -1) edges
+ = let (newBlks, correctedEdges) = branchUnterminatedBlocks blks []
+       newEdges                  = correctedEdges ++ filter (\(_, d) -> d /= -1) edges
    in CFG name args newBlks newEdges
 
 branchUnterminatedBlocks :: [Block] -> [(Int, Int)] -> ([Block], [(Int, Int)])
 branchUnterminatedBlocks blks correctedEdges
- = let (pre, post)
-        = break (\(Block _ _ _ _ br) -> br == [-1]) blks
+ = let (pre, post) = break (\(Block _ _ _ _ br) -> br == [-1]) blks
    in case post of 
-           [] -> (blks, correctedEdges)
-           [blk] ->  (pre ++ [setBlkBranches blk []], correctedEdges) 
+           [] 
+            -> (blks, correctedEdges)
+           [blk]
+            ->  (pre ++ [setBlkBranches blk []], correctedEdges) 
            thisBlk@(Block tbId instrs _ _ _):nBlk@(Block nbId _ _ _ _):rest
-            -> let lastAddr = case instrs of 
-                                   [] -> -1
-                                   _  -> extractNodeAddr (last instrs)
+            -> let lastAddr  = case instrs of 
+                                    [] -> -1
+                                    _  -> extractNodeAddr (last instrs)
                    jmpInstrs = [ InstrNode 
                                   (IConst (Reg 666) 0) 
                                   (InstrAddr tbId (lastAddr + 1)) 
@@ -373,8 +380,8 @@ branchUnterminatedBlocks blks correctedEdges
                                   (IBranch (Reg 666) nbId nbId)
                                   (InstrAddr tbId (lastAddr + 2))
                                   [InstrAddr tbId (lastAddr + 1)] [] ]
-                   newBlk = setBlkInstrs thisBlk (instrs ++ jmpInstrs)
-                   newEdge = (tbId, nbId)
+                   newBlk    = setBlkInstrs thisBlk (instrs ++ jmpInstrs)
+                   newEdge   = (tbId, nbId)
                    (newRest, newCorrected)
                     = branchUnterminatedBlocks (nBlk:rest) (newEdge:correctedEdges)
                in ( pre 

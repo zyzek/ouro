@@ -11,12 +11,11 @@ import qualified Imp.Core.Interpreter   as I
 
 -- | Flow Graph Construction  ========================================
 
--- | Immediately after parsing, no edges or state information exists, so needs to be calculated.
--- | Optimisations may add and remove instructions, blocks, so that edges and state are changed.
+-- | Immediately after parsing, no state or edges exist, so these needs to be calculated.
+-- | Optimisations may add and remove instructions and blocks, so that the graph changes.
 -- | Updated state information, in particular, must be propagated if instructions are modified.
 -- |
 -- | This process happens in several stages.
--- |
 -- |
 -- | First, determine the edges that go between blocks, for the next stage to operate on.
 -- | This only requires finding the first branch instruction in each block, if it exists.
@@ -26,7 +25,7 @@ import qualified Imp.Core.Interpreter   as I
 -- | This involves first finding for each block, the blocks which originate it.
 -- | Everything defined in the originating blocks is defined in this block, and all of these
 -- | variables and registers are added to the state at the start of the block, with
--- | an uninitialised status.
+-- | an uninitialised value.
 -- |
 -- | To actually build the map from blocks to sets of originators, it's important to realise that
 -- | block A originates block B iff block A also originates all the parents of block B, block 0,
@@ -36,7 +35,7 @@ import qualified Imp.Core.Interpreter   as I
 -- | Then, for each block, look at the sets of originators of the parents of this block.
 -- | The intersection of these sets, plus the block itself, is the block's new set of originators.
 -- | Keep performing this until no further changes can be made, and we have obtained the
--- | final mapping of originators.
+-- | final mapping.
 -- | 
 -- | An invariant is maintained that the true set of originators for a block is a subset of the 
 -- | interim set at all stages of the algorithm.
@@ -148,7 +147,6 @@ propOrigScopes blks origList
                  = breakElem (\(Block b _ _ _ _) -> b == n) blks
                 newPreDets
                  = unionScopeList $ preDets : map (snd . getInstrDets blks) origs
-
             in pre ++ [setBlkPreDets blk newPreDets] ++ post
 
 unionScopeList :: [InstrDets] -> InstrDets
@@ -160,9 +158,10 @@ unionScopeList scopeList
 unionScopes :: InstrDets -> InstrDets -> InstrDets
 unionScopes (InstrDets rd vd) (InstrDets rd' vd')
  = InstrDets (unionScopeDets rd rd') (unionScopeDets vd vd')
- where unionDetScopeList l = case l of
-                             (r, _):_ -> [(r, ([], VBot))]
-                             _          -> []
+ where unionDetScopeList l
+        = case l of
+               (r, _):_ -> [(r, ([], VBot))]
+               _        -> []
        unionScopeDets a b
         = let merged = groupBy (\(a1, _) (a2, _) -> a1 == a2) $ sortByKeys  (a ++ b)
           in concatMap unionDetScopeList merged
@@ -182,7 +181,7 @@ instrScopes instrs instrDets
                IArith _ reg _ _ -> setRegDets (newDet reg) dets
                ICall reg _ _    -> setRegDets (newDet reg) dets
                IStore vId _     -> setVarDets (newDet vId) dets
-               _                ->  dets
+               _                -> dets
        newDet a = (a, ([], VBot))
 
 
@@ -191,29 +190,27 @@ instrScopes instrs instrDets
 -- | defined in the entirety of the block we're looking at.
 findOriginators :: [(Int, Int)] -> [(Int, [Int])]
 findOriginators edges 
- = let nodes = rmDups $ concatMap (\(o, d) -> [o, d]) edges
+ = let nodes    = rmDups $ concatMap (\(o, d) -> [o, d]) edges
        origList =  (0, [0]) : filter ((/= 0) . fst) (map (\n -> (n, nodes)) nodes)
    in map (\(n, os) -> (n, filter (/=n) os)) $ originators (filter (/= 0) nodes) edges origList
 
 originators :: [Int] -> [(Int, Int)] -> [(Int, [Int])] -> [(Int, [Int])]
 originators nodes edges origList
- | stepped == origList
-   = origList
- | otherwise
-   = originators nodes edges stepped
- where stepped 
-        = map (recalcOrigs edges origList . fst) origList 
+ | stepped == origList = origList
+ | otherwise           = originators nodes edges stepped
+ where stepped = map (recalcOrigs edges origList . fst) origList 
 
 recalcOrigs :: [(Int, Int)] -> [(Int, [Int])] -> Int -> (Int, [Int])
 recalcOrigs edges origList node
- = let ins = map fst (edgesTo edges node)
-       inOrigs =  map snd $ filter ((`elem` ins) . fst) origList 
+ = let ins      = map fst (edgesTo edges node)
+       inOrigs  = map snd $ filter ((`elem` ins) . fst) origList 
        newOrigs = rmDups $ node : polyIntersect inOrigs
    in (node, newOrigs)
- where polyIntersect ls = case ls of
-                               []     -> []
-                               [l]      -> l
-                               l:rest -> l `intersect` polyIntersect rest
+ where polyIntersect ls 
+        = case ls of
+               []     -> []
+               [l]    -> l
+               l:rest -> l `intersect` polyIntersect rest
 
 
 
@@ -262,8 +259,7 @@ graphInEdges edges blks queue
 -- | Update the edges and states of a given block.
 blockInstrEdges :: Block -> Block
 blockInstrEdges (Block bid instrs preDets _ branches)
- = let (newInstrs, newPostDets)
-        = instrEdges instrs preDets
+ = let (newInstrs, newPostDets) = instrEdges instrs preDets
    in Block bid newInstrs preDets newPostDets branches
 
 
@@ -297,7 +293,7 @@ instrEdges instrs instrDets
 -- |     own value. 
 -- |     If the register's value is indeterminate, then not only is the variable's value set,
 -- |     but the register is now marked as containing the same value that is in the variable.
--- |     It would by possible, if the register contained the value of some other
+-- |     It would be possible, if the register contained the value of some other
 -- |     variable, to transitively propagate the information that the two variables hold the same 
 -- |     value. Although it would be straightforward, this has not been implemented.
 -- |
@@ -317,40 +313,40 @@ instrEdges instrs instrDets
 updateInstrDets :: InstrNode -> InstrDets -> InstrDets
 updateInstrDets (InstrNode inst addr _ _) instrDets
  = case inst of
-        IConst reg v  -> setRegDets (reg, ([addr], VNum v)) instrDets
-        ILoad  reg vId  -> let varVal = getVarVal instrDets vId  
-                               val = case varVal of
-                                          VBot -> VTop
-                                          VTop -> VVar vId
-                                          v    -> v
+        IConst reg v    -> setRegDets (reg, ([addr], VNum v)) instrDets
+        ILoad  reg vId  -> let varVal  = getVarVal instrDets vId  
+                               val     = case varVal of
+                                              VBot -> VTop
+                                              VTop -> VVar vId
+                                              v    -> v
                                newDets = case varVal of
                                               VBot -> setVarDets (vId, ([], VVar vId )) instrDets
                                               _    -> instrDets
                            in setRegDets (reg, ([addr], val)) newDets
-        IStore avId reg  -> let val = getRegVal instrDets reg
-                                newDets = case val of
-                                               VVar bvId -> if avId == bvId 
-                                                              then instrDets
-                                                              else derefVar instrDets avId
-                                               VTop      -> let deref
-                                                                 = derefVar instrDets avId
-                                                                oldRegDets 
-                                                                 = getRegDet deref reg
-                                                            in setRegDets 
-                                                                (reg, (oldRegDets, VVar avId))
-                                                                deref
-                                               _         -> derefVar instrDets avId
+        IStore avId reg -> let val     = getRegVal instrDets reg
+                               newDets = case val of
+                                              VVar bvId -> if avId == bvId 
+                                                             then instrDets
+                                                             else derefVar instrDets avId
+                                              VTop      -> let deref
+                                                                = derefVar instrDets avId
+                                                               oldRegDets 
+                                                                = getRegDet deref reg
+                                                           in setRegDets 
+                                                               (reg, (oldRegDets, VVar avId))
+                                                               deref
+                                              _         -> derefVar instrDets avId
                            in setVarDets (avId, ([addr], val)) newDets
-        IArith op rout rin1 rin2 -> let val1 = getRegVal instrDets rin1
-                                        val2 = getRegVal instrDets rin2
+        IArith op rout rin1 rin2 -> let val1   = getRegVal instrDets rin1
+                                        val2   = getRegVal instrDets rin2
                                         outval = if valIsNum val1 && valIsNum val2
                                                   then VNum (I.arithCalc op 
                                                                          (getValNum val1)
                                                                          (getValNum val2))
                                                   else VTop
                                     in setRegDets (rout, ([addr], outval)) instrDets
-        ICall reg _ _ -> setRegDets (reg, ([addr], VTop)) instrDets
-        _             -> instrDets
+        ICall reg _ _   -> setRegDets (reg, ([addr], VTop)) instrDets
+        _               -> instrDets
 
 
 -- | Determine which instructions determine the inputs of an instruction.
@@ -366,17 +362,13 @@ instrEdge instrN@(InstrNode inst _ _ _) instrDets
                IArith _ _ rin1 rin2 -> setNodeIns instrN (rmDups (concatMap getRegD [rin1, rin2]))
                IBranch reg _ _      -> setNodeIns instrN (getRegD reg)
                IReturn reg          -> setNodeIns instrN (getRegD reg)
-               ICall _ _ rlist      -> let detList 
-                                            = rmDups $ concatMap getRegD rlist
+               ICall _ _ rlist      -> let detList = rmDups $ concatMap getRegD rlist
                                        in setNodeIns instrN detList
-               IPrint rlist         -> let detList
-                                            = rmDups $ concatMap getRegD rlist
+               IPrint rlist         -> let detList = rmDups $ concatMap getRegD rlist
                                        in setNodeIns instrN detList
    in (newInstrN, newInstrDets)
- where getRegD
-        = getRegDet instrDets
-       getVarD
-        = getVarDet instrDets
+ where getRegD = getRegDet instrDets
+       getVarD = getVarDet instrDets
 
 
 
@@ -415,13 +407,11 @@ graphOuts blks
 -- | In order to remove unreachable blocks, it is straightforward to find the transitive closure
 -- | of the graph from Block 0. Any that are not reached by this are discarded.
 blockClosure :: CFG -> CFG
-blockClosure cfg
- = let (_, reachable) = zeroClosure cfg
-   in retainBlocks cfg reachable 
+blockClosure cfg = let (_, reachable) = zeroClosure cfg
+                   in retainBlocks cfg reachable 
 
 closureIds :: [CFG] -> [(Id, [Int])]
-closureIds
- = map zeroClosure
+closureIds = map zeroClosure
 
 -- | Transitive closure of graph blocks starting from the 0 block.
 zeroClosure :: CFG -> (Id, [Int])
@@ -436,10 +426,8 @@ closure cfg nodes
 
 closureStep :: CFG -> [Int] -> [Int]
 closureStep (CFG _ _ _ edges) reached
- = let isOrig n (o, _)
-        = o == n
-       edgeDests n
-        = map snd (filter (isOrig n) edges)
+ = let isOrig n (o, _) = o == n
+       edgeDests n     = map snd (filter (isOrig n) edges)
    in rmDups $ reached ++ concatMap edgeDests reached
 
 -- | Take a CFG, a list of block numbers to keep, 
@@ -521,9 +509,9 @@ removeUnreachedInstrs (CFG cId args blks edges)
         = not (null ins && null outs) || isUseInstr instrN
        removeInBlk blk@(Block _ instrs _ _ _)
         = let (pre, post) = break isBranchOrRet instrs
-              truncated = case post of
-                               []   -> pre
-                               br:_ -> pre ++ [br]
+              truncated   = case post of
+                                 []   -> pre
+                                 br:_ -> pre ++ [br]
           in setBlkInstrs blk (filter instrReached truncated)
   in CFG cId args (map removeInBlk blks) edges
 
@@ -574,7 +562,7 @@ isUseInstr (InstrNode i _ _ _)
 -- |   that this will mean fewer dependencies on loads and stores. Wherever the const value came
 -- |   from can eventually be replaced by an lc.
 -- |   We preferentially choose registers which obtained their value in some earlier block, 
--- |   to make it likelier that this block will be emptied out.A
+-- |   to make it likelier that this block will be emptied out.
 -- |   If no constant register is available, one is created by the insertion of an lc immediately
 -- |   before the branch.
 -- |   I had intended this register to be the lowest unused register number, but for now it 
@@ -604,7 +592,8 @@ mutateBlks blks forbidRewrite bIds
         []   -> blks
         i:is -> let (_, Block _ instrs preDets _ _, _)
                      = breakElem (\(Block b _ _ _ _) -> b == i) blks
-                    (newBlks, newForbids) = mutateInstrs blks preDets instrs forbidRewrite
+                    (newBlks, newForbids) 
+                     = mutateInstrs blks preDets instrs forbidRewrite
                 in mutateBlks newBlks newForbids is
 
 -- | Given the instruction sequence of a block, apply optimisations to each of the instructions,
@@ -727,7 +716,8 @@ mutateInstrs blks dets instrs forbidRewrite
                      -> let v1 = getRegVal dets rin1
                             v2 = getRegVal dets rin2
                         in if valIsNum v1 && valIsNum v2 
-                           then let res = I.arithCalc op (getValNum v1) (getValNum v2)
+                           then let res 
+                                     = I.arithCalc op (getValNum v1) (getValNum v2)
                                     newInstr
                                      = InstrNode (IConst rout res) addr [] outs
                                     newBlks
@@ -762,7 +752,8 @@ tryRewriteRegs :: [Block] -> [InstrAddr] -> [InstrAddr] -> Reg -> ([Block], Bool
 tryRewriteRegs blks instrsToRewrite forbidRewrite targetReg
  = case instrsToRewrite of
         [] -> (blks, True)
-        _  -> let br:_ = rmDups $ map (\(InstrAddr b _) -> b) instrsToRewrite
+        _  -> let br:_ 
+                   = rmDups $ map (\(InstrAddr b _) -> b) instrsToRewrite
                   (bInstrs, rest) 
                    = partition (\(InstrAddr b _) -> b == br) instrsToRewrite
                   (rewritten, success) 
@@ -777,8 +768,10 @@ tryRewriteRegs blks instrsToRewrite forbidRewrite targetReg
 -- | arrived at.
 rewriteBlock :: [Block] -> Int -> [InstrAddr] -> [InstrAddr] -> Reg -> ([Block], Bool)
 rewriteBlock blks bId instrsToRewrite forbidRewrite targetReg
- = let (_, Block _ bInstrs preDets _ _, _) = breakElem (\(Block b _ _ _ _) -> b == bId) blks
-       instrAddrs = map (\(InstrNode _ addr _ _) -> addr) bInstrs
+ = let (_, Block _ bInstrs preDets _ _, _)
+        = breakElem (\(Block b _ _ _ _) -> b == bId) blks
+       instrAddrs
+        = map (\(InstrNode _ addr _ _) -> addr) bInstrs
    in rewriteBlockInstrs blks bId preDets instrsToRewrite forbidRewrite instrAddrs targetReg
 
 rewriteBlockInstrs :: [Block] -> Int -> InstrDets -> [InstrAddr] 
@@ -803,7 +796,8 @@ rewriteBlockInstrs blks bId dets instrsToRewrite forbidRewrite instrAddrs target
                                 ++ post
                             rBlks 
                              = addOutEdges (removeAddrsFromOuts newBlks ins iAddr) newIns iAddr
-                            newDets = updateInstrDets newInstr dets
+                            newDets
+                             = updateInstrDets newInstr dets
                             (fBlks, fSuccess) 
                              = rewriteBlockInstrs rBlks bId newDets is forbidRewrite bas targetReg
                         in if iAddr `elem` instrsToRewrite
@@ -838,30 +832,28 @@ rewriteInstr dets targetReg instrN forbidRewrite
 replaceInstrReg :: InstrDets -> Reg -> Reg -> InstrNode -> InstrNode
 replaceInstrReg dets oldReg newReg instrN@(InstrNode inst addr _ outs)
  = case inst of 
-        IStore vId r          -> let newR = ifOldNew r
+        IStore vId r          -> let newR   = ifOldNew r
                                      newIns = newRegDets [newR]
                                  in InstrNode (IStore vId newR) addr newIns outs
-        IArith op rout r1 r2  -> let newR1 = ifOldNew r1
-                                     newR2 = ifOldNew r2
+        IArith op rout r1 r2  -> let newR1  = ifOldNew r1
+                                     newR2  = ifOldNew r2
                                      newIns = newRegDets [newR1, newR2]
                                  in InstrNode (IArith op rout newR1 newR2) addr newIns outs
-        IBranch r b1 b2       -> let newR = ifOldNew r
+        IBranch r b1 b2       -> let newR   = ifOldNew r
                                      newIns = newRegDets [newR]
                                  in InstrNode (IBranch newR b1 b2) addr newIns outs
-        IReturn r             -> let newR = ifOldNew r
+        IReturn r             -> let newR   = ifOldNew r
                                      newIns = newRegDets [newR]
                                  in InstrNode (IReturn newR) addr newIns outs
-        ICall rout vId rs     -> let newRs = map ifOldNew rs
+        ICall rout vId rs     -> let newRs  = map ifOldNew rs
                                      newIns = newRegDets newRs
                                  in InstrNode (ICall rout vId newRs) addr newIns outs
-        IPrint rs             -> let newRs = map ifOldNew rs
+        IPrint rs             -> let newRs  = map ifOldNew rs
                                      newIns = newRegDets newRs
                                  in InstrNode (IPrint newRs) addr newIns outs
         _                     -> instrN
- where ifOldNew r
-        = if r == oldReg then newReg else r
-       newRegDets rs
-        = rmDups $ concatMap (getRegDet dets) rs
+ where ifOldNew r    = if r == oldReg then newReg else r
+       newRegDets rs = rmDups $ concatMap (getRegDet dets) rs
 
 
 
@@ -896,7 +888,7 @@ joinBridges :: ([Block], [(Int, Int)], [(Int, Int)]) -> ([Block], [(Int, Int)])
 joinBridges beb@(blks, edges, bridges)
  = case bridges of     
         []   -> (blks, edges)
-        _ -> joinBridges $ joinBridge beb
+        _    -> joinBridges $ joinBridge beb
 
 joinBridge :: ([Block], [(Int, Int)], [(Int, Int)]) -> ([Block], [(Int, Int)], [(Int, Int)])
 joinBridge beb@(blks, edges, bridges)
@@ -917,18 +909,19 @@ joinBridge beb@(blks, edges, bridges)
                 newEdges
                  = filter (\e -> e /= (p, c)) $ map (reRootFrom c p) edges
                 newBridges
-                 = filter (\(o, d) -> o /= d) $ map (reRootFrom c p) bs
+                 = filter (uncurry (/=)) $ map (reRootFrom c p) bs
             in (newBlks, newEdges, newBridges)
- where isNotBranch i
-        = case i of
-               IBranch{} -> False
-               _         -> True
-       reRootFrom c p (o, d) 
-        = if o == c then (p, d) else (o, d)
+ where isNotBranch i         = case i of
+                                    IBranch{} -> False
+                                    _         -> True
+       reRootFrom c p (o, d) = if o == c then (p, d) else (o, d)
 
 isBridge :: [(Int, Int)] -> (Int, Int) -> Bool
 isBridge edges (h, t)
- = snd (findDegree h edges) == 1 && fst (findDegree t edges) == 1 && h /= t && t /= 0
+ = snd (findDegree h edges) == 1 
+       && fst (findDegree t edges) == 1 
+       && h /= t 
+       && t /= 0
 
 findDegree :: Int -> [(Int, Int)] -> (Int, Int)
 findDegree bId edges
@@ -941,7 +934,7 @@ findDegree bId edges
 removeChains :: [(Int, Int)] -> [(Int, Int)]
 removeChains edges
  = case edges of
-        []   -> []
+        []        -> []
         (p, c):es -> if not (any (\(t, _) -> t == c) es
                              || any (\(_, s) -> s == p) es)
                       then (p, c) : removeChains es
@@ -1022,6 +1015,6 @@ isEmptyBlock (Block bId instrs _ _ brs)
                [  InstrNode (IConst{}) cAddr _ cOut
                 , InstrNode (IBranch _ b1 b2) bAddr bIn _ ]  -> b1 == b2 && b1 /= bId
                                                                  && cOut == [bAddr] 
-                                                                 && bIn == [cAddr]
+                                                                 &&  bIn == [cAddr]
                _                                             -> False
 

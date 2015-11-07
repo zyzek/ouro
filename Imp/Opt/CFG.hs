@@ -13,9 +13,9 @@ data CFG
 
 
 -- | CFG Block.
--- | A block contains its ID; instruction list;
--- | the values in registers and variables at both the start and end of the block;
--- | A list of block IDs which this block branches to.
+-- | A block contains its ID, instruction list,
+-- | the values in registers and variables at both the start and end of the block,
+-- | a list of block IDs which this block branches to.
 data Block
         = Block Int [InstrNode] InstrDets InstrDets [Int]
         deriving (Show, Eq)
@@ -25,15 +25,15 @@ deadBlock = Block (-1) [] (InstrDets [] []) (InstrDets [] []) []
 
 
 -- A node of the flow graph.
--- Each node contains an instruction; its address;
--- the addresses of its In-Neighbours and Out-Neighbours
+-- Each node contains an instruction, its address,
+-- the addresses of its in-neighbours and out-neighbours
 data InstrNode
         = InstrNode Instr InstrAddr [InstrAddr] [InstrAddr]
         deriving (Show, Eq)
 
 
 -- | The address of an instruction:
--- | The first int is which block it belongs to; the second, its position wihtin the block.
+-- | The first int is which block it belongs to; the second, its position within the block.
 data InstrAddr
         = InstrAddr Int Int
         deriving (Show, Eq, Ord)

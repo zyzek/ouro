@@ -42,6 +42,7 @@ the relevant optimisation steps.
 
 Now, let's move on to specific examples.
 
+
 Unreachable Block Elimination (-unreach)
 ========================================
 
@@ -194,7 +195,7 @@ It probably makes sense, therefore, to eliminate unreachable before dead code.
 Redundant Load Elimination (-mutate)
 ====================================
 
-The example redundant.ir demonstrates that the optimiser can perform redunant load elimination,
+The example redundant.ir demonstrates that the optimiser can perform redundant load elimination,
 but there are some other capabilities it has, too.
 For example, the file load_const.ir demonstrates the constant propagation optimisation.
 The source,
@@ -349,10 +350,10 @@ the result is obtained:
 
 Each of the (ret r0) instructions has been rewritten to use r2, so that now (lc r0 0) is dead code.
 In truth, it would be more efficient in this case to have run the dead code removal optimisation
-first, and done away with the twin (lc r2 0) instructions. But ithe example, though confected,
-at least demonstrates the optimisation.
+first, and done away with the twin (lc r2 0) instructions. But the example, though confected,
+is at least demonstrative..
 
-Finally, constant propagation of course works through arithmetic ops. These as well, if known to
+Finally, constant propagation of works through arithmetic ops. These as well, if known to
 evaluate to some numeric constant, are replaced by lcs. Thus, const_prop.ir goes from this:
 
     (
@@ -448,7 +449,7 @@ which is reduced by the block merging optimisations to:
 
 The the chain and split functions have been reduced to rumps, but in different ways.
 The difference lies in the behaviour of the block merging optimisations.
-This consists of two stages: empty block are deleted, then linear chains of blocks are telescoped.
+This consists of two stages: empty blocks are deleted, then linear chains of blocks are telescoped.
 
 In the empty block deletion stage, any block consisting of just a load and a jump (or just 
 a jump), with each depending on each other and nothing else, then that block can be resected.
@@ -459,7 +460,7 @@ say, if A branches only to B, and B is branched to only by A, then the two can b
 without issue.
 
 Both have occurred here. chain has been reduced by simply block deletion, but split had to be 
-treated a little differently. Block 0 is relies upon by Block 6, and the branch in Block 2 has
+treated a little differently. Block 0 is relied upon by Block 6, and the branch in Block 2 has
 two destinations, so these cannot be removed. 
 
 So after deletion, we are at the intermediate stage,
@@ -508,14 +509,14 @@ if we run the telescoping step first on chains.ir, yielding the following.
 
 None of the constant loads have been destroyed, despite most being dead code.
 
-As with the unreachable block optimisations, these ones come into its own only in combination
+As with the unreachable block optimisations, these come into their own only in combination
 with the dead code and branch optimisations.
 
 
 Fixed Point Demonstrations
 ==========================
 
-If we examine the example from the specification, contained in deadcode.ir, we see that in fact
+If we examine the example, deadcode.ir, from the specification, we see that in fact
 none of the instructions but the last two have any effect whatsoever on the output.
 
     (
@@ -646,8 +647,8 @@ This reduces to,
       )
     )
 
-Each of the infinite loops has been reduced down to a single block (the print statement in the
-exec function is required so that the value in r0 is actually used, so not optimised out).
+Each of the infinite loops has been reduced down to a single block. The print statement in the
+exec function is required so that the value in r0 is actually used and not optimised out.
 
 However, exec, used to optimise to this:
 
@@ -667,7 +668,7 @@ However, exec, used to optimise to this:
 The branch block 1 was rewritten due to a limitation in the optimiser: 
 it believed that the value in r1 was indeterminate.
 
-Although it is true that r1 always contains the value 1, when the flow graph is being 
+Although it is true that r1 always contains a 1, when the flow graph is being
 constructed, and block 1 is entered for the first time, the incoming edges are examined.
 Block 1 is branched to from both 0 and 1, so that its initial state is potentially determined
 by the final states of either of them.
@@ -717,7 +718,7 @@ Consider the following non-recursive factorial program, fact_loop.ir.
       )
     )
 
-The program optimised this down to this somewhat better code:
+The program is optimised down to this somewhat better code:
 
     (
       (factorial (n)

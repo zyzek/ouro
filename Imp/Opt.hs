@@ -36,10 +36,9 @@ cfgsToProgram cfgs
 -- Apply all available optimisations in sequence until we reach a fixed point.
 optUntilFixed :: CFG -> CFG
 optUntilFixed cfg
- = let stepped = (
-                    coalesceCFG .
-                    mutateGraph .
-                    removeDeadCode .
-                    blockClosure) cfg
+ = let stepped = ( coalesceCFG .
+                   mutateGraph .
+                   removeDeadCode .
+                   blockClosure ) cfg
    in if stepped == cfg then cfg else optUntilFixed stepped
  
