@@ -1,165 +1,49 @@
 
 -------------------------------------------------------------------------------
 
-
-COMP3109 Assignment 3. Compiler Optimizer
-
-Authors:
-
-  Anton Jurisevic   311180051
-  Jeremy Short      440353151
+A toy optimising compiler, produced for the University of Sydney programming languages course.
+It compiles from a simple C-style language to an intermediate language that looks like assembly.
 
 
 Tools:
-  GHC 7.8.4
-  cabal-install 1.22.6.0 using version 1.22.4.0 of the Cabal library
-  check imp.cabal for Haskell build dependencies.
-
-
-Completed Tasks:
-
-  Control-Flow Graph Construction
-  Unreachable Code Removal
-  Dead Code Elimination
-  Redundant Load Elimination
-
-  Other:
-   Constant Propagation
-   Branch Optimisations 
-   Block Merging/Deletion
-
-  See the annotated source files in ./Imp/Opt for descriptions of the solutions to these problems.
-  Read ./test/works/opt/discussion.txt for an exploration of the capabilities of the optimiser,
-  along with descriptions of example files and output upon optimising them. The ./test/works/opt/
-  directory contains the test files used.
-
-
-Stumbling Blocks:
-  
-  The actual implementation went well enough, if hastily. There's a bunch of stuff that I'd
-  like to refactor, though. The sensation that I should be using monadic computations more
-  lingers with me, and there is plenty of duplicated structure that should be abstracted.
-  As ever, there is always more scope; not everything that was thought of was actually implemented.
-
-  Since cabal does not seem to exist on ucpu1, it's hard to compile it on there; but it does
-  actually run.
-
-  Lateness due to self-misinformation, crap organisation, zero teamwork.
+  Produced with GHC 7.8.4, cabal 1.22.6. To compile, install the haskell platform, and then run
+  cabal configure, cabal build. cabal install for dependencies.
 
 
 Invocation:
 
-  In order to run the optimiser, do
-
-    imp -flag filepath
-    
-  Here the file must end in .ir, and -flag can be any of the following, where under each heading,
-  the first flag produces ir code, the second one will display the internal CFG structure of 
-  the program.
+  Run imp from the root directory, which holds Main.hs, in order that it can
+  find the lib/ folder.
   
-  Unreachable Code Optimisation:
-    -unreach
-    -cb
-  Dead Code Elimination
-    -dead
-    -cd
-  Redundant Load Elimination (and others)
-    -mutate
-    -cr
-  Block Merging
-    -merge
-    -cm
-  Apply All Optimisations Until Fixed
-    -fix
-    -cf
+      imp -lex|-parse|-check|-convert|-interpret file [args ... ]
+      imp -unreach|-dead|-mutate|-merge|-fix file
+  
+  Input source is contained in .imp files. IR code is stored in .ir files. 
+  
+  -lex tokenises a given file, and -interpret attempts to run it with the given arguments.
+  -convert transforms input source into the intermediate representation, and
+  -check operates exclusively on the AST, so these are unavailable for .ir files.
+  -parse works on both languages, but it produces the AST resulting
+  from an .imp file, whereas it prints out the Haskell data structure
+  representing a parsed .ir file.
+  
+  The optimisation flags only work on .ir files:
+  -unreach removes unreachable code blocks.
+  -dead removes dead code (which has no effect on output)
+  -mutate rewrites instructions to speed things up.
+  -merge joins joinable blocks, removes removable ones.
+  -fix applies all optimisations repeatedly until the code stabilises.
+  -cfg generates the flow graph for some IR code and prints it.
 
-  Other
-   -cfg
-     Generate the CFG of some IR code.
-   -cir
-     Echo back the parsed intermediate code.
-   -cid
-     Produce the ids of the blocks in each CFG's zero closure.
+  
+Features: 
 
+  Syntax and Semantics Analysis: Lexer, parser, a code checker.
+  Intermediate Code Generation: Compile from source to a simpler representation with registers etc.
+  Interpreter: Actually run the compiled code.
+  Optimiser: Reduce the size of compiled code.
 
--------------------------------------------------------------------------------
-
-
-1. Install the Haskell Platform.
-   Current version is 7.10.2
-   https://www.haskell.org/platform/
-
-   If this works you should now have the 'ghc', 'ghci' and 'cabal' commands.
-
-   Cabal is the Haskell package manager and build tool.
-
-   You can check the current install ghc version:
-
-   $ ghc --version
-
-
-2. Update the cabal package directory.
-   This gets the list of available libraries from the online Hackage database.
-   https://hackage.haskell.org/
-
-   $ cabal update
-
-
-3. Install some extra libraries.
-   The template code uses these.
-   The following command downloads them from Hackage.
-
-   $ cabal install pretty-show
-   $ cabal install Diff
-
-
-4. Build the template code.
-
-   $ cabal configure
-   $ cabal build
-
-
-5. Run some tests.
-
-   The compiled executable is written to dist/build/imp/imp
-
-   $ dist/build/imp/imp -lex test/works/factorial.imp
-
-
-6. If you like, install your compiler.
-
-   $ cabal install
-
-   The executable will be installed in your system, 
-   though the exact place depends on your OS.
-
-   On OSX:   /Users/USER/Library/Haskell/bin
-   On Linux: ~/.cabal/bin
-
-   Add the correct directory to your $PATH.
-
-
--------------------------------------------------------------------------------
-
-
-COMP3109 Assignment 2. Compiler Front End
-
-Completed Tasks:
-
-  Task 1 - Syntax and Semantics Analysis
-  Task 2 - Intermediate Code Generation
-  Task 3 - Interpreter
-  Task 4 - Infix Operators
-  Task 5 - While Loops
-
-  Other:
-  + Richer operators:
-    - Operator precedence;
-    - Extended arithmetic and logical operations;
-    - Unary/Binary operator distinction.
-
-  + Extended language semantics:
-    - Expressions go where only ids could before;
+  Operator semantics:
     - Multiple-assignment:
         a, b, c  =  1, (1 + c), -b;
     - Functions as operators:
@@ -170,63 +54,21 @@ Completed Tasks:
         x = func(x, y, z);   <->   x [func z]= y;
     - Single-assignments can be evaluated as expressions,
       for chained assignment;
-    - "Ouroboros" recursion operator: calls its enclosing function;
-    - Comments;
-    - Print statement.
+    - "Ouroboros" recursion operator: @ calls its enclosing function;
 
-  + Source file preprocessor for library importation:
+  Source file preprocessor for library importation:
     - Handles circular dependencies;
     - Included math and number-theory toy libraries.
 
-  + Several extra semantic checks and warnings.
-    - Checks that multiple assignments are correct.
-    - Check that functions actually return.
-    - Some warnings if you have unreachable or redundant code.
-    - Some runtime error messages in the interpreter for looking up
-      non-existent registers, calling functions incorrectly, etc.
-
-  + Relatively extensive example code base.
-    - For the most part, example code in the test/ directory demonstrates
-      language features. To this end, many of the source files are annotated,
-      and can only be parsed or converted with the -e flag given to imp.
-      However, most of the files in test/fails are not extended, and simply 
-      demonstrate features of the checker.
-      Similarly, anything in test/works/unextended can be run with the
-      unextended language, and should run on other peoples'
-      interpreters/compilers.
+  For the most part, example code in the test/ directory demonstrates
+  language features. Some of it is annotated.
 
 
-  Invocation:
-    Run imp from the root directory, which holds Main.hs, in order that it can
-    find the lib/ folder.
-    
-    Input source is contained in .imp files. IR code is stored in .ir files. 
-    For both of these, -lex tokenises a given file, and -interpret attempts to
-    run it with the arguments you have given.
-    -convert transforms input source into the intermediate representation, and
-    -check operates exclusively on the AST, so these are unavailable for .ir
-    files.
-    Finally, -parse works on both languages, but it produces the AST resulting
-    from an .imp file, whereas it prints out the Haskell data structure
-    representing a parsed .ir file.
-
-    If you want to switch to the extended grammar, provide the -e flag first:
-
-        imp [-e] -lex|-parse|-check|-convert|-interpret file [args ... ]
-    
-    The non-extended grammar includes while loops and infix operators with
-    precedence, but none of the futher features.
-
-
-Stumbling Blocks:
-
-  Not enough time for everything.
-  Some things that were unfinished:
-    - A type system, half-done.
-    - Actually-informative syntax errors with line numbers.
-    - Static expression reduction, substitution of constants for variables if
-      possible in the AST.
-
+Future: 
+  - Types.
+  - Actually-informative syntax errors with line numbers.
+  - Static expression reduction, substitution of constants for variables if
+    possible in the AST. Maybe unnecessary given IR optimiser.
 
 -------------------------------------------------------------------------------
 

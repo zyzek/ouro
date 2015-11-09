@@ -5,7 +5,6 @@ import Imp.Source.Lexer
 import Imp.Source.Tokens
 import Imp.Parsec
 import qualified Imp.Source.Parser      as PF
-import qualified Imp.Source.MinParser   as MPF
 
 
 -- | Lex a thing, then parse it.
@@ -27,11 +26,3 @@ programOfString = lexParse PF.program
 -- | Parse an expr as a program.
 exprOfString  :: Id -> String -> Maybe Exp
 exprOfString curFuncId = lexParse (PF.expr curFuncId)
-
-
--- Same as above, but use the minimal grammar.
-minProgramOfString :: String -> Maybe Program
-minProgramOfString = lexParse MPF.program
-
-minExprOfString :: String -> Maybe Exp
-minExprOfString = lexParse MPF.expr

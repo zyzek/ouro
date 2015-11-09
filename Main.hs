@@ -28,17 +28,8 @@ import Data.Maybe
 
 main :: IO ()
 main  
-  = do  flags     <- System.getArgs
+  = do  args     <- System.getArgs
         
-        -- Determine which grammar the user has chosen, and use it. -e for extended.
-        let lang
-             | not (null flags) = head flags
-             | otherwise        = ""
-
-        let (args, progOfString, lexer)
-             | lang == "-e" = (tail flags, S.programOfString, S.lexer)
-             | otherwise    = (flags, S.minProgramOfString, S.minlexer)
-
         case args of
 
          -- Lex a file.
@@ -46,7 +37,7 @@ main
           | ".imp" `isSuffixOf` file 
           -> do contents   <- readFile file
                 str        <- S.preprocess contents file
-                let out = Text.ppShow $ lexer str
+                let out = Text.ppShow $ S.lexer str
                 showResult out (file ++ ".lex")
           
           | ".ir" `isSuffixOf` file
@@ -62,7 +53,7 @@ main
           | ".imp" `isSuffixOf` file
           -> do contents   <- readFile file
                 str     <- S.preprocess contents file
-                let out = Text.ppShow $ progOfString str
+                let out = Text.ppShow $ S.programOfString str
                 showResult out (file ++ ".parse")
           
           | ".ir" `isSuffixOf` file
@@ -78,7 +69,7 @@ main
           | ".imp" `isSuffixOf` file
           -> do contents     <- readFile file
                 str          <- S.preprocess contents file
-                case progOfString str of
+                case S.programOfString str of
                  Nothing -> error "Syntax error."
                  Just prog
                   -> do let (errs, wrns) = S.checkProgram prog
@@ -102,7 +93,7 @@ main
           | ".imp" `isSuffixOf` file
           -> do contents     <- readFile file
                 str          <- S.preprocess contents file
-                case progOfString str of
+                case S.programOfString str of
                  Nothing -> error "Syntax error."
                  Just progSource
                   -> do let core = S.convertProgram progSource
@@ -240,7 +231,7 @@ main
           | ".imp" `isSuffixOf` file
           -> do contents   <- readFile file
                 str        <- S.preprocess contents file
-                case progOfString str of
+                case S.programOfString str of
                      Nothing -> error "Syntax error."
                      Just progSource
                       -> do let core = S.convertProgram progSource

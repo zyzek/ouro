@@ -11,14 +11,6 @@ lexer str
         [(tokens', "")]  -> Just tokens'
         _                -> Nothing
 
-
-minlexer :: String -> Maybe [Token]
-minlexer str
- = case parse mintokens str of 
-        [(tokens', "")]  -> Just tokens'
-        _                -> Nothing
-
-
 -- | Parse a sequence of tokens, separated by whitespace.
 -- | Discard code comments.
 tokens :: Parser Char [Token]
